@@ -2,10 +2,10 @@
 
 A neon survival arena where almost-dying is the point — skim bullets, build your combo, unleash the nova. Danger pays.
 
-The entire game is one file, [graze.html](graze.html): no dependencies, no build step, no server. Open it in a browser and play.
+The entire game is one file, [index.html](index.html): no dependencies, no build step, no server. Open it in a browser and play.
 
 ```sh
-open graze.html
+open index.html
 ```
 
 ## How it plays
