@@ -10,11 +10,11 @@ const bad = msg => Response.json({ error: msg }, { status: 400 });
 const noStore = { "cache-control": "no-store" };
 
 export default async req => {
-  // strong consistency: max-per-name decisions must read the latest write,
-  // not a stale CDN copy
-  const store = getStore({ name: "leaderboard", consistency: "strong" });
+  const store = getStore("leaderboard");
 
   if (req.method === "GET") {
+    // viewing tolerates a few seconds of staleness — eventual reads come from the
+    // edge cache and keep the board snappy even on a cold function
     const data = (await store.get("scores", { type: "json" })) || {};
     const scores = Object.values(data)
       .sort((a, b) => b.score - a.score)
@@ -37,9 +37,11 @@ export default async req => {
   // generous ceiling on score-per-second; blocks lazy forgery, not determined cheaters
   if (score > (time + 10) * 25000) return bad("implausible score");
 
-  // one entry per username (case-insensitive), keeping the max score
+  // one entry per username (case-insensitive), keeping the max score.
+  // strong consistency here only: the read-modify-write must see the latest
+  // board or a lower score could clobber a higher one
   const key = name.toLowerCase();
-  const data = (await store.get("scores", { type: "json" })) || {};
+  const data = (await store.get("scores", { type: "json", consistency: "strong" })) || {};
   const prev = data[key];
   const improved = !prev || score > prev.score;
   if (improved) {

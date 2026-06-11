@@ -16,7 +16,7 @@ Your ship shadows the mouse (or WASD/arrows) and fires automatically at the near
 
 Grazes charge the golden **surge** meter. Holding a full surge passively boosts your damage, or you can press **SPACE** to detonate a nova scaled by your current multiplier. Hoard it or spend it — greed is a strategy.
 
-Fallen enemies drop shards that level you up. Each level pauses the action and offers a draft of three **evolutions** (common through legendary) from a pool of 20+ — pierce, ricochet, frost, orbitals, black-hole novas, and occasional mid-run weapon refits. Builds compound, so no two runs evolve alike.
+Fallen enemies drop shards that level you up. Each level pauses the action and offers a draft of three **bonuses** (common through legendary) from a pool of 20+ — pierce, ricochet, frost, orbitals, black-hole novas, and occasional mid-run weapon refits. Builds compound, so no two runs play alike.
 
 ## Controls
 
@@ -24,7 +24,7 @@ Fallen enemies drop shards that level you up. Each level pauses the action and o
 |---|---|
 | Mouse / WASD / arrows | Move (firing is automatic) |
 | SPACE | Detonate nova when surge is full |
-| 1 / 2 / 3 | Pick an evolution card |
+| 1 / 2 / 3 | Pick a bonus card |
 | SPACE or R | Instant restart from the death screen |
 | M | Toggle sound |
 | ESC | Back out of menus / return to menu after death |
@@ -32,12 +32,11 @@ Fallen enemies drop shards that level you up. Each level pauses the action and o
 ## Meta progression
 
 - **Cores (⬢)** drop from elites and heavies, and your score banks more when you die. Spend them in the **HANGAR** on eight permanent ship systems (damage, fire rate, hull, speed, magnet, graze radius, surge gain, luck) and ten unlockable weapons — from scatter pellets and railguns to chain lightning, lasers, and a tethered wrecking orb. Weapons must be **discovered first**: take one as a mid-run refit card and it becomes purchasable; until then the hangar shows an UNDISCOVERED placeholder.
-- **Lifetime-score unlocks** grant color schemes, starting perks, and a fourth heart at higher thresholds.
 - **Difficulty director** introduces nine enemy types over the first four minutes, scales pressure with time survived, and starts sending elites after the two-minute mark.
 - A **daily streak** bonus rewards coming back each day.
-- A **global leaderboard** (from the main menu) tracks the best run per callsign. After your first death you can optionally enter a name — from then on your best scores submit automatically. No sign-in; one entry per name.
+- A **global leaderboard** (from the main menu) tracks the best run per callsign. After a death, ADD SCORE TO LEADERBOARD prompts for a callsign (remembered for next time) and shows your rank in the top ten. No sign-in; one entry per name.
 
-Progress saves to `localStorage` (a double-click reset button in the hangar wipes it).
+Progress saves to `localStorage` (a double-click reset button in settings wipes it).
 
 ## Tech notes
 
