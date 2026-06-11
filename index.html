@@ -307,6 +307,43 @@
   #tutBtn{margin-top:10px;font-size:9.5px;letter-spacing:4px;color:#5a6e92;cursor:pointer;
     padding:6px 12px;transition:color .2s, text-shadow .2s;animation:fadeUp 1.4s 1.8s both;}
   #tutBtn:hover{color:#fff;text-shadow:0 0 10px var(--c1);}
+  /* ---------- global leaderboard ---------- */
+  #lbBtn{margin-top:2px;font-size:9.5px;letter-spacing:4px;color:#5a6e92;cursor:pointer;
+    padding:6px 12px;transition:color .2s, text-shadow .2s;animation:fadeUp 1.4s 1.95s both;}
+  #lbBtn:hover{color:#fff;text-shadow:0 0 10px var(--c1);}
+  #board{justify-content:flex-start;padding:54px 0 44px;overflow-y:auto;z-index:6;}
+  #bTitle{font-size:26px;letter-spacing:14px;font-weight:200;color:#eef6ff;
+    font-family:"Helvetica Neue","Inter",-apple-system,"Segoe UI",Arial,sans-serif;}
+  #bSub{margin-top:10px;font-size:10px;letter-spacing:4px;color:#5a6e92;}
+  #bList{margin-top:26px;width:min(560px,92vw);display:flex;flex-direction:column;gap:6px;}
+  #bStatus{padding:30px 0;font-size:11px;letter-spacing:4px;color:#7d92b8;text-align:center;
+    animation:pulse 1.2s infinite alternate;}
+  .brow{display:flex;align-items:baseline;gap:14px;padding:9px 14px;border:1px solid rgba(140,170,220,.16);
+    border-radius:4px;background:rgba(10,14,30,.6);font-size:12px;}
+  .brow .br{width:34px;color:#5a6e92;letter-spacing:1px;}
+  .brow .bn{flex:1;text-align:left;color:#dfe9ff;letter-spacing:2px;text-transform:uppercase;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .brow .bs{color:#fff;font-weight:700;text-shadow:0 0 10px var(--c1);}
+  .brow .bt{width:52px;text-align:right;color:#7d92b8;font-size:10px;}
+  .brow.top1 .br{color:#ffd84e;text-shadow:0 0 8px rgba(255,216,78,.6);}
+  .brow.top2 .br{color:#dfe9ff;}
+  .brow.top3 .br{color:#ff9b3d;}
+  .brow.me{border-color:var(--c1);box-shadow:0 0 14px rgba(78,243,255,.25);}
+  .brow.me .bn{color:var(--c1);}
+  /* death-screen callsign entry */
+  #lbBox{margin-top:18px;text-align:center;}
+  #lbJoin{display:flex;gap:10px;align-items:center;justify-content:center;}
+  #lbName{font:inherit;font-size:12px;letter-spacing:3px;color:#fff;background:rgba(10,14,30,.8);
+    border:1px solid rgba(140,170,220,.3);border-radius:3px;padding:9px 12px;width:170px;
+    text-align:center;outline:none;text-transform:uppercase;}
+  #lbName:focus{border-color:var(--c1);box-shadow:0 0 14px rgba(78,243,255,.3);}
+  #lbName::placeholder{color:#5a6e92;letter-spacing:3px;}
+  #lbJoinBtn{font:inherit;font-size:10px;letter-spacing:2px;padding:9px 14px;background:transparent;
+    border:1px solid rgba(78,243,255,.5);color:var(--c1);border-radius:3px;cursor:pointer;transition:all .15s;}
+  #lbJoinBtn:hover{background:var(--c1);color:#04040c;}
+  #lbHint{margin-top:8px;font-size:9px;letter-spacing:2px;color:#5a6e92;}
+  #lbStatus{margin-top:10px;font-size:10px;letter-spacing:3px;color:var(--c1);min-height:14px;
+    text-shadow:0 0 10px rgba(78,243,255,.4);}
   #tut{z-index:7;}
   #tutInner{display:flex;flex-direction:column;align-items:center;text-align:center;
     max-width:540px;padding:0 26px;}
@@ -394,6 +431,7 @@
     </div>
     <button id="startBtn">ENGAGE</button>
     <div id="tutBtn">PROTOCOL — HOW TO PLAY</div>
+    <div id="lbBtn">⬡ GLOBAL LEADERBOARD</div>
     <div id="cornerL" class="corner"></div>
     <div id="hangarBtn" class="corner cornerR">HANGAR · ⬢ <span id="hCores">0</span></div>
     <div id="menuReset">RESET PROGRESS</div>
@@ -429,6 +467,13 @@
     <button class="cta small" id="storeBack">BACK</button>
   </div>
 
+  <div id="board" class="overlay">
+    <div id="bTitle">GLOBAL LEADERBOARD</div>
+    <div id="bSub">BEST RUN PER CALLSIGN</div>
+    <div id="bList"></div>
+    <button class="cta small" id="boardBack">BACK</button>
+  </div>
+
   <div id="levelup" class="overlay">
     <div id="lvlTitle">CHOOSE EVOLUTION</div>
     <div id="cards"></div>
@@ -453,6 +498,14 @@
       <div id="nuPct"></div>
     </div>
     <div id="unlockedMsg"></div>
+    <div id="lbBox">
+      <div id="lbJoin">
+        <input id="lbName" maxlength="16" placeholder="CALLSIGN" spellcheck="false" autocomplete="off">
+        <button id="lbJoinBtn">JOIN LEADERBOARD</button>
+      </div>
+      <div id="lbHint">optional — saves your best run to the global board</div>
+      <div id="lbStatus"></div>
+    </div>
     <div class="restartHint">CLICK / SPACE — ONE MORE RUN</div>
     <button class="cta hangar small" id="deathHangar">HANGAR · ⬢ <span id="dhCores">0</span></button>
     <div id="deathMenu">ESC — RETURN TO MENU</div>
@@ -501,7 +554,7 @@ const store = {
 const meta = Object.assign({
   best:0, totalScore:0, runs:0, scheme:"pulse",
   streak:0, lastDay:"", muted:false,
-  cores:0, weapon:"pulse", owned:null, shop:null
+  cores:0, weapon:"pulse", owned:null, shop:null, player:""
 }, store.load());
 meta.owned = Object.assign({pulse:true}, meta.owned||{});
 meta.shop  = Object.assign({gun:0,cycle:0,hull:0,thrust:0,magnet:0,graze:0,surge:0,luck:0}, meta.shop||{});
@@ -1754,6 +1807,7 @@ function showDeathScreen(){
     document.getElementById("nuPct").textContent=pct.toFixed(1)+"%  ("+fmtN(next.at-meta.totalScore)+" to go)";
     setTimeout(()=>{document.getElementById("nuBar").style.width=Math.min(100,pct)+"%";},80);
   } else nu.style.display="none";
+  initDeathBoard();
   document.getElementById("death").classList.add("on");
 }
 
@@ -1820,6 +1874,10 @@ function handleKey(code){
   }
   if(document.getElementById("store").classList.contains("on")){
     if(code==="Escape"||code==="Backspace") closeStore();
+    return;
+  }
+  if(document.getElementById("board").classList.contains("on")){
+    if(code==="Escape"||code==="Backspace") closeBoard();
     return;
   }
   if(G.state==="playing" && code==="Space") tryNova();
@@ -1987,6 +2045,80 @@ document.getElementById("scPlay").addEventListener("pointerdown",e=>{
 document.getElementById("deathHangar").addEventListener("pointerdown",e=>{ e.stopPropagation(); openStore(); });
 document.getElementById("deathMenu").addEventListener("pointerdown",e=>{ e.stopPropagation(); goMenu(); });
 document.getElementById("storeBack").addEventListener("pointerdown",e=>{ e.stopPropagation(); closeStore(); });
+
+// ---------- global leaderboard (Netlify function + Blobs) ----------
+const LB_API="/api/scores";
+const LB_NAME_RE=/^[a-z0-9 _.\-]{2,16}$/i;
+let lbSent=false; // one transmission per death
+const escHTML=s=>String(s).replace(/[&<>"']/g,c=>"&#"+c.charCodeAt(0)+";");
+
+function openBoard(){
+  AU.init();
+  document.getElementById("board").classList.add("on");
+  const list=document.getElementById("bList");
+  list.innerHTML="<div id='bStatus'>CONTACTING RELAY…</div>";
+  fetch(LB_API).then(r=>{ if(!r.ok) throw 0; return r.json(); }).then(d=>{
+    if(!d.scores||!d.scores.length){
+      list.innerHTML="<div id='bStatus'>NO SIGNALS YET — BE THE FIRST</div>"; return;
+    }
+    const mine=(meta.player||"").toLowerCase();
+    list.innerHTML=d.scores.map((s,i)=>{
+      const cls="brow"+(i<3?" top"+(i+1):"")+(String(s.name).toLowerCase()===mine?" me":"");
+      return "<div class='"+cls+"'><span class='br'>"+(i+1)+"</span>"+
+        "<span class='bn'>"+escHTML(s.name)+"</span>"+
+        "<span class='bs'>"+fmtN(s.score)+"</span>"+
+        "<span class='bt'>"+fmtT(s.time)+"</span></div>";
+    }).join("");
+  }).catch(()=>{ list.innerHTML="<div id='bStatus'>LEADERBOARD UNREACHABLE</div>"; });
+  AU.ui();
+}
+function closeBoard(){ document.getElementById("board").classList.remove("on"); AU.ui(); }
+document.getElementById("lbBtn").addEventListener("pointerdown",e=>{ e.stopPropagation(); openBoard(); });
+document.getElementById("boardBack").addEventListener("pointerdown",e=>{ e.stopPropagation(); closeBoard(); });
+
+function sendScore(){
+  if(lbSent||!meta.player||G.score<1||G.t<5) return;
+  lbSent=true;
+  const st=document.getElementById("lbStatus");
+  st.textContent="TRANSMITTING…";
+  fetch(LB_API,{method:"POST",headers:{"content-type":"application/json"},
+    body:JSON.stringify({name:meta.player,score:G.score,time:G.t})})
+  .then(r=>{ if(!r.ok) throw 0; return r.json(); })
+  .then(d=>{
+    st.textContent=d.improved
+      ? "★ ON THE BOARD — GLOBAL RANK #"+d.rank+" ★"
+      : "GLOBAL BEST STANDS AT "+fmtN(d.best)+" — RANK #"+d.rank;
+  })
+  .catch(()=>{ lbSent=false; st.textContent="LEADERBOARD UNREACHABLE"; });
+}
+function joinBoard(){
+  const inp=document.getElementById("lbName");
+  const name=inp.value.trim();
+  if(!LB_NAME_RE.test(name)){
+    document.getElementById("lbStatus").textContent="2–16 LETTERS, NUMBERS, _ . -";
+    AU.deny(); return;
+  }
+  meta.player=name; store.save(meta); AU.coin();
+  document.getElementById("lbJoin").style.display="none";
+  document.getElementById("lbHint").style.display="none";
+  sendScore();
+}
+// the death screen restarts on click/space — keep typing in the input from leaking out
+{
+  const inp=document.getElementById("lbName");
+  inp.addEventListener("keydown",e=>{ e.stopPropagation(); if(e.key==="Enter") joinBoard(); });
+  inp.addEventListener("pointerdown",e=>e.stopPropagation());
+  document.getElementById("lbJoinBtn").addEventListener("pointerdown",e=>{ e.stopPropagation(); joinBoard(); });
+}
+function initDeathBoard(){
+  lbSent=false;
+  const joinable=!meta.player && G.score>0;
+  document.getElementById("lbJoin").style.display=joinable?"flex":"none";
+  document.getElementById("lbHint").style.display=joinable?"block":"none";
+  document.getElementById("lbStatus").textContent="";
+  document.getElementById("lbName").value=meta.player||"";
+  if(meta.player) sendScore();
+}
 
 function buildStore(){
   document.getElementById("sCores").textContent="⬢ "+fmtN(meta.cores)+" CORES";

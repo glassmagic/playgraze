@@ -1,0 +1,8 @@
+{
+  "name": "playgraze",
+  "private": true,
+  "description": "GRAZE — neon survival arena. Static game plus a Netlify function for the global leaderboard.",
+  "dependencies": {
+    "@netlify/blobs": "^10.7.9"
+  }
+}

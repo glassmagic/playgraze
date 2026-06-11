@@ -2,11 +2,13 @@
 
 A neon survival arena where almost-dying is the point — skim bullets, build your combo, unleash the nova. Danger pays.
 
-The entire game is one file, [index.html](index.html): no dependencies, no build step, no server. Open it in a browser and play.
+The entire game is one file, [index.html](index.html): no dependencies, no build step. Open it in a browser and play.
 
 ```sh
 open index.html
 ```
+
+(The global leaderboard is backed by a Netlify function, so it shows as unreachable when the file is opened locally — everything else works. The deployed game at [playgraze.com](https://playgraze.com) has the full experience.)
 
 ## How it plays
 
@@ -33,12 +35,14 @@ Fallen enemies drop shards that level you up. Each level pauses the action and o
 - **Lifetime-score unlocks** grant color schemes, starting perks, and a fourth heart at higher thresholds.
 - **Difficulty director** introduces nine enemy types over the first four minutes, scales pressure with time survived, and starts sending elites after the two-minute mark.
 - A **daily streak** bonus rewards coming back each day.
+- A **global leaderboard** (from the main menu) tracks the best run per callsign. After your first death you can optionally enter a name — from then on your best scores submit automatically. No sign-in; one entry per name.
 
 Progress saves to `localStorage` (a double-click reset button in the hangar wipes it).
 
 ## Tech notes
 
 - Vanilla JavaScript on a single `<canvas>` — no frameworks, no assets.
+- The leaderboard is a single Netlify function ([netlify/functions/scores.mjs](netlify/functions/scores.mjs)) storing scores in Netlify Blobs, exposed at `/api/scores`. It keeps the max score per username and applies basic plausibility checks on submissions.
 - All audio is synthesized live with the Web Audio API, including the soundtrack, which layers up as a run gets more intense.
 - Cinematic dressing (film grain, letterboxing, color grade, anamorphic title flare) is done in CSS on top of the canvas.
 - Works with touch — the ship follows your finger.
