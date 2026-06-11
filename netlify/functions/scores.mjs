@@ -19,7 +19,7 @@ export default async req => {
     const scores = Object.values(data)
       .sort((a, b) => b.score - a.score)
       .slice(0, TOP_RETURNED);
-    return Response.json({ scores }, { headers: noStore });
+    return Response.json({ scores, total: Object.keys(data).length }, { headers: noStore });
   }
 
   if (req.method !== "POST") {
@@ -52,5 +52,5 @@ export default async req => {
 
   const best = improved ? score : prev.score;
   const rank = 1 + Object.values(data).filter(e => e.score > best).length;
-  return Response.json({ best, rank, improved }, { headers: noStore });
+  return Response.json({ best, rank, improved, total: Object.keys(data).length }, { headers: noStore });
 };
