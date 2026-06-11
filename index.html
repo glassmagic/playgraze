@@ -645,7 +645,7 @@ const lerp = (a,b,t)=> a+(b-a)*t;
 const d2 = (ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy;};
 const fmtT = s =>{s|=0;return ((s/60)|0)+":"+("0"+(s%60)).slice(-2);};
 const fmtN = n => (n|0).toLocaleString("en-US");
-const VERSION="1.4.0"; // bump the minor on every PR — shown in settings to track deploys
+const VERSION="1.5.0"; // bump the minor on every PR — shown in settings to track deploys
 
 // ---------- persistence ----------
 const store = {
@@ -1864,12 +1864,12 @@ function levelUp(){
   G.state="levelup";
   AU.levelup(); flashScreen(0.25);
   document.getElementById("lvl").textContent="LV "+G.level;
-  // roll 3 cards with rarity weighting (legendary 4.5%, epic ~12%, rare 30%)
+  // roll 3 cards with rarity weighting — legendaries are an event, not a routine
   const pool=[...UPGRADES, ...weaponOffers()];
   offered=[];
   for(let i=0;i<3 && pool.length;i++){
     const roll=Math.random() - (meta.shop.luck||0)*0.02;
-    const wantR = roll<0.10?3 : roll<0.30?2 : roll<0.60?1 : 0;
+    const wantR = roll<0.05?3 : roll<0.24?2 : roll<0.56?1 : 0;
     let cands=pool.filter(u=>u.rar===wantR);
     if(!cands.length) cands=pool;
     const u=pick(cands);
@@ -1877,10 +1877,17 @@ function levelUp(){
     offered.push(u);
   }
   // weapons deserve a regular seat: if the rarity rolls shut them all out,
-  // often swap one card for a refit so every weapon is actually encounterable
+  // often swap one card for a refit — but the seat respects rarity too,
+  // or every swap parades another legendary card
   if(!offered.some(u=>u.id.startsWith("wpn_")) && Math.random()<0.4){
     const wo=weaponOffers();
-    if(wo.length) offered[(Math.random()*offered.length)|0]=pick(wo);
+    if(wo.length){
+      const r=Math.random(), wantW=r<0.07?3 : r<0.30?2 : 1;
+      let cands=wo.filter(o=>o.rar===wantW);
+      if(!cands.length) cands=wo.filter(o=>o.rar<wantW);
+      if(!cands.length) cands=wo;
+      offered[(Math.random()*offered.length)|0]=pick(cands);
+    }
   }
   const cardsEl=document.getElementById("cards");
   cardsEl.innerHTML="";
@@ -2248,6 +2255,9 @@ document.getElementById("storeBack").addEventListener("pointerdown",e=>{ e.stopP
 
 // ---------- global leaderboard (Netlify function + Blobs) ----------
 const LB_API="/api/scores";
+// fire-and-forget warm-up: boots the function on page load so the first real
+// leaderboard call doesn't eat a multi-second cold start
+try{ fetch(LB_API).catch(()=>{}); }catch(e){}
 const LB_NAME_RE=/^[a-z0-9 _.\-]{2,16}$/i;
 let lbSent=false; // one transmission per death
 const escHTML=s=>String(s).replace(/[&<>"']/g,c=>"&#"+c.charCodeAt(0)+";");
