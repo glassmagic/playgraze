@@ -376,11 +376,12 @@
   .sbtn{font-size:9px;letter-spacing:2px;color:#9fb6d8;border:1px solid rgba(140,170,220,.25);
     border-radius:3px;padding:6px 10px;cursor:pointer;transition:all .15s;background:rgba(10,14,30,.6);}
   .sbtn:hover{color:#04040c;background:var(--c1);border-color:var(--c1);}
-  #lbName{font:inherit;font-size:12px;letter-spacing:3px;color:#fff;background:rgba(10,14,30,.8);
+  #lbName,#setName{font:inherit;font-size:12px;letter-spacing:3px;color:#fff;background:rgba(10,14,30,.8);
     border:1px solid rgba(140,170,220,.3);border-radius:3px;padding:9px 12px;width:170px;
     text-align:center;outline:none;text-transform:uppercase;}
-  #lbName:focus{border-color:var(--c1);box-shadow:0 0 14px rgba(78,243,255,.3);}
-  #lbName::placeholder{color:#5a6e92;letter-spacing:3px;}
+  #lbName:focus,#setName:focus{border-color:var(--c1);box-shadow:0 0 14px rgba(78,243,255,.3);}
+  #lbName::placeholder,#setName::placeholder{color:#5a6e92;letter-spacing:3px;}
+  #setName{width:150px;font-size:11px;padding:7px 10px;}
   #lbJoinBtn{font:inherit;font-size:10px;letter-spacing:2px;padding:9px 14px;background:transparent;
     border:1px solid rgba(78,243,255,.5);color:var(--c1);border-radius:3px;cursor:pointer;transition:all .15s;}
   #lbJoinBtn:hover{background:var(--c1);color:#04040c;}
@@ -536,7 +537,7 @@
     <div id="setTitle">SETTINGS</div>
     <div id="setRows">
       <div class="setrow"><span class="setk">SOUND</span><button class="setbtn" id="setSound">ON</button></div>
-      <div class="setrow"><span class="setk">CALLSIGN</span><span class="setv" id="setCallsign">—</span><button class="setbtn" id="setClearName">CLEAR</button></div>
+      <div class="setrow"><span class="setk">CALLSIGN</span><input id="setName" maxlength="16" placeholder="NOT SET" spellcheck="false" autocomplete="off"><button class="setbtn" id="setNameSave">SAVE</button></div>
       <div class="setrow"><span class="setk">RECORD</span><span class="setv" id="setStats"></span></div>
       <div class="setrow"><span class="setk">DANGER ZONE</span><button class="setbtn danger" id="setReset">RESET PROGRESS</button></div>
     </div>
@@ -2103,20 +2104,34 @@ bindReset(document.getElementById("setReset"));
 // ---------- settings ----------
 function buildSettings(){
   document.getElementById("setSound").textContent=AU.muted?"OFF":"ON";
-  document.getElementById("setCallsign").textContent=meta.player||"NOT SET";
-  document.getElementById("setClearName").style.display=meta.player?"inline-block":"none";
+  document.getElementById("setName").value=meta.player||"";
   document.getElementById("setStats").textContent=
     fmtN(meta.runs)+" RUNS · BEST "+fmtN(meta.best)+" · LIFETIME "+fmtN(meta.totalScore)+" · ⬢ "+fmtN(meta.cores);
   document.getElementById("setVersion").textContent="GRAZE v"+VERSION;
+}
+function saveCallsign(){
+  const btn=document.getElementById("setNameSave");
+  const name=document.getElementById("setName").value.trim();
+  if(name && !LB_NAME_RE.test(name)){
+    btn.textContent="2–16 CHARS"; AU.deny();
+    setTimeout(()=>{ btn.textContent="SAVE"; },2000);
+    return;
+  }
+  meta.player=name; store.save(meta); AU.coin();
+  btn.textContent=name?"✓ SAVED":"✓ CLEARED";
+  setTimeout(()=>{ btn.textContent="SAVE"; },2000);
 }
 function openSettings(){ AU.init(); buildSettings(); document.getElementById("settings").classList.add("on"); AU.ui(); }
 function closeSettings(){ document.getElementById("settings").classList.remove("on"); AU.ui(); buildMenu(); }
 document.getElementById("settingsBtn").addEventListener("pointerdown",e=>{ e.stopPropagation(); openSettings(); });
 document.getElementById("setBack").addEventListener("pointerdown",e=>{ e.stopPropagation(); closeSettings(); });
 document.getElementById("setSound").addEventListener("pointerdown",e=>{ e.stopPropagation(); AU.toggle(); buildSettings(); });
-document.getElementById("setClearName").addEventListener("pointerdown",e=>{
-  e.stopPropagation(); meta.player=""; store.save(meta); AU.ui(); buildSettings();
-});
+document.getElementById("setNameSave").addEventListener("pointerdown",e=>{ e.stopPropagation(); saveCallsign(); });
+{
+  const inp=document.getElementById("setName");
+  inp.addEventListener("keydown",e=>{ e.stopPropagation(); if(e.key==="Enter") saveCallsign(); });
+  inp.addEventListener("pointerdown",e=>e.stopPropagation());
+}
 // coffee links open externally without touching game state (no accidental restarts)
 for(const id of ["coffeeMenu","coffeeDeath"])
   document.getElementById(id).addEventListener("pointerdown",e=>e.stopPropagation());
