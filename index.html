@@ -64,7 +64,8 @@
     box-shadow:0 0 14px var(--c1);transition:width .15s;}
   #lvl{position:absolute;bottom:14px;left:18px;font-size:12px;letter-spacing:2px;color:#9fb6d8;}
   /* surge */
-  #surgewrap{position:absolute;bottom:14px;right:18px;width:150px;text-align:right;}
+  #surgewrap{position:absolute;bottom:14px;right:18px;width:150px;text-align:right;
+    pointer-events:auto;cursor:pointer;padding:8px 0 0 8px;}
   #surgelabel{font-size:10px;letter-spacing:3px;color:#9fb6d8;margin-bottom:4px;}
   #surgebg{height:10px;background:rgba(255,255,255,.06);border-radius:5px;overflow:hidden;transition:box-shadow .2s;}
   #surgebar{height:100%;width:0%;background:linear-gradient(90deg,#ffd84e,#ff7b3d);
@@ -210,6 +211,22 @@
   .overlay.on #deathTitle{animation:trackIn 1.1s cubic-bezier(.16,.84,.3,1) both;}
   @keyframes trackIn{from{opacity:0;letter-spacing:26px;filter:blur(7px);}
     to{opacity:1;letter-spacing:12px;filter:blur(0);}}
+  /* the report card assembles cinematically, line by line */
+  #death.on > *{animation:fadeUp .7s cubic-bezier(.16,.84,.3,1) both;}
+  #death.on #deathTitle{animation:trackIn 1.1s cubic-bezier(.16,.84,.3,1) both;}
+  #death.on #newBest{animation-delay:.5s;}
+  #death.on #dScore{animation:scoreIn .9s .25s cubic-bezier(.16,.84,.3,1) both;}
+  #death.on #dScoreLbl{animation-delay:.6s;}
+  #death.on #dstats{animation-delay:.72s;}
+  #death.on #lbBox{animation-delay:.86s;}
+  #death.on #dEvoTitle{animation-delay:.96s;}
+  #death.on #dEvos{animation-delay:1.02s;}
+  #death.on #nextUnlock{animation-delay:1.1s;}
+  #death.on #unlockedMsg{animation-delay:1.16s;}
+  #death.on .restartHint{animation-delay:1.32s;}
+  #death.on #dActions{animation-delay:1.44s;}
+  @keyframes scoreIn{from{opacity:0;transform:scale(1.7);filter:blur(14px);}
+    62%{filter:blur(0);}to{opacity:1;transform:scale(1);filter:blur(0);}}
   #newBest{font-size:12px;letter-spacing:5px;color:#ffd84e;text-shadow:0 0 16px #ffb84e;
     margin-top:10px;height:16px;}
   #dScore{font-size:62px;font-weight:700;color:#fff;margin-top:6px;letter-spacing:2px;
@@ -337,9 +354,12 @@
     transition:all .15s;}
   #lbAddBtn:hover{background:var(--c1);color:#04040c;box-shadow:0 0 22px rgba(78,243,255,.4);}
   #lbJoin{display:flex;gap:10px;align-items:center;justify-content:center;}
-  #shareRank{margin-top:10px;font-size:9.5px;letter-spacing:3px;color:#5a6e92;cursor:pointer;
-    padding:4px 12px;transition:color .2s;display:none;}
-  #shareRank:hover{color:var(--c1);text-shadow:0 0 12px rgba(78,243,255,.5);}
+  #shareRow{margin-top:12px;display:none;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;}
+  #shareRow.on{display:flex;}
+  #shareLbl{font-size:9px;letter-spacing:3px;color:#5a6e92;}
+  .sbtn{font-size:9px;letter-spacing:2px;color:#9fb6d8;border:1px solid rgba(140,170,220,.25);
+    border-radius:3px;padding:6px 10px;cursor:pointer;transition:all .15s;background:rgba(10,14,30,.6);}
+  .sbtn:hover{color:#04040c;background:var(--c1);border-color:var(--c1);}
   #lbName{font:inherit;font-size:12px;letter-spacing:3px;color:#fff;background:rgba(10,14,30,.8);
     border:1px solid rgba(140,170,220,.3);border-radius:3px;padding:9px 12px;width:170px;
     text-align:center;outline:none;text-transform:uppercase;}
@@ -504,7 +524,16 @@
         <button id="lbJoinBtn">TRANSMIT</button>
       </div>
       <div id="lbStatus"></div>
-      <div id="shareRank">⤴ SHARE YOUR RANK</div>
+      <div id="shareRow">
+        <span id="shareLbl">SHARE YOUR RANK —</span>
+        <span class="sbtn" data-net="x">𝕏</span>
+        <span class="sbtn" data-net="wa">WHATSAPP</span>
+        <span class="sbtn" data-net="fb">FACEBOOK</span>
+        <span class="sbtn" data-net="tg">TELEGRAM</span>
+        <span class="sbtn" data-net="rd">REDDIT</span>
+        <span class="sbtn" data-net="sys" hidden>⤴ MORE</span>
+        <span class="sbtn" data-net="copy">⧉ COPY LINK</span>
+      </div>
     </div>
     <div id="dEvoTitle">EVOLUTIONS TAKEN</div>
     <div id="dEvos"></div>
@@ -905,6 +934,9 @@ window.addEventListener("keydown",e=>{
   handleKey(e.code);
 });
 window.addEventListener("keyup",e=>keys[e.code]=false);
+// touch: one finger steers, a second finger (or tapping the surge bar) releases the nova
+const TOUCH=matchMedia("(pointer:coarse)").matches;
+window.addEventListener("touchstart",e=>{ if(e.touches.length>=2) tryNova(); },{passive:true});
 window.addEventListener("pointermove",e=>{ mouseX=e.clientX; mouseY=e.clientY; mouseActive=true; });
 // browsers forbid sound before a gesture — unlock on the very first click or key
 const audioUnlock=()=>{ AU.init(); if(AU.ctx && AU.ctx.state==="suspended") AU.ctx.resume(); };
@@ -912,6 +944,7 @@ window.addEventListener("pointerdown",audioUnlock,{once:true});
 window.addEventListener("keydown",audioUnlock,{once:true});
 window.addEventListener("pointerdown",e=>{ mouseX=e.clientX; mouseY=e.clientY; mouseActive=true; handleClick(); });
 document.getElementById("muteBtn").addEventListener("pointerdown",e=>{e.stopPropagation(); AU.toggle();});
+document.getElementById("surgewrap").addEventListener("pointerdown",e=>{e.stopPropagation(); tryNova();});
 
 // ---------- game state ----------
 const G = {
@@ -1767,12 +1800,15 @@ function chooseCard(i){
 // ---------- death & meta (near-miss framing) ----------
 function startDeath(){
   G.state="dying"; G.deathT=0;
+  // the crash site becomes a singularity that swallows the whole arena
+  G.deathHole={x:player.x,y:player.y,collapsed:false};
+  zones=[]; waves=[]; bolts=[]; flail=null;
   document.getElementById("wrap").classList.add("cine"); // bars close in as the signal dies
-  addFlare(player.x,player.y, W*1.2, "255,93,126", 1.3);  // the signal collapses to a line
+  addFlare(player.x,player.y, W*1.5, "255,93,126", 1.7);  // the signal collapses to a line
   AU.die();
   burst(player.x,player.y,scheme().c1,90,700,6,1.4);
   burst(player.x,player.y,"#ffffff",40,480,4,1.0);
-  shake(24); flashScreen(0.7);
+  shake(26); flashScreen(0.7);
 }
 function showDeathScreen(){
   G.state="dead";
@@ -1918,7 +1954,7 @@ const TUT=[
  {t:"THE GRAZE", v:'<div class="tRing"><div class="tBullet"></div></div>',
   b:"A faint ring surrounds your ship. Anything deadly that crosses it <b>without touching you</b> is a <b>graze</b>.<br><br>Grazes feed everything — score, combo, surge. A near-miss is worth more than a clean escape. The game pays you to live close to the fire."},
  {t:"COMBO & SURGE", v:'<div class="tSurge"></div><div class="tKey">SPACE</div>',
-  b:"Grazes and kills build your <b>combo</b> — the ×multiplier on all score. Play it too safe and it decays.<br><br>Grazes also charge the golden <b>surge</b> ring. Full surge boosts your damage — or press <b>SPACE</b> to detonate a nova scaled by your multiplier. Hoard it or spend it: greed is a strategy."},
+  b:"Grazes and kills build your <b>combo</b> — the ×multiplier on all score. Play it too safe and it decays.<br><br>Grazes also charge the golden <b>surge</b> ring. Full surge boosts your damage — or press <b>SPACE</b> (on touch: <b>two-finger tap</b>, or tap the surge bar) to detonate a nova scaled by your multiplier. Hoard it or spend it: greed is a strategy."},
  {t:"EVOLUTION", v:'<div class="tCards"><i></i><i class="mid"></i><i></i></div>',
   b:"Fallen enemies drop <b>shards</b>. Shards fill the bar below — each level pauses time and offers <b>three evolutions</b>, common through <b>legendary</b>.<br><br>Builds compound: split shots ricochet, frost slows, death blooms chain. No two runs evolve alike."},
  {t:"CORES & HANGAR", v:'<div class="tCore">⬢</div>',
@@ -2017,26 +2053,47 @@ for(const id of ["coffeeMenu","coffeeDeath"])
   document.getElementById(id).addEventListener("pointerdown",e=>e.stopPropagation());
 
 // ---------- share your rank ----------
-document.getElementById("shareRank").addEventListener("pointerdown",e=>{
-  e.stopPropagation();
-  if(!lbResult) return;
-  const el=e.currentTarget;
+function shareData(){
   const base=location.href.split("?")[0].split("#")[0];
   const url=base+"?s="+lbResult.best+"&t="+Math.floor(G.t)+"&g="+G.grazes+"&k="+G.kills+
     "&r="+lbResult.rank+"&n="+lbResult.total+"&c="+encodeURIComponent(meta.player||"");
-  const done=()=>{ el.textContent="✓ LINK COPIED"; AU.coin();
-    setTimeout(()=>{ el.textContent="⤴ SHARE YOUR RANK"; },2200); };
+  const text="GRAZE — "+rankText(lbResult.rank,lbResult.total)+" with "+fmtN(lbResult.best)+" points. danger pays.";
+  return {url,text};
+}
+function copyText(txt,el,label){
+  const done=()=>{ el.textContent="✓ COPIED"; AU.coin();
+    setTimeout(()=>{ el.textContent=label; },2200); };
   const fallback=()=>{
     const ta=document.createElement("textarea");
-    ta.value=url; ta.style.position="fixed"; ta.style.opacity="0";
+    ta.value=txt; ta.style.position="fixed"; ta.style.opacity="0";
     document.body.appendChild(ta); ta.select();
     try{ document.execCommand("copy"); }catch(err){}
     ta.remove(); done();
   };
   if(navigator.clipboard && navigator.clipboard.writeText)
-    navigator.clipboard.writeText(url).then(done,fallback);
+    navigator.clipboard.writeText(txt).then(done,fallback);
   else fallback();
+}
+document.querySelectorAll("#shareRow .sbtn").forEach(b=>{
+  b.addEventListener("pointerdown",e=>{
+    e.stopPropagation();
+    if(!lbResult) return;
+    const {url,text}=shareData(), u=encodeURIComponent(url), t=encodeURIComponent(text);
+    const links={
+      x:"https://twitter.com/intent/tweet?text="+t+"&url="+u,
+      wa:"https://wa.me/?text="+t+"%20"+u,
+      fb:"https://www.facebook.com/sharer/sharer.php?u="+u+"&quote="+t,
+      tg:"https://t.me/share/url?url="+u+"&text="+t,
+      rd:"https://www.reddit.com/submit?url="+u+"&title="+t,
+    };
+    const net=b.dataset.net;
+    if(net==="copy") copyText(url,b,"⧉ COPY LINK");
+    else if(net==="sys") navigator.share({title:"GRAZE",text,url}).catch(()=>{});
+    else window.open(links[net],"_blank","noopener");
+    AU.ui();
+  });
 });
+if(navigator.share) document.querySelector('#shareRow .sbtn[data-net="sys"]').hidden=false;
 // arriving via a shared link: render the scorecard above a play CTA
 (function(){
   const q=new URLSearchParams(location.search);
@@ -2111,7 +2168,7 @@ function sendScore(){
     st.textContent=d.improved
       ? "★ "+rankText(d.rank,d.total)+" ★"
       : "YOUR BEST STANDS AT "+fmtN(d.best)+" — "+rankText(d.rank,d.total);
-    document.getElementById("shareRank").style.display="block";
+    document.getElementById("shareRow").classList.add("on");
   })
   .catch(()=>{
     lbSent=false;
@@ -2151,7 +2208,7 @@ function initDeathBoard(){
   document.getElementById("lbAddBtn").style.display=eligible?"inline-block":"none";
   document.getElementById("lbJoin").style.display="none";
   document.getElementById("lbStatus").textContent="";
-  document.getElementById("shareRank").style.display="none";
+  document.getElementById("shareRow").classList.remove("on");
   document.getElementById("lbName").value=meta.player||"";
 }
 
@@ -2221,7 +2278,7 @@ function buildMenu(){
   document.getElementById("cornerL").innerHTML =
     "⬢ "+fmtN(meta.cores)+" · BEST "+fmtN(meta.best)+
     (meta.streak>1 ? " · <b>DAY "+meta.streak+" +"+(meta.streak*5)+"%</b>" : "")+
-    "<br><span class='dim'>mouse to move · space to surge</span>";
+    "<br><span class='dim'>"+(TOUCH?"touch to move · two-finger tap to surge":"mouse to move · space to surge")+"</span>";
   document.getElementById("muteBtn").textContent="M — SOUND "+(AU.muted?"OFF":"ON");
   document.getElementById("hCores").textContent=fmtN(meta.cores);
   applySchemeCSS();
@@ -2286,6 +2343,12 @@ function render(now){
   let sx=0,sy=0;
   if(G.shake>0.2){ sx=rnd(-G.shake,G.shake); sy=rnd(-G.shake,G.shake); }
   ctx.save(); ctx.translate(sx,sy);
+  // dying: the camera leans into the singularity
+  if(G.state==="dying" && G.deathHole){
+    const z=1+Math.min(1,G.deathT/1.1)*0.14;
+    ctx.translate(G.deathHole.x,G.deathHole.y); ctx.scale(z,z);
+    ctx.translate(-G.deathHole.x,-G.deathHole.y);
+  }
 
   // stars
   ctx.globalCompositeOperation="source-over";
@@ -2377,6 +2440,21 @@ function render(now){
     if(Math.random()<0.5){ const a=rnd(TAU);
       parts.push({x:h.x+Math.cos(a)*70,y:h.y+Math.sin(a)*70,vx:-Math.cos(a)*130,vy:-Math.sin(a)*130,
         life:0.5,max:0.5,r:2,c:"#cf7dff",drag:0.96}); }
+  }
+
+  // the death singularity — the run collapses into the point where you fell
+  if(G.state==="dying" && G.deathHole && !G.deathHole.collapsed){
+    const h=G.deathHole, pull=Math.min(1,G.deathT/1.1), r=10+pull*26;
+    drawGlow(h.x,h.y,r*2.4,"#9ef7ff",0.5+0.4*pull);
+    ctx.globalCompositeOperation="source-over";
+    ctx.fillStyle="#000"; ctx.beginPath(); ctx.arc(h.x,h.y,r,0,TAU); ctx.fill();
+    ctx.globalCompositeOperation="lighter";
+    ctx.lineWidth=2.5;
+    ctx.strokeStyle="#ff5d7e"; ctx.globalAlpha=0.75;
+    ctx.beginPath(); ctx.arc(h.x,h.y,r+14+Math.sin(now*0.02)*5,now*0.005,now*0.005+4.4); ctx.stroke();
+    ctx.strokeStyle="#9ef7ff"; ctx.globalAlpha=0.6;
+    ctx.beginPath(); ctx.arc(h.x,h.y,r+30+Math.sin(now*0.013)*8,-now*0.004,-now*0.004+3.6); ctx.stroke();
+    ctx.globalAlpha=1;
   }
 
   // shards
@@ -2563,7 +2641,8 @@ function syncHUD(dt){
   document.getElementById("surgebar").style.width=G.surge+"%";
   const full=G.surge>=100;
   document.getElementById("surgewrap").classList.toggle("full",full);
-  document.getElementById("surgelabel").textContent = full ? "⚡ SPACE — RELEASE" : "SURGE — SPACE";
+  document.getElementById("surgelabel").textContent =
+    full ? (TOUCH?"⚡ TAP — RELEASE":"⚡ SPACE — RELEASE") : (TOUCH?"SURGE — TAP":"SURGE — SPACE");
 }
 
 // ---------- main loop ----------
@@ -2624,9 +2703,36 @@ function loop(now){
   }
   else if(G.state==="dying"){
     G.deathT+=dt;
-    const slow=0.12;
+    const slow=Math.max(0.05, 0.14-G.deathT*0.04); // time crawls deeper as the well takes hold
     updateEnemies(dt*slow); updateBullets(dt*slow);
-    if(G.deathT>1.5) showDeathScreen();
+    const h=G.deathHole, pull=Math.min(1,G.deathT/1.1);
+    const drag=o=>{
+      const dx=h.x-o.x, dy=h.y-o.y, dd=Math.hypot(dx,dy)||1;
+      const step=Math.min((600+140000/Math.max(dd,30))*pull*dt, dd);
+      o.x+=dx/dd*step; o.y+=dy/dd*step;
+      return dd<26+pull*22; // crossed the horizon
+    };
+    for(let i=enemies.length-1;i>=0;i--) if(drag(enemies[i])){
+      burst(h.x,h.y,enemies[i].c,6,200,2.5,0.4); shake(3); enemies.splice(i,1);
+    }
+    for(let i=ebul.length-1;i>=0;i--) if(drag(ebul[i])) ebul.splice(i,1);
+    for(let i=pbul.length-1;i>=0;i--) if(drag(pbul[i])) pbul.splice(i,1);
+    for(let i=shards.length-1;i>=0;i--) if(drag(shards[i])) shards.splice(i,1);
+    for(const p of parts) drag(p);
+    // shimmer streaming over the event horizon
+    if(Math.random()<0.7){ const a=rnd(TAU), R=130+pull*70;
+      parts.push({x:h.x+Math.cos(a)*R,y:h.y+Math.sin(a)*R,
+        vx:-Math.cos(a)*(180+240*pull),vy:-Math.sin(a)*(180+240*pull),
+        life:0.45,max:0.45,r:2.2,c:"#9ef7ff",drag:0.97});
+    }
+    // final collapse — one hard flash, then the report card fades in
+    if(!h.collapsed && G.deathT>1.7){
+      h.collapsed=true;
+      addFlare(h.x,h.y,W*1.7,"158,247,255",0.9);
+      flashScreen(0.9); shake(20); AU.nova();
+      enemies=[];ebul=[];pbul=[];shards=[];
+    }
+    if(G.deathT>2.3) showDeathScreen();
   }
 
   // particles & texts always update (menus feel alive)
