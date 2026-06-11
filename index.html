@@ -561,7 +561,7 @@
   </div>
 
   <div id="levelup" class="overlay">
-    <div id="lvlTitle">CHOOSE EVOLUTION</div>
+    <div id="lvlTitle">CHOOSE BONUS</div>
     <div id="cards"></div>
   </div>
 
@@ -692,7 +692,7 @@ const SHOP = [
   {id:"magnet",nm:"MAGNET ARRAY",    ds:"+20% pickup radius per level", max:3, base:30},
   {id:"graze", nm:"GRAZE ANTENNA",   ds:"+10% graze radius per level",  max:3, base:60},
   {id:"surge", nm:"SURGE CAPACITOR", ds:"+12% surge gain per level",    max:3, base:45},
-  {id:"luck",  nm:"LUCKY LOGIC",     ds:"rarer evolutions per level",   max:3, base:80},
+  {id:"luck",  nm:"LUCKY LOGIC",     ds:"rarer bonuses per level",      max:3, base:80},
 ];
 const shopPrice = (it,lv)=>Math.round(it.base*Math.pow(2.2,lv));
 // the weapon actually in hand: a mid-run refit overrides the hangar loadout
@@ -1013,8 +1013,8 @@ function addFlare(x,y,w,c,life=0.45){ flares.push({x,y,w,c,life,max:life}); }
 
 const baseStats = ()=>({
   damage:10, fireRate:2.6, projectiles:1, bulletSpeed:540, pierce:0,
-  // 185 base speed: slow enough that thruster tunes and afterburners actually register
-  crit:0.05, speed:185, magnet:90, grazeR:78, surgeGain:1,
+  // 155 base speed: slow enough that thruster tunes and afterburners actually register
+  crit:0.05, speed:155, magnet:90, grazeR:78, surgeGain:1,
   shardMult:1, orbitals:0, ricochet:0, homing:0, novaMult:1,
   bloom:0, chrono:0, echo:0, horizon:0,
   bulletLife:1, chill:0, staticN:0, retaliate:0, nanites:0,
@@ -2037,8 +2037,8 @@ const TUT=[
   b:"A faint ring surrounds your ship. Anything deadly that crosses it <b>without touching you</b> is a <b>graze</b>.<br><br>Grazes feed everything — score, combo, surge. A near-miss is worth more than a clean escape. The game pays you to live close to the fire."},
  {t:"COMBO & SURGE", v:'<div class="tSurge"></div><div class="tKey">SPACE</div>',
   b:"Grazes and kills build your <b>combo</b> — the ×multiplier on all score. Play it too safe and it decays.<br><br>Grazes also charge the golden <b>surge</b> ring. Full surge boosts your damage — or press <b>SPACE</b> (on touch: <b>two-finger tap</b>, or tap the surge bar) to detonate a nova scaled by your multiplier. Hoard it or spend it: greed is a strategy."},
- {t:"EVOLUTION", v:'<div class="tCards"><i></i><i class="mid"></i><i></i></div>',
-  b:"Fallen enemies drop <b>shards</b>. Shards fill the bar below — each level pauses time and offers <b>three evolutions</b>, common through <b>legendary</b>.<br><br>Builds compound: split shots ricochet, frost slows, death blooms chain. No two runs evolve alike."},
+ {t:"BONUSES", v:'<div class="tCards"><i></i><i class="mid"></i><i></i></div>',
+  b:"Fallen enemies drop <b>shards</b>. Shards fill the bar below — each level pauses time and offers <b>three bonuses</b>, common through <b>legendary</b>.<br><br>Builds compound: split shots ricochet, frost slows, death blooms chain. No two runs play alike."},
  {t:"CORES & HANGAR", v:'<div class="tCore">⬢</div>',
   b:"Elites and heavies drop <b>⬢ cores</b>, and your score banks more when you fall.<br><br>Spend them in the <b>HANGAR</b> on permanent ship systems and entirely new weapons — railguns, mines, lightning, lasers. Every death funds the next run."},
 ];
@@ -2070,7 +2070,7 @@ document.getElementById("tutNext").addEventListener("pointerdown",e=>{ e.stopPro
 const COACH=[
  {at:1.2, msg:"your ship follows the mouse — firing is automatic"},
  {at:9,   msg:"skim the ring against danger — near-misses build combo & surge"},
- {at:22,  msg:"collect shards to evolve. the multiplier decays if you play too safe"},
+ {at:22,  msg:"collect shards for bonuses. the multiplier decays if you play too safe"},
 ];
 function coachMsg(m){
   const c=document.getElementById("coach");
