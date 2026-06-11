@@ -1846,10 +1846,10 @@ function weaponOffers(){
   for(let i=ids.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [ids[i],ids[j]]=[ids[j],ids[i]]; }
   for(const id of ids){
     const w=WEAPONS[id];
-    if(Math.random() < 0.72 - w.price/12000){ // pricier = rarer in the field
+    if(Math.random() < Math.max(0.08, 0.72 - w.price/12000)){ // pricier = rarer in the field
       out.push({id:"wpn_"+id, ico:"◈", nm:w.nm,
         ds:"refit for this run — "+w.ds,
-        rar: w.price<500?1 : w.price<1500?2 : 3,
+        rar: w.price<500?1 : w.price<1800?2 : 3,
         f:()=>{ G.runWeapon=id; flail=null;
           meta.seen[id]=true; store.save(meta); // field-tested — it may now be bought in the hangar
           ftext(player.x,player.y-30,"REFIT: "+w.nm,"#9ef7ff",15); }});
@@ -1875,6 +1875,12 @@ function levelUp(){
     const u=pick(cands);
     pool.splice(pool.indexOf(u),1);
     offered.push(u);
+  }
+  // weapons deserve a regular seat: if the rarity rolls shut them all out,
+  // often swap one card for a refit so every weapon is actually encounterable
+  if(!offered.some(u=>u.id.startsWith("wpn_")) && Math.random()<0.4){
+    const wo=weaponOffers();
+    if(wo.length) offered[(Math.random()*offered.length)|0]=pick(wo);
   }
   const cardsEl=document.getElementById("cards");
   cardsEl.innerHTML="";
