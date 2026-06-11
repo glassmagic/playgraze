@@ -217,26 +217,35 @@
   #death.on #newBest{animation-delay:.5s;}
   #death.on #dScore{animation:scoreIn .9s .25s cubic-bezier(.16,.84,.3,1) both;}
   #death.on #dScoreLbl{animation-delay:.6s;}
-  #death.on #dstats{animation-delay:.72s;}
-  #death.on #lbBox{animation-delay:.86s;}
-  #death.on #dEvoTitle{animation-delay:.96s;}
-  #death.on #dEvos{animation-delay:1.02s;}
-  #death.on #nextUnlock{animation-delay:1.1s;}
-  #death.on #unlockedMsg{animation-delay:1.16s;}
-  #death.on .restartHint{animation-delay:1.32s;}
-  #death.on #dActions{animation-delay:1.44s;}
+  #death.on #dLine{animation-delay:.7s;}
+  #death.on #againBtn{animation-delay:.82s;}
+  #death.on #lbBox{animation-delay:.94s;}
+  #death.on #dHint{animation-delay:1.05s;}
+  #death.on #nextUnlock{animation-delay:1.12s;}
+  #death.on #unlockedMsg{animation-delay:1.18s;}
+  #death.on #dActions{animation-delay:1.28s;}
   @keyframes scoreIn{from{opacity:0;transform:scale(1.7);filter:blur(14px);}
     62%{filter:blur(0);}to{opacity:1;transform:scale(1);filter:blur(0);}}
-  #newBest{font-size:12px;letter-spacing:5px;color:#ffd84e;text-shadow:0 0 16px #ffb84e;
-    margin-top:10px;height:16px;}
-  #dScore{font-size:62px;font-weight:700;color:#fff;margin-top:6px;letter-spacing:2px;
-    text-shadow:0 0 26px var(--c1),0 0 70px rgba(78,243,255,.45);}
+  #newBest{font-size:12px;letter-spacing:5px;color:#ffd84e;text-shadow:0 0 16px #ffb84e;margin-top:10px;}
+  #newBest:empty{display:none;}
+  #dScore{font-size:88px;font-weight:700;color:#fff;margin-top:4px;letter-spacing:2px;line-height:1.05;
+    text-shadow:0 0 30px var(--c1),0 0 90px rgba(78,243,255,.5);}
   #dScoreLbl{font-size:10px;letter-spacing:4px;color:#7d92b8;margin-top:8px;}
   #dCores{color:#ffd84e;text-shadow:0 0 10px rgba(255,216,78,.5);}
-  #dstats{display:flex;gap:40px;margin:22px 0 0;text-align:center;}
-  #dstats .v{font-size:19px;color:#dfe9ff;font-weight:700;text-shadow:0 0 12px rgba(78,243,255,.5);}
-  #dstats .k{font-size:9px;letter-spacing:3px;color:#7d92b8;margin-top:5px;}
-  #nextUnlock{margin-top:18px;width:320px;text-align:center;}
+  #dLine{margin-top:14px;font-size:10px;letter-spacing:2.5px;color:#5a6e92;text-align:center;
+    max-width:92vw;line-height:2;}
+  #dLine b{font-weight:700;color:#9fb6d8;font-size:12px;}
+  /* the two big actions — restart first, glory second */
+  .deathCta{font:inherit;display:block;width:min(380px,88vw);padding:17px 0;text-align:center;
+    font-size:13px;letter-spacing:6px;text-indent:6px;border-radius:3px;cursor:pointer;transition:all .2s;}
+  #againBtn{margin-top:30px;background:var(--c1);color:#04040c;border:1px solid var(--c1);
+    font-weight:700;box-shadow:0 0 34px rgba(78,243,255,.35);}
+  #againBtn:hover{box-shadow:0 0 60px rgba(78,243,255,.65);letter-spacing:8px;text-indent:8px;}
+  #lbAddBtn{background:transparent;border:1px solid rgba(78,243,255,.45);color:var(--c1);
+    font-size:11px;letter-spacing:4px;text-indent:4px;white-space:nowrap;}
+  #lbAddBtn:hover{background:rgba(78,243,255,.12);box-shadow:0 0 24px rgba(78,243,255,.25);}
+  #dHint{margin-top:12px;font-size:9px;letter-spacing:3px;color:#3d4a66;}
+  #nextUnlock{margin-top:22px;width:300px;text-align:center;}
   #nuLabel{font-size:11px;letter-spacing:2px;color:#9fb6d8;margin-bottom:8px;}
   #nuLabel b{color:#ffd84e;}
   #nuBg{height:8px;background:rgba(255,255,255,.07);border-radius:4px;overflow:hidden;}
@@ -244,17 +253,8 @@
     box-shadow:0 0 12px #ffb84e;transition:width 1.2s cubic-bezier(.2,.8,.2,1);}
   #nuPct{font-size:11px;color:#ffd84e;margin-top:6px;letter-spacing:2px;}
   #unlockedMsg{margin-top:12px;font-size:13px;color:#7fe8a8;letter-spacing:3px;
-    text-shadow:0 0 14px #3dd87f;height:16px;}
-  #dEvoTitle{margin-top:18px;font-size:9px;letter-spacing:4px;color:#5a6e92;}
-  #dEvos{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;max-width:680px;margin-top:10px;
-    max-height:15vh;overflow-y:auto;}
-  .evochip{font-size:11px;padding:7px 11px;border-radius:6px;background:rgba(12,16,38,.9);
-    border:1px solid rgba(120,150,255,.3);color:#fff;display:flex;flex-direction:column;gap:3px;align-items:center;}
-  .evochip i{font-style:normal;font-size:9px;color:#7d92b8;}
-  .evochip.common{border-color:rgba(125,184,255,.5);}
-  .evochip.rare{border-color:rgba(207,125,255,.6);}
-  .evochip.epic{border-color:rgba(255,216,78,.7);}
-  .evochip.legend{border-color:#ff4ecd;box-shadow:0 0 12px rgba(255,78,205,.45);}
+    text-shadow:0 0 14px #3dd87f;}
+  #unlockedMsg:empty{display:none;}
   #dCores{margin-top:8px;font-size:12px;letter-spacing:3px;color:#ffd84e;text-shadow:0 0 10px rgba(255,216,78,.5);}
   /* ---------- hangar ---------- */
   #store{justify-content:flex-start;padding:54px 0 44px;overflow-y:auto;z-index:6;}
@@ -364,11 +364,8 @@
   .brow.me{border-color:var(--c1);box-shadow:0 0 14px rgba(78,243,255,.25);}
   .brow.me .bn{color:var(--c1);}
   /* death-screen leaderboard block */
-  #lbBox{margin-top:20px;text-align:center;min-height:64px;}
-  #lbAddBtn{font:inherit;font-size:10px;letter-spacing:3px;padding:11px 26px;background:transparent;
-    border:1px solid rgba(78,243,255,.45);color:var(--c1);border-radius:3px;cursor:pointer;
-    transition:all .15s;}
-  #lbAddBtn:hover{background:var(--c1);color:#04040c;box-shadow:0 0 22px rgba(78,243,255,.4);}
+  #lbBox{margin-top:12px;text-align:center;min-height:53px;}
+  #lbBox .deathCta{margin:0 auto;}
   #lbJoin{display:flex;gap:10px;align-items:center;justify-content:center;}
   #shareRow{margin-top:12px;display:none;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;}
   #shareRow.on{display:flex;}
@@ -435,7 +432,7 @@
     opacity:0;pointer-events:none;}
   @media (max-width:760px){
     #cards{flex-direction:column;gap:12px;} .card{width:260px;padding:14px;}
-    #dstats{gap:24px;} #score{font-size:26px;} #dScore{font-size:44px;}
+    #score{font-size:26px;} #dScore{font-size:56px;}
     #dActions{gap:16px;flex-wrap:wrap;justify-content:center;}
     /* menu corners: shrink so the two sides can't collide */
     .corner{font-size:8px;letter-spacing:1.5px;}
@@ -555,14 +552,10 @@
     <div id="newBest"></div>
     <div id="dScore">0</div>
     <div id="dScoreLbl">FINAL SCORE &nbsp;·&nbsp; <span id="dCores"></span></div>
-    <div id="dstats">
-      <div><div class="v" id="dTime">0:00</div><div class="k">SURVIVED</div></div>
-      <div><div class="v" id="dKills">0</div><div class="k">KILLS</div></div>
-      <div><div class="v" id="dGraze">0</div><div class="k">GRAZES</div></div>
-      <div><div class="v" id="dMult">×1</div><div class="k">PEAK MULT</div></div>
-    </div>
+    <div id="dLine"><b id="dTime">0:00</b> SURVIVED &nbsp;·&nbsp; <b id="dKills">0</b> KILLS &nbsp;·&nbsp; <b id="dGraze">0</b> GRAZES &nbsp;·&nbsp; <b id="dMult">×1</b> PEAK</div>
+    <button class="deathCta" id="againBtn">▶ &nbsp;ONE MORE RUN</button>
     <div id="lbBox">
-      <button id="lbAddBtn">⬡ ADD SCORE TO LEADERBOARD</button>
+      <button class="deathCta" id="lbAddBtn">⬡ &nbsp;ADD SCORE TO LEADERBOARD</button>
       <div id="lbJoin">
         <input id="lbName" maxlength="16" placeholder="CALLSIGN" spellcheck="false" autocomplete="off">
         <button id="lbJoinBtn">TRANSMIT</button>
@@ -579,15 +572,13 @@
         <span class="sbtn" data-net="copy">⧉ COPY LINK</span>
       </div>
     </div>
-    <div id="dEvoTitle">EVOLUTIONS TAKEN</div>
-    <div id="dEvos"></div>
+    <div id="dHint">click anywhere · space</div>
     <div id="nextUnlock">
       <div id="nuLabel"></div>
       <div id="nuBg"><div id="nuBar"></div></div>
       <div id="nuPct"></div>
     </div>
     <div id="unlockedMsg"></div>
-    <div class="restartHint">CLICK / SPACE — ONE MORE RUN</div>
     <div id="dActions">
       <span class="dact" id="dBoardBtn">⬡ LEADERBOARD</span>
       <span class="dact" id="deathHangar">HANGAR · ⬢ <span id="dhCores">0</span></span>
@@ -1880,14 +1871,6 @@ function showDeathScreen(){
   document.getElementById("dKills").textContent=fmtN(G.kills);
   document.getElementById("dGraze").textContent=fmtN(G.grazes);
   document.getElementById("dMult").textContent="×"+G.peakMult.toFixed(1);
-  const counts={}, byId={};
-  taken.forEach(u=>{ counts[u.id]=(counts[u.id]||0)+1; byId[u.id]=u; });
-  document.getElementById("dEvos").innerHTML = taken.length ?
-    Object.keys(counts).map(id=>{
-      const u=byId[id], c=counts[id];
-      return "<span class='evochip "+RARCLS[u.rar]+"'>"+u.ico+" "+u.nm+(c>1?" ×"+c:"")+"<i>"+u.ds+"</i></span>";
-    }).join("") :
-    "<span class='evochip'>none — the void was swift</span>";
   document.getElementById("newBest").textContent=isBest?"★ NEW BEST ★":"";
   document.getElementById("unlockedMsg").textContent=
     justUnlocked.length?("⬢ UNLOCKED: "+justUnlocked.map(u=>u.name).join(" · ")):"";
@@ -2285,11 +2268,14 @@ function joinBoard(){
     i.value=meta.player||""; i.focus(); i.select();
   });
   document.getElementById("dBoardBtn").addEventListener("pointerdown",e=>{ e.stopPropagation(); openBoard(); });
+  document.getElementById("againBtn").addEventListener("pointerdown",e=>{
+    e.stopPropagation(); if(G.state==="dead"){ AU.init(); startRun(); }
+  });
 }
 function initDeathBoard(){
   lbSent=false; lbResult=null;
   const eligible=G.score>0 && G.t>=5;
-  document.getElementById("lbAddBtn").style.display=eligible?"inline-block":"none";
+  document.getElementById("lbAddBtn").style.display=eligible?"block":"none";
   document.getElementById("lbJoin").style.display="none";
   document.getElementById("lbStatus").textContent="";
   document.getElementById("shareRow").classList.remove("on");
