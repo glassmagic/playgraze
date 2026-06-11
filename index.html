@@ -157,9 +157,9 @@
   .cta:hover::before,.cta:hover::after{width:16px;height:16px;}
   /* minimal prompt — pure type, no chrome */
   #startBtn{margin-top:90px;background:none;border:none;color:#cfe0f5;font:inherit;font-size:13px;
-    letter-spacing:12px;cursor:pointer;padding:12px 34px;transition:all .3s ease;
+    letter-spacing:12px;text-indent:12px;cursor:pointer;padding:12px 34px;transition:all .3s ease;
     animation:fadeUp 1.4s 1.5s both, promptPulse 3.6s 2.9s ease-in-out infinite;}
-  #startBtn:hover{color:#fff;text-shadow:0 0 20px var(--c1);letter-spacing:15px;
+  #startBtn:hover{color:#fff;text-shadow:0 0 20px var(--c1);letter-spacing:15px;text-indent:15px;
     animation:fadeUp 1.4s 1.5s both;opacity:1;}
   /* pulse starts at full opacity, exactly where the fade-in ends — no snap */
   @keyframes promptPulse{0%,100%{opacity:1;}50%{opacity:.45;}}
@@ -203,30 +203,34 @@
   .card.legend .rar{color:#ff4ecd;letter-spacing:5px;}
   .card.legend:hover{border-color:#fff;}
   @keyframes legendglow{from{box-shadow:0 0 16px rgba(255,78,205,.35);}to{box-shadow:0 0 44px rgba(255,78,205,.85);}}
-  /* death screen */
-  #deathTitle{font-size:44px;letter-spacing:18px;color:#ff5d7e;font-weight:300;
+  /* death screen — the score is the hero, everything else supports it */
+  #deathTitle{font-size:26px;letter-spacing:12px;text-indent:12px;color:#ff5d7e;font-weight:300;
     font-family:"Helvetica Neue","Inter",-apple-system,"Segoe UI",Arial,sans-serif;
-    text-shadow:0 0 30px #ff2d5e,0 0 80px rgba(255,45,94,.5);}
+    text-shadow:0 0 24px #ff2d5e,0 0 60px rgba(255,45,94,.5);}
   .overlay.on #deathTitle{animation:trackIn 1.1s cubic-bezier(.16,.84,.3,1) both;}
-  @keyframes trackIn{from{opacity:0;letter-spacing:38px;filter:blur(7px);}
-    to{opacity:1;letter-spacing:18px;filter:blur(0);}}
-  #newBest{font-size:14px;letter-spacing:6px;color:#ffd84e;text-shadow:0 0 16px #ffb84e;
-    margin-top:14px;height:18px;}
-  #dstats{display:flex;gap:44px;margin:30px 0 8px;text-align:center;}
-  #dstats .v{font-size:26px;color:#fff;font-weight:700;text-shadow:0 0 14px var(--c1);}
-  #dstats .k{font-size:10px;letter-spacing:3px;color:#7d92b8;margin-top:6px;}
-  #nextUnlock{margin-top:26px;width:320px;text-align:center;}
+  @keyframes trackIn{from{opacity:0;letter-spacing:26px;filter:blur(7px);}
+    to{opacity:1;letter-spacing:12px;filter:blur(0);}}
+  #newBest{font-size:12px;letter-spacing:5px;color:#ffd84e;text-shadow:0 0 16px #ffb84e;
+    margin-top:10px;height:16px;}
+  #dScore{font-size:62px;font-weight:700;color:#fff;margin-top:6px;letter-spacing:2px;
+    text-shadow:0 0 26px var(--c1),0 0 70px rgba(78,243,255,.45);}
+  #dScoreLbl{font-size:10px;letter-spacing:4px;color:#7d92b8;margin-top:8px;}
+  #dCores{color:#ffd84e;text-shadow:0 0 10px rgba(255,216,78,.5);}
+  #dstats{display:flex;gap:40px;margin:22px 0 0;text-align:center;}
+  #dstats .v{font-size:19px;color:#dfe9ff;font-weight:700;text-shadow:0 0 12px rgba(78,243,255,.5);}
+  #dstats .k{font-size:9px;letter-spacing:3px;color:#7d92b8;margin-top:5px;}
+  #nextUnlock{margin-top:18px;width:320px;text-align:center;}
   #nuLabel{font-size:11px;letter-spacing:2px;color:#9fb6d8;margin-bottom:8px;}
   #nuLabel b{color:#ffd84e;}
   #nuBg{height:8px;background:rgba(255,255,255,.07);border-radius:4px;overflow:hidden;}
   #nuBar{height:100%;width:0%;background:linear-gradient(90deg,#ffd84e,#ff7b3d);
     box-shadow:0 0 12px #ffb84e;transition:width 1.2s cubic-bezier(.2,.8,.2,1);}
   #nuPct{font-size:11px;color:#ffd84e;margin-top:6px;letter-spacing:2px;}
-  #unlockedMsg{margin-top:18px;font-size:14px;color:#7fe8a8;letter-spacing:3px;
-    text-shadow:0 0 14px #3dd87f;height:18px;}
-  #dEvoTitle{margin-top:22px;font-size:10px;letter-spacing:4px;color:#7d92b8;}
-  #dEvos{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:680px;margin-top:12px;
-    max-height:22vh;overflow-y:auto;}
+  #unlockedMsg{margin-top:12px;font-size:13px;color:#7fe8a8;letter-spacing:3px;
+    text-shadow:0 0 14px #3dd87f;height:16px;}
+  #dEvoTitle{margin-top:18px;font-size:9px;letter-spacing:4px;color:#5a6e92;}
+  #dEvos{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;max-width:680px;margin-top:10px;
+    max-height:15vh;overflow-y:auto;}
   .evochip{font-size:11px;padding:7px 11px;border-radius:6px;background:rgba(12,16,38,.9);
     border:1px solid rgba(120,150,255,.3);color:#fff;display:flex;flex-direction:column;gap:3px;align-items:center;}
   .evochip i{font-style:normal;font-size:9px;color:#7d92b8;}
@@ -236,10 +240,6 @@
   .evochip.legend{border-color:#ff4ecd;box-shadow:0 0 12px rgba(255,78,205,.45);}
   #dCores{margin-top:8px;font-size:12px;letter-spacing:3px;color:#ffd84e;text-shadow:0 0 10px rgba(255,216,78,.5);}
   /* ---------- hangar ---------- */
-  .cta.hangar{margin-top:14px;padding:11px 38px;font-size:11px;letter-spacing:5px;
-    border-color:rgba(255,216,78,.35);animation-delay:1.4s;}
-  .cta.hangar::before,.cta.hangar::after{border-color:rgba(255,216,78,.7);}
-  .cta.hangar:hover{background:#ffd84e;border-color:#ffd84e;color:#04040c;box-shadow:0 0 34px rgba(255,216,78,.45);}
   #store{justify-content:flex-start;padding:54px 0 44px;overflow-y:auto;z-index:6;}
   #sTitle{font-size:26px;letter-spacing:14px;font-weight:200;color:#eef6ff;
     font-family:"Helvetica Neue","Inter",-apple-system,"Segoe UI",Arial,sans-serif;}
@@ -268,14 +268,14 @@
   .sbuy:hover:not(:disabled){background:#ffd84e;color:#04040c;}
   .sbuy:disabled{opacity:.35;cursor:default;border-color:rgba(140,170,220,.3);color:#7d92b8;}
   .cta.small{margin-top:30px;padding:11px 44px;font-size:11px;animation:none;}
-  #deathHangar{margin-top:20px;}
-  #deathMenu{margin-top:16px;font-size:9.5px;letter-spacing:3px;color:#5a6e92;cursor:pointer;
-    padding:4px 12px;transition:color .2s;}
-  #deathMenu:hover{color:#fff;}
   #coffeeMenu{bottom:128px;text-decoration:none;}
-  #shareScore{margin-top:14px;font-size:9.5px;letter-spacing:3px;color:#5a6e92;cursor:pointer;
-    padding:4px 12px;transition:color .2s;}
-  #shareScore:hover{color:var(--c1);text-shadow:0 0 12px rgba(78,243,255,.5);}
+  /* death-screen action row — one quiet line for every exit */
+  #dActions{display:flex;gap:30px;margin-top:18px;align-items:baseline;}
+  .dact{font-size:9.5px;letter-spacing:3px;color:#5a6e92;cursor:pointer;
+    text-decoration:none;transition:color .2s, text-shadow .2s;}
+  .dact:hover{color:#fff;text-shadow:0 0 10px var(--c1);}
+  #deathHangar:hover{color:#ffd84e;text-shadow:0 0 12px rgba(255,216,78,.5);}
+  #coffeeDeath:hover{color:#ffd84e;text-shadow:0 0 12px rgba(255,216,78,.5);}
   /* shared-score embed card */
   #shareCard{z-index:8;}
   #scWrap{display:flex;flex-direction:column;align-items:center;padding:44px 66px;
@@ -291,9 +291,9 @@
   #scStats .sck{font-size:8px;letter-spacing:2.5px;color:#5a6e92;margin-top:4px;}
   #scTag{font-size:10px;letter-spacing:6px;color:#9fb6d8;margin-bottom:24px;}
   #scTag b{color:var(--c2);font-weight:400;text-shadow:0 0 10px var(--c2);}
-  #coffeeDeath{margin-top:14px;font-size:9.5px;letter-spacing:3px;color:#5a6e92;
-    text-decoration:none;padding:4px 12px;transition:color .2s;}
-  #coffeeDeath:hover{color:#ffd84e;text-shadow:0 0 12px rgba(255,216,78,.5);}
+  #scRank{font-size:12px;letter-spacing:4px;color:#ffd84e;text-shadow:0 0 14px rgba(255,216,78,.5);
+    margin-bottom:14px;}
+  #scRank:empty{display:none;}
   #resetBtn{margin-top:10px;font-size:9px;letter-spacing:3px;color:#5a6e92;cursor:pointer;
     padding:6px 12px;transition:color .2s;}
   #resetBtn:hover{color:#ff5d7e;}
@@ -304,11 +304,11 @@
   #resetBtn.armed,#menuReset.armed{color:#ff2d5e;text-shadow:0 0 10px rgba(255,45,94,.6);
     animation:pulse .5s infinite alternate;}
   /* ---------- tutorial (protocol) ---------- */
-  #tutBtn{margin-top:10px;font-size:9.5px;letter-spacing:4px;color:#5a6e92;cursor:pointer;
+  #tutBtn{margin-top:10px;font-size:9.5px;letter-spacing:4px;text-indent:4px;color:#5a6e92;cursor:pointer;
     padding:6px 12px;transition:color .2s, text-shadow .2s;animation:fadeUp 1.4s 1.8s both;}
   #tutBtn:hover{color:#fff;text-shadow:0 0 10px var(--c1);}
   /* ---------- global leaderboard ---------- */
-  #lbBtn{margin-top:2px;font-size:9.5px;letter-spacing:4px;color:#5a6e92;cursor:pointer;
+  #lbBtn{margin-top:2px;font-size:9.5px;letter-spacing:4px;text-indent:4px;color:#5a6e92;cursor:pointer;
     padding:6px 12px;transition:color .2s, text-shadow .2s;animation:fadeUp 1.4s 1.95s both;}
   #lbBtn:hover{color:#fff;text-shadow:0 0 10px var(--c1);}
   #board{justify-content:flex-start;padding:54px 0 44px;overflow-y:auto;z-index:6;}
@@ -330,9 +330,16 @@
   .brow.top3 .br{color:#ff9b3d;}
   .brow.me{border-color:var(--c1);box-shadow:0 0 14px rgba(78,243,255,.25);}
   .brow.me .bn{color:var(--c1);}
-  /* death-screen callsign entry */
-  #lbBox{margin-top:18px;text-align:center;}
+  /* death-screen leaderboard block */
+  #lbBox{margin-top:20px;text-align:center;min-height:64px;}
+  #lbAddBtn{font:inherit;font-size:10px;letter-spacing:3px;padding:11px 26px;background:transparent;
+    border:1px solid rgba(78,243,255,.45);color:var(--c1);border-radius:3px;cursor:pointer;
+    transition:all .15s;}
+  #lbAddBtn:hover{background:var(--c1);color:#04040c;box-shadow:0 0 22px rgba(78,243,255,.4);}
   #lbJoin{display:flex;gap:10px;align-items:center;justify-content:center;}
+  #shareRank{margin-top:10px;font-size:9.5px;letter-spacing:3px;color:#5a6e92;cursor:pointer;
+    padding:4px 12px;transition:color .2s;display:none;}
+  #shareRank:hover{color:var(--c1);text-shadow:0 0 12px rgba(78,243,255,.5);}
   #lbName{font:inherit;font-size:12px;letter-spacing:3px;color:#fff;background:rgba(10,14,30,.8);
     border:1px solid rgba(140,170,220,.3);border-radius:3px;padding:9px 12px;width:170px;
     text-align:center;outline:none;text-transform:uppercase;}
@@ -341,7 +348,6 @@
   #lbJoinBtn{font:inherit;font-size:10px;letter-spacing:2px;padding:9px 14px;background:transparent;
     border:1px solid rgba(78,243,255,.5);color:var(--c1);border-radius:3px;cursor:pointer;transition:all .15s;}
   #lbJoinBtn:hover{background:var(--c1);color:#04040c;}
-  #lbHint{margin-top:8px;font-size:9px;letter-spacing:2px;color:#5a6e92;}
   #lbStatus{margin-top:10px;font-size:10px;letter-spacing:3px;color:var(--c1);min-height:14px;
     text-shadow:0 0 10px rgba(78,243,255,.4);}
   #tut{z-index:7;}
@@ -389,7 +395,8 @@
     cursor:pointer;pointer-events:auto;z-index:6;opacity:.7;}
   @media (max-width:760px){
     #cards{flex-direction:column;gap:12px;} .card{width:260px;padding:14px;}
-    #dstats{gap:24px;} #score{font-size:26px;}
+    #dstats{gap:24px;} #score{font-size:26px;} #dScore{font-size:44px;}
+    #dActions{gap:16px;flex-wrap:wrap;justify-content:center;}
   }
 </style>
 </head>
@@ -482,13 +489,22 @@
   <div id="death" class="overlay">
     <div id="deathTitle">SIGNAL LOST</div>
     <div id="newBest"></div>
-    <div id="dCores"></div>
+    <div id="dScore">0</div>
+    <div id="dScoreLbl">FINAL SCORE &nbsp;·&nbsp; <span id="dCores"></span></div>
     <div id="dstats">
-      <div><div class="v" id="dScore">0</div><div class="k">SCORE</div></div>
       <div><div class="v" id="dTime">0:00</div><div class="k">SURVIVED</div></div>
       <div><div class="v" id="dKills">0</div><div class="k">KILLS</div></div>
       <div><div class="v" id="dGraze">0</div><div class="k">GRAZES</div></div>
       <div><div class="v" id="dMult">×1</div><div class="k">PEAK MULT</div></div>
+    </div>
+    <div id="lbBox">
+      <button id="lbAddBtn">⬡ ADD SCORE TO LEADERBOARD</button>
+      <div id="lbJoin">
+        <input id="lbName" maxlength="16" placeholder="CALLSIGN" spellcheck="false" autocomplete="off">
+        <button id="lbJoinBtn">TRANSMIT</button>
+      </div>
+      <div id="lbStatus"></div>
+      <div id="shareRank">⤴ SHARE YOUR RANK</div>
     </div>
     <div id="dEvoTitle">EVOLUTIONS TAKEN</div>
     <div id="dEvos"></div>
@@ -498,19 +514,13 @@
       <div id="nuPct"></div>
     </div>
     <div id="unlockedMsg"></div>
-    <div id="lbBox">
-      <div id="lbJoin">
-        <input id="lbName" maxlength="16" placeholder="CALLSIGN" spellcheck="false" autocomplete="off">
-        <button id="lbJoinBtn">JOIN LEADERBOARD</button>
-      </div>
-      <div id="lbHint">optional — saves your best run to the global board</div>
-      <div id="lbStatus"></div>
-    </div>
     <div class="restartHint">CLICK / SPACE — ONE MORE RUN</div>
-    <button class="cta hangar small" id="deathHangar">HANGAR · ⬢ <span id="dhCores">0</span></button>
-    <div id="deathMenu">ESC — RETURN TO MENU</div>
-    <div id="shareScore">⤴ SHARE SCORE</div>
-    <a id="coffeeDeath" href="https://buymeacoffee.com/adamcpowell" target="_blank" rel="noopener">☕ enjoying graze? buy me a coffee</a>
+    <div id="dActions">
+      <span class="dact" id="dBoardBtn">⬡ LEADERBOARD</span>
+      <span class="dact" id="deathHangar">HANGAR · ⬢ <span id="dhCores">0</span></span>
+      <span class="dact" id="deathMenu">MENU</span>
+      <a class="dact" id="coffeeDeath" href="https://buymeacoffee.com/adamcpowell" target="_blank" rel="noopener">☕ BUY ME A COFFEE</a>
+    </div>
   </div>
 
   <div id="shareCard" class="overlay">
@@ -518,6 +528,7 @@
       <div id="scKicker">TRANSMISSION RECEIVED</div>
       <div id="scTitle">GRAZE</div>
       <div id="scScore">0</div>
+      <div id="scRank"></div>
       <div id="scStats"></div>
       <div id="scTag">DANGER <b>PAYS</b></div>
       <button class="cta small" id="scPlay">PLAY GRAZE</button>
@@ -1893,6 +1904,7 @@ function handleKey(code){
 function handleClick(){
   if(document.getElementById("tut").classList.contains("on")) return;
   if(document.getElementById("store").classList.contains("on")) return;
+  if(document.getElementById("board").classList.contains("on")) return;
   if(G.state==="dead"){ AU.init(); startRun(); }
 }
 document.getElementById("startBtn").addEventListener("pointerdown",e=>{
@@ -1963,8 +1975,7 @@ function goMenu(){
 
 // ---------- hangar (store) ----------
 function updateDeathCores(){
-  document.getElementById("dCores").innerHTML=
-    "+"+fmtN(G.lastEarned||0)+" ⬢ BANKED &nbsp;·&nbsp; WALLET "+fmtN(meta.cores);
+  document.getElementById("dCores").textContent="+"+fmtN(G.lastEarned||0)+" ⬢ BANKED";
   document.getElementById("dhCores").textContent=fmtN(meta.cores);
 }
 function openStore(){ AU.init(); buildStore(); document.getElementById("store").classList.add("on"); AU.ui(); }
@@ -2005,14 +2016,16 @@ bindReset(document.getElementById("menuReset"));
 for(const id of ["coffeeMenu","coffeeDeath"])
   document.getElementById(id).addEventListener("pointerdown",e=>e.stopPropagation());
 
-// ---------- share your score ----------
-document.getElementById("shareScore").addEventListener("pointerdown",e=>{
+// ---------- share your rank ----------
+document.getElementById("shareRank").addEventListener("pointerdown",e=>{
   e.stopPropagation();
+  if(!lbResult) return;
   const el=e.currentTarget;
   const base=location.href.split("?")[0].split("#")[0];
-  const url=base+"?s="+G.score+"&t="+Math.floor(G.t)+"&g="+G.grazes+"&k="+G.kills;
+  const url=base+"?s="+lbResult.best+"&t="+Math.floor(G.t)+"&g="+G.grazes+"&k="+G.kills+
+    "&r="+lbResult.rank+"&n="+lbResult.total+"&c="+encodeURIComponent(meta.player||"");
   const done=()=>{ el.textContent="✓ LINK COPIED"; AU.coin();
-    setTimeout(()=>{ el.textContent="⤴ SHARE SCORE"; },2200); };
+    setTimeout(()=>{ el.textContent="⤴ SHARE YOUR RANK"; },2200); };
   const fallback=()=>{
     const ta=document.createElement("textarea");
     ta.value=url; ta.style.position="fixed"; ta.style.opacity="0";
@@ -2030,6 +2043,9 @@ document.getElementById("shareScore").addEventListener("pointerdown",e=>{
   if(!q.has("s")) return;
   const num=v=>Math.max(0,parseInt(v,10)||0);
   document.getElementById("scScore").textContent=fmtN(num(q.get("s")));
+  const name=(q.get("c")||"").trim();
+  if(name) document.getElementById("scKicker").textContent="TRANSMISSION FROM "+name.toUpperCase().slice(0,16);
+  if(q.has("r")) document.getElementById("scRank").textContent=rankText(num(q.get("r")),num(q.get("n")));
   document.getElementById("scStats").innerHTML=
     "<div><div class='scv'>"+fmtT(num(q.get("t")))+"</div><div class='sck'>SURVIVED</div></div>"+
     "<div><div class='scv'>"+fmtN(num(q.get("g")))+"</div><div class='sck'>GRAZES</div></div>"+
@@ -2076,6 +2092,12 @@ function closeBoard(){ document.getElementById("board").classList.remove("on"); 
 document.getElementById("lbBtn").addEventListener("pointerdown",e=>{ e.stopPropagation(); openBoard(); });
 document.getElementById("boardBack").addEventListener("pointerdown",e=>{ e.stopPropagation(); closeBoard(); });
 
+// rank phrasing: a number while you're in the top 10, a percentile beyond it
+let lbResult=null; // the accepted submission for this death, feeds SHARE YOUR RANK
+function rankText(rank,total){
+  if(rank<=10) return "GLOBAL RANK #"+rank;
+  return "TOP "+Math.max(1,Math.ceil(rank/Math.max(total,1)*100))+"% OF PILOTS";
+}
 function sendScore(){
   if(lbSent||!meta.player||G.score<1||G.t<5) return;
   lbSent=true;
@@ -2085,11 +2107,17 @@ function sendScore(){
     body:JSON.stringify({name:meta.player,score:G.score,time:G.t})})
   .then(r=>{ if(!r.ok) throw 0; return r.json(); })
   .then(d=>{
+    lbResult={rank:d.rank,total:d.total,best:d.best};
     st.textContent=d.improved
-      ? "★ ON THE BOARD — GLOBAL RANK #"+d.rank+" ★"
-      : "GLOBAL BEST STANDS AT "+fmtN(d.best)+" — RANK #"+d.rank;
+      ? "★ "+rankText(d.rank,d.total)+" ★"
+      : "YOUR BEST STANDS AT "+fmtN(d.best)+" — "+rankText(d.rank,d.total);
+    document.getElementById("shareRank").style.display="block";
   })
-  .catch(()=>{ lbSent=false; st.textContent="LEADERBOARD UNREACHABLE"; });
+  .catch(()=>{
+    lbSent=false;
+    st.textContent="LEADERBOARD UNREACHABLE";
+    document.getElementById("lbJoin").style.display="flex";
+  });
 }
 function joinBoard(){
   const inp=document.getElementById("lbName");
@@ -2100,7 +2128,6 @@ function joinBoard(){
   }
   meta.player=name; store.save(meta); AU.coin();
   document.getElementById("lbJoin").style.display="none";
-  document.getElementById("lbHint").style.display="none";
   sendScore();
 }
 // the death screen restarts on click/space — keep typing in the input from leaking out
@@ -2109,15 +2136,23 @@ function joinBoard(){
   inp.addEventListener("keydown",e=>{ e.stopPropagation(); if(e.key==="Enter") joinBoard(); });
   inp.addEventListener("pointerdown",e=>e.stopPropagation());
   document.getElementById("lbJoinBtn").addEventListener("pointerdown",e=>{ e.stopPropagation(); joinBoard(); });
+  document.getElementById("lbAddBtn").addEventListener("pointerdown",e=>{
+    e.stopPropagation(); AU.ui();
+    document.getElementById("lbAddBtn").style.display="none";
+    document.getElementById("lbJoin").style.display="flex";
+    const i=document.getElementById("lbName");
+    i.value=meta.player||""; i.focus(); i.select();
+  });
+  document.getElementById("dBoardBtn").addEventListener("pointerdown",e=>{ e.stopPropagation(); openBoard(); });
 }
 function initDeathBoard(){
-  lbSent=false;
-  const joinable=!meta.player && G.score>0;
-  document.getElementById("lbJoin").style.display=joinable?"flex":"none";
-  document.getElementById("lbHint").style.display=joinable?"block":"none";
+  lbSent=false; lbResult=null;
+  const eligible=G.score>0 && G.t>=5;
+  document.getElementById("lbAddBtn").style.display=eligible?"inline-block":"none";
+  document.getElementById("lbJoin").style.display="none";
   document.getElementById("lbStatus").textContent="";
+  document.getElementById("shareRank").style.display="none";
   document.getElementById("lbName").value=meta.player||"";
-  if(meta.player) sendScore();
 }
 
 function buildStore(){
