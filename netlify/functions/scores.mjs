@@ -10,7 +10,9 @@ const bad = msg => Response.json({ error: msg }, { status: 400 });
 const noStore = { "cache-control": "no-store" };
 
 export default async req => {
-  const store = getStore("leaderboard");
+  // strong consistency: max-per-name decisions must read the latest write,
+  // not a stale CDN copy
+  const store = getStore({ name: "leaderboard", consistency: "strong" });
 
   if (req.method === "GET") {
     const data = (await store.get("scores", { type: "json" })) || {};
