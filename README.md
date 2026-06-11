@@ -31,7 +31,7 @@ Fallen enemies drop shards that level you up. Each level pauses the action and o
 
 ## Meta progression
 
-- **Cores (⬢)** drop from elites and heavies, and your score banks more when you die. Spend them in the **HANGAR** on eight permanent ship systems (damage, fire rate, hull, speed, magnet, graze radius, surge gain, luck) and ten unlockable weapons — from scatter pellets and railguns to chain lightning, lasers, and a tethered wrecking orb.
+- **Cores (⬢)** drop from elites and heavies, and your score banks more when you die. Spend them in the **HANGAR** on eight permanent ship systems (damage, fire rate, hull, speed, magnet, graze radius, surge gain, luck) and ten unlockable weapons — from scatter pellets and railguns to chain lightning, lasers, and a tethered wrecking orb. Weapons must be **discovered first**: take one as a mid-run refit card and it becomes purchasable; until then the hangar shows an UNDISCOVERED placeholder.
 - **Lifetime-score unlocks** grant color schemes, starting perks, and a fourth heart at higher thresholds.
 - **Difficulty director** introduces nine enemy types over the first four minutes, scales pressure with time survived, and starts sending elites after the two-minute mark.
 - A **daily streak** bonus rewards coming back each day.

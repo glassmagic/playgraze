@@ -271,6 +271,9 @@
   .wcard:hover{border-color:var(--c1);}
   .wcard.sel{border-color:var(--c1);box-shadow:0 0 18px rgba(78,243,255,.35);}
   .wcard.locked{opacity:.6;}
+  .wcard.undisc{opacity:.4;cursor:default;border-style:dashed;}
+  .wcard.undisc:hover{border-color:rgba(140,170,220,.25);}
+  .wcard.undisc .wn{color:#7d92b8;letter-spacing:3px;}
   #sShip{display:flex;flex-direction:column;gap:8px;width:min(620px,92vw);}
   .srow{display:flex;align-items:center;gap:14px;padding:10px 14px;border:1px solid rgba(140,170,220,.16);
     border-radius:4px;background:rgba(10,14,30,.6);}
@@ -311,15 +314,28 @@
   #scRank{font-size:12px;letter-spacing:4px;color:#ffd84e;text-shadow:0 0 14px rgba(255,216,78,.5);
     margin-bottom:14px;}
   #scRank:empty{display:none;}
-  #resetBtn{margin-top:10px;font-size:9px;letter-spacing:3px;color:#5a6e92;cursor:pointer;
-    padding:6px 12px;transition:color .2s;}
-  #resetBtn:hover{color:#ff5d7e;}
-  #menuReset{position:absolute;bottom:92px;right:26px;text-align:right;font-size:9px;
-    letter-spacing:3px;color:#3d4a66;cursor:pointer;padding:4px 0;transition:color .2s;
+  /* ---------- settings ---------- */
+  #settingsBtn{position:absolute;bottom:92px;right:26px;text-align:right;font-size:9.5px;
+    letter-spacing:2.5px;color:#5a6e92;cursor:pointer;padding:4px 0;transition:color .2s, text-shadow .2s;
     animation:fadeUp 1.8s 2.5s both;}
-  #menuReset:hover{color:#ff5d7e;}
-  #resetBtn.armed,#menuReset.armed{color:#ff2d5e;text-shadow:0 0 10px rgba(255,45,94,.6);
+  #settingsBtn:hover{color:#fff;text-shadow:0 0 10px var(--c1);}
+  #settings{z-index:6;}
+  #setTitle{font-size:26px;letter-spacing:14px;font-weight:200;color:#eef6ff;
+    font-family:"Helvetica Neue","Inter",-apple-system,"Segoe UI",Arial,sans-serif;}
+  #setRows{margin-top:30px;display:flex;flex-direction:column;gap:10px;width:min(460px,92vw);}
+  .setrow{display:flex;align-items:center;gap:14px;padding:12px 16px;border:1px solid rgba(140,170,220,.16);
+    border-radius:4px;background:rgba(10,14,30,.6);}
+  .setrow .setk{font-size:10px;letter-spacing:3px;color:#7d92b8;flex:1;text-align:left;}
+  .setrow .setv{font-size:10.5px;letter-spacing:2px;color:#dfe9ff;text-transform:uppercase;text-align:right;}
+  .setbtn{font:inherit;font-size:10px;letter-spacing:2px;padding:7px 14px;background:transparent;
+    border:1px solid rgba(78,243,255,.5);color:var(--c1);border-radius:3px;cursor:pointer;
+    transition:all .15s;min-width:64px;}
+  .setbtn:hover{background:var(--c1);color:#04040c;}
+  .setbtn.danger{border-color:rgba(255,93,126,.5);color:#ff5d7e;}
+  .setbtn.danger:hover{background:#ff5d7e;color:#04040c;}
+  #setReset.armed{color:#ff2d5e;border-color:#ff2d5e;text-shadow:0 0 10px rgba(255,45,94,.6);
     animation:pulse .5s infinite alternate;}
+  #setVersion{margin-top:22px;font-size:9.5px;letter-spacing:3px;color:#5a6e92;}
   /* ---------- tutorial (protocol) ---------- */
   #tutBtn{margin-top:10px;font-size:9.5px;letter-spacing:4px;text-indent:4px;color:#5a6e92;cursor:pointer;
     padding:6px 12px;transition:color .2s, text-shadow .2s;animation:fadeUp 1.4s 1.8s both;}
@@ -412,11 +428,27 @@
   #coach.on{opacity:1;}
   .restartHint{margin-top:34px;font-size:13px;color:#9fb6d8;letter-spacing:3px;animation:pulse 1s infinite alternate;}
   #muteBtn{position:absolute;bottom:56px;right:26px;font-size:9px;color:#5a6e92;letter-spacing:2px;
-    cursor:pointer;pointer-events:auto;z-index:6;opacity:.7;}
+    cursor:pointer;pointer-events:auto;z-index:6;opacity:.7;transition:opacity .2s;}
+  /* the scrolling overlays have their own room — get the floating toggle out of the way */
+  #tut.on~#muteBtn,#store.on~#muteBtn,#board.on~#muteBtn,#settings.on~#muteBtn,#shareCard.on~#muteBtn{
+    opacity:0;pointer-events:none;}
   @media (max-width:760px){
     #cards{flex-direction:column;gap:12px;} .card{width:260px;padding:14px;}
     #dstats{gap:24px;} #score{font-size:26px;} #dScore{font-size:44px;}
     #dActions{gap:16px;flex-wrap:wrap;justify-content:center;}
+    /* menu corners: shrink so the two sides can't collide */
+    .corner{font-size:8px;letter-spacing:1.5px;}
+    #cornerL{max-width:52vw;}
+    /* hangar: two-column weapon grid, ship rows wrap instead of squeezing */
+    #store{padding:34px 0 30px;}
+    #sTitle{font-size:20px;letter-spacing:10px;}
+    .sSection{margin:20px 0 10px;}
+    #sWeapons{gap:8px;width:94vw;}
+    .wcard{min-width:0;flex:1 1 calc(50% - 8px);padding:10px 8px;}
+    #sShip{width:94vw;gap:6px;}
+    .srow{flex-wrap:wrap;gap:8px 12px;padding:10px 12px;}
+    .srow .sn{flex:1 1 100%;}
+    .srow .sbuy{margin-left:auto;}
   }
 </style>
 </head>
@@ -461,7 +493,7 @@
     <div id="lbBtn">LEADERBOARD</div>
     <div id="cornerL" class="corner"></div>
     <div id="hangarBtn" class="corner cornerR">HANGAR · ⬢ <span id="hCores">0</span></div>
-    <div id="menuReset">RESET PROGRESS</div>
+    <div id="settingsBtn">⚙ SETTINGS</div>
     <a id="coffeeMenu" class="corner cornerR" href="https://buymeacoffee.com/adamcpowell"
        target="_blank" rel="noopener">☕ BUY ME A COFFEE</a>
   </div>
@@ -484,7 +516,6 @@
   <div id="store" class="overlay">
     <div id="sTitle">HANGAR</div>
     <div id="sCores"></div>
-    <div id="resetBtn">RESET PROGRESS</div>
     <div class="sSection">WEAPON SYSTEMS</div>
     <div id="sWeapons"></div>
     <div class="sSection">SHIP SYSTEMS</div>
@@ -499,6 +530,18 @@
     <div id="bSub">BEST RUN PER CALLSIGN</div>
     <div id="bList"></div>
     <button class="cta small" id="boardBack">BACK</button>
+  </div>
+
+  <div id="settings" class="overlay">
+    <div id="setTitle">SETTINGS</div>
+    <div id="setRows">
+      <div class="setrow"><span class="setk">SOUND</span><button class="setbtn" id="setSound">ON</button></div>
+      <div class="setrow"><span class="setk">CALLSIGN</span><span class="setv" id="setCallsign">—</span><button class="setbtn" id="setClearName">CLEAR</button></div>
+      <div class="setrow"><span class="setk">RECORD</span><span class="setv" id="setStats"></span></div>
+      <div class="setrow"><span class="setk">DANGER ZONE</span><button class="setbtn danger" id="setReset">RESET PROGRESS</button></div>
+    </div>
+    <div id="setVersion"></div>
+    <button class="cta small" id="setBack">BACK</button>
   </div>
 
   <div id="levelup" class="overlay">
@@ -585,6 +628,7 @@ const lerp = (a,b,t)=> a+(b-a)*t;
 const d2 = (ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy;};
 const fmtT = s =>{s|=0;return ((s/60)|0)+":"+("0"+(s%60)).slice(-2);};
 const fmtN = n => (n|0).toLocaleString("en-US");
+const VERSION="1.4.0"; // bump the minor on every PR — shown in settings to track deploys
 
 // ---------- persistence ----------
 const store = {
@@ -598,6 +642,7 @@ const meta = Object.assign({
 }, store.load());
 meta.owned = Object.assign({pulse:true}, meta.owned||{});
 meta.shop  = Object.assign({gun:0,cycle:0,hull:0,thrust:0,magnet:0,graze:0,surge:0,luck:0}, meta.shop||{});
+meta.seen  = Object.assign({}, meta.seen||{}); // weapons used mid-run — only these surface in the hangar
 
 // daily streak (a reason to come back tomorrow)
 (function(){
@@ -1748,7 +1793,9 @@ function weaponOffers(){
       out.push({id:"wpn_"+id, ico:"◈", nm:w.nm,
         ds:"refit for this run — "+w.ds,
         rar: w.price<500?1 : w.price<1500?2 : 3,
-        f:()=>{ G.runWeapon=id; flail=null; ftext(player.x,player.y-30,"REFIT: "+w.nm,"#9ef7ff",15); }});
+        f:()=>{ G.runWeapon=id; flail=null;
+          meta.seen[id]=true; store.save(meta); // field-tested — it may now be bought in the hangar
+          ftext(player.x,player.y-30,"REFIT: "+w.nm,"#9ef7ff",15); }});
       if(out.length>=3) break;
     }
   }
@@ -1927,6 +1974,10 @@ function handleKey(code){
     if(code==="Escape"||code==="Backspace") closeBoard();
     return;
   }
+  if(document.getElementById("settings").classList.contains("on")){
+    if(code==="Escape"||code==="Backspace") closeSettings();
+    return;
+  }
   if(G.state==="playing" && code==="Space") tryNova();
   else if(G.state==="levelup"){
     if(code==="Digit1")chooseCard(0);
@@ -2025,16 +2076,17 @@ function bindReset(el){
     if(el.classList.contains("armed") && nowMs-(el._arm||0)<3000){
       try{ localStorage.removeItem("graze_save"); }catch(err){}
       Object.assign(meta,{best:0,totalScore:0,runs:0,scheme:"pulse",streak:1,
-        lastDay:new Date().toISOString().slice(0,10),cores:0,weapon:"pulse"});
+        lastDay:new Date().toISOString().slice(0,10),cores:0,weapon:"pulse",player:""});
       meta.owned={pulse:true};
+      meta.seen={};
       meta.shop={gun:0,cycle:0,hull:0,thrust:0,magnet:0,graze:0,surge:0,luck:0};
       store.save(meta);
-      document.querySelectorAll("#resetBtn,#menuReset").forEach(b=>{
+      document.querySelectorAll("#setReset").forEach(b=>{
         b.classList.remove("armed");
         b.textContent="PROGRESS ERASED";
         setTimeout(()=>{ b.textContent="RESET PROGRESS"; },2200);
       });
-      AU.deny(); buildStore(); buildMenu(); applySchemeCSS();
+      AU.deny(); buildStore(); buildMenu(); buildSettings(); applySchemeCSS();
     } else {
       el._arm=nowMs;
       el.classList.add("armed");
@@ -2046,8 +2098,25 @@ function bindReset(el){
     }
   });
 }
-bindReset(document.getElementById("resetBtn"));
-bindReset(document.getElementById("menuReset"));
+bindReset(document.getElementById("setReset"));
+
+// ---------- settings ----------
+function buildSettings(){
+  document.getElementById("setSound").textContent=AU.muted?"OFF":"ON";
+  document.getElementById("setCallsign").textContent=meta.player||"NOT SET";
+  document.getElementById("setClearName").style.display=meta.player?"inline-block":"none";
+  document.getElementById("setStats").textContent=
+    fmtN(meta.runs)+" RUNS · BEST "+fmtN(meta.best)+" · LIFETIME "+fmtN(meta.totalScore)+" · ⬢ "+fmtN(meta.cores);
+  document.getElementById("setVersion").textContent="GRAZE v"+VERSION;
+}
+function openSettings(){ AU.init(); buildSettings(); document.getElementById("settings").classList.add("on"); AU.ui(); }
+function closeSettings(){ document.getElementById("settings").classList.remove("on"); AU.ui(); buildMenu(); }
+document.getElementById("settingsBtn").addEventListener("pointerdown",e=>{ e.stopPropagation(); openSettings(); });
+document.getElementById("setBack").addEventListener("pointerdown",e=>{ e.stopPropagation(); closeSettings(); });
+document.getElementById("setSound").addEventListener("pointerdown",e=>{ e.stopPropagation(); AU.toggle(); buildSettings(); });
+document.getElementById("setClearName").addEventListener("pointerdown",e=>{
+  e.stopPropagation(); meta.player=""; store.save(meta); AU.ui(); buildSettings();
+});
 // coffee links open externally without touching game state (no accidental restarts)
 for(const id of ["coffeeMenu","coffeeDeath"])
   document.getElementById(id).addEventListener("pointerdown",e=>e.stopPropagation());
@@ -2218,6 +2287,13 @@ function buildStore(){
   const wEl=document.getElementById("sWeapons"); wEl.innerHTML="";
   for(const id in WEAPONS){
     const w=WEAPONS[id], owned=!!meta.owned[id], sel=meta.weapon===id&&owned;
+    // weapons must be field-tested (picked as a mid-run refit) before the hangar sells them
+    if(!owned && !meta.seen[id]){
+      const u=document.createElement("div");
+      u.className="wcard undisc";
+      u.innerHTML="<div class='wn'>UNDISCOVERED</div><div class='wd'>take its refit card mid-run to unlock</div><div class='wp'>?</div>";
+      wEl.appendChild(u); continue;
+    }
     const d=document.createElement("div");
     d.className="wcard"+(sel?" sel":"")+(!owned?" locked":"");
     d.innerHTML="<div class='wn'>"+w.nm+"</div><div class='wd'>"+w.ds+"</div>"+
@@ -2278,7 +2354,7 @@ function buildMenu(){
   document.getElementById("cornerL").innerHTML =
     "⬢ "+fmtN(meta.cores)+" · BEST "+fmtN(meta.best)+
     (meta.streak>1 ? " · <b>DAY "+meta.streak+" +"+(meta.streak*5)+"%</b>" : "")+
-    "<br><span class='dim'>"+(TOUCH?"touch to move · two-finger tap to surge":"mouse to move · space to surge")+"</span>";
+    "<br><span class='dim'>"+(TOUCH?"touch to move · two-finger tap to surge":"mouse to move · space to surge")+" · v"+VERSION+"</span>";
   document.getElementById("muteBtn").textContent="M — SOUND "+(AU.muted?"OFF":"ON");
   document.getElementById("hCores").textContent=fmtN(meta.cores);
   applySchemeCSS();
