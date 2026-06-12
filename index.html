@@ -865,7 +865,7 @@ const AU = {
   levelup(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>this.tone(f,0.3,"triangle",0.12),i*70)); },
   ui(){ this.tone(660,0.07,"sine",0.08); },
   die(){ this.noise(1.2,0.5,300); this.tone(220,1.4,"sawtooth",0.25,-180); },
-  // ---- composed soundtrack: 8-bar A-minor loop, layered by intensity ----
+  // ---- composed soundtrack: Am–F–C–G (i–♭VI–♭III–♭VII) at 126bpm, layered by intensity ----
   mStep:0, mNext:0, mStarted:false,
   noteAt(t,f,dur,type="sine",vol=0.1){
     if(!this.ctx||this.muted) return;
@@ -892,6 +892,20 @@ const AU = {
     s.buffer=buf; f.type="highpass"; f.frequency.value=6000; g.gain.value=vol;
     s.connect(f); f.connect(g); g.connect(this.mbus||this.master); s.start(t);
   },
+  snareAt(t,vol=0.12){
+    if(!this.ctx||this.muted) return;
+    const n=this.ctx.sampleRate*0.12|0, buf=this.ctx.createBuffer(1,n,this.ctx.sampleRate), d=buf.getChannelData(0);
+    for(let i=0;i<n;i++){ const e=1-i/n; d[i]=(Math.random()*2-1)*e*e; }
+    const s=this.ctx.createBufferSource(), f=this.ctx.createBiquadFilter(), g=this.ctx.createGain();
+    s.buffer=buf; f.type="bandpass"; f.frequency.value=1900; f.Q.value=0.8; g.gain.value=vol;
+    s.connect(f); f.connect(g); g.connect(this.mbus||this.master); s.start(t);
+    // a little tonal body under the noise
+    const o=this.ctx.createOscillator(), og=this.ctx.createGain();
+    o.type="triangle"; o.frequency.setValueAtTime(210,t);
+    o.frequency.exponentialRampToValueAtTime(140,t+0.08);
+    og.gain.setValueAtTime(vol*0.7,t); og.gain.exponentialRampToValueAtTime(0.0001,t+0.09);
+    o.connect(og); og.connect(this.mbus||this.master); o.start(t); o.stop(t+0.12);
+  },
   crashAt(t,vol=0.16){
     if(!this.ctx||this.muted) return;
     const n=this.ctx.sampleRate*0.7|0, buf=this.ctx.createBuffer(1,n,this.ctx.sampleRate), d=buf.getChannelData(0);
@@ -903,86 +917,103 @@ const AU = {
   musicTick(intensity){
     if(!this.ctx||this.muted||this.ctx.state!=="running"){ this.mStarted=false; return; }
     if(!this.mStarted){ this.mStarted=true; this.mStep=0; this.mNext=this.ctx.currentTime+0.05; }
-    const stepDur=60/112/4; // 16ths at 112bpm
-    const ROOTS=[110,110,87.31,98,110,110,87.31,82.41]; // Am Am F G / Am Am F E
-    const BASS=[0,-1,-1,0, -1,-1,0,-1, 0,-1,-1,0, -1,7,-1,10]; // riff w/ bar-end walkup
-    // THE THEME — 8 bars, semitones above A. a heroic "short-short-LONG" cell,
-    // held notes answered by driving pickups, a climb to a held high-A summit,
-    // then a cascade and a high-G# cliffhanger that aches back home to A.
-    const THEME=[
-      12,-1,15,-1, 19,-1,-1,-1, -1,-1,17,-1, 15,-1,14,-1,   // Am: A-C-E——  ... D-C-B
-      12,-1,-1,-1, -1,-1,-1,-1,  7,-1,12,-1, 14,-1,15,-1,   // Am: A——      ... e-a-b-c (pickup)
-      17,-1,15,-1, 20,-1,-1,-1, -1,-1,-1,-1, 19,-1,17,-1,   // F:  D-C-F——  ... E-D
-      14,-1,-1,-1, -1,-1,-1,-1, 10,-1,14,-1, 17,-1,19,-1,   // G:  B——      ... G-B-D-E (coil)
-      12,-1,15,-1, 19,-1,-1,-1, -1,-1,19,-1, 20,-1,22,-1,   // Am: motif    ... E-F-G (climb!)
-      24,-1,-1,-1, -1,-1,-1,-1, 22,-1,19,-1, 22,-1,-1,-1,   // Am: A''——!   ... G'-E'-G' (summit)
-      20,-1,19,-1, 17,-1,-1,-1, -1,-1,15,-1, 17,-1,19,-1,   // F:  F-E-D——  ... C-D-E (cascade)
-      23,-1,-1,-1, -1,-1,-1,-1, 19,-1,14,-1, 11,-1,-1,-1];  // E:  G#'——    ... E'-B'-g# (cliffhanger)
-    const LEAD_B=[12,-1,-1,10, -1,7,-1,5, 7,-1,-1,3, -1,5,-1,-1,
-                  12,-1,-1,10, -1,7,-1,12, 15,-1,-1,12, -1,10,-1,7]; // answer phrase
+    const stepDur=60/126/4; // 16ths at a driving 126bpm
+    // i–♭VI–♭III–♭VII — the minor four-chord loop (Am F C G): the arcade earworm engine
+    const ROOTS =[110,87.31,130.81,98, 110,87.31,130.81,98];
+    const THIRDS=[3,4,4,4, 3,4,4,4]; // minor third on Am, major on F/C/G
+    const BASS=[0,-1,12,-1, 0,-1,12,-1, 0,-1,12,-1, 0,-1,12,12]; // pumping octaves, 16th push at bar end
+    // chord-tone arps per bar (semitones above A3) — the chiptune sparkle
+    const ARPS=[[12,15,19,24],[8,12,15,20],[15,19,22,27],[10,14,17,22],
+                [12,15,19,24],[8,12,15,20],[15,19,22,27],[10,14,17,22]];
+    const ARPSEQ=[0,1,2,3,2,1]; // up-and-over
+    // THE HOOK — 8 bars over Am F C G ×2. A two-bar cell stated twice (that's the
+    // earworm), then restated with a climb to a held high-A summit and a C6 peak,
+    // cascading down to an E that aches back home to A as the loop turns over.
+    const HOOK=[
+      12,-1,15,-1, 17,-1,19,-1, -1,-1,-1,-1, 17,-1,15,-1,   // Am: A-C-D-E——  D-C
+      17,-1,15,-1, 12,-1,-1,-1, -1,-1,12,-1, 15,-1,17,-1,   // F:  D-C-A——    A-C-D pickup
+      19,-1,-1,-1, 22,-1,19,-1, -1,-1,17,-1, 15,-1,17,-1,   // C:  E——G-E     D-C-D turn
+      14,-1,17,-1, 14,-1,-1,-1, 10,-1,-1,-1, 14,-1,17,-1,   // G:  B-D-B——    G—— B-D lift
+      12,-1,15,-1, 17,-1,19,-1, -1,-1,-1,-1, 19,-1,20,-1,   // Am: the cell    E-F climb!
+      24,-1,-1,-1, -1,-1,22,-1, 24,-1,-1,-1, 22,-1,20,-1,   // F:  A'——! G-A'  G-F summit ride
+      19,-1,-1,-1, 22,-1,24,-1, 27,-1,-1,-1, 24,-1,22,-1,   // C:  E—G-A' C''! A'-G peak
+      22,-1,-1,-1, 19,-1,17,-1, 14,-1,17,-1, 19,-1,-1,-1];  // G:  G'—E-D B-D-E → resolves to A
     // notes ring until the next one arrives — phrasing, not plinking
     const sustain=(arr,len,idx)=>{let g=1;while(g<8&&arr[(idx+g)%len]<0)g++;return Math.min(g,6);};
     while(this.mNext < this.ctx.currentTime+0.18){
       const t=this.mNext, s16=this.mStep%16, bar=((this.mStep/16)|0)%8,
-            sect=((this.mStep/128)|0)%4, root=ROOTS[bar],
+            sect=((this.mStep/128)|0)%4, root=ROOTS[bar], third=THIRDS[bar],
             lastBar=bar===7, hum=()=>rnd(0.85,1.15);
       if(intensity>=1){
-        const breakdown = sect===3; // every 4th 8-bar section drops the drums
+        const breakdown = sect===3; // every 4th 8-bar phrase opens the sky
         if(!breakdown){
-          if(s16%4===0) this.kickAt(t,0.19*hum());
+          // drums: four-on-the-floor, offbeat hats, real snare backbeat
+          if(s16%4===0) this.kickAt(t,0.2*hum());
           if(s16%4===2) this.hatAt(t,0.05*hum());
-          if(intensity>=3 && s16%2===1) this.hatAt(t,0.02*hum()); // late-game ghost 16ths
-          if((s16===4||s16===12) && intensity>=2) this.hatAt(t,0.1);
+          if(s16===4||s16===12){ if(intensity>=2) this.snareAt(t,0.11*hum()); else this.hatAt(t,0.09); }
+          if(intensity>=3 && s16%2===1) this.hatAt(t,0.022*hum()); // late-game ghost 16ths
+          if(lastBar && s16>=12) this.snareAt(t,0.05+0.02*(s16-12)); // phrase-end fill
+          // bass: pumping octaves
           let b=BASS[s16];
-          if(lastBar && s16>=12) b=(b>=0?b:0)+12; // section-end fill: octave jump
-          if(b>=0) this.noteAt(t,(root/2)*Math.pow(2,b/12),stepDur*0.9,"sawtooth",0.08*hum());
-          if(intensity>=2 && sect>=1){
-            const isB=sect===2, arr=isB?LEAD_B:THEME, len=isB?32:128, idx=this.mStep%len;
-            const l=arr[idx];
+          if(b>=0) this.noteAt(t,(root/2)*Math.pow(2,b/12),stepDur*0.85,"sawtooth",0.085*hum());
+          // chiptune arp — quiet 16th sparkle riding the chord
+          if(intensity>=2){
+            const a=ARPS[bar][ARPSEQ[this.mStep%ARPSEQ.length]];
+            this.noteAt(t,220*Math.pow(2,a/12)*2,stepDur*0.8,"square",0.016*hum());
+          }
+          // THE HOOK — square lead with detune, sub-octave weight and a slap echo
+          if(intensity>=2){
+            const idx=this.mStep%128, l=HOOK[idx];
             if(l>=0){
-              const g=sustain(arr,len,idx);
-              const f=220*Math.pow(2,l/12), big=l>=19;
-              const dur=stepDur*g*0.95, vol=(big?0.08:0.062)*hum();
-              this.noteAt(t,f,dur,"triangle",vol);
-              this.noteAt(t,f*1.004,dur,"triangle",vol*0.5);      // detuned double
-              this.noteAt(t,f/2,dur,"triangle",vol*0.45);          // octave below — weight
-              if(s16%8===0) this.noteAt(t,f*Math.pow(2,-7/12),dur,"triangle",vol*0.5); // power fifth
-              this.noteAt(t+stepDur*3,f,dur*0.7,"triangle",0.02);  // echo
+              const g=sustain(HOOK,128,idx);
+              const f=220*Math.pow(2,l/12), big=l>=20;
+              const dur=stepDur*g*0.95, vol=(big?0.075:0.058)*hum();
+              this.noteAt(t,f,dur,"square",vol*0.8);
+              this.noteAt(t,f*1.005,dur,"triangle",vol*0.7);       // detuned warm double
+              this.noteAt(t,f/2,dur,"triangle",vol*0.4);           // octave below — weight
+              this.noteAt(t+stepDur*3,f,dur*0.6,"triangle",0.018); // slap echo
             }
-            // power-chord bed under the theme — the epic floor
+            // chord pad — root/third/fifth saw bed, the epic floor
             if(s16===0){
-              this.noteAt(t,root,stepDur*15,"sawtooth",0.034);
+              this.noteAt(t,root,stepDur*15,"sawtooth",0.032);
+              this.noteAt(t,root*Math.pow(2,third/12),stepDur*15,"sawtooth",0.022);
               this.noteAt(t,root*Math.pow(2,7/12),stepDur*15,"sawtooth",0.026);
-              this.noteAt(t,root*2,stepDur*15,"sawtooth",0.02);
             }
             const cyc=this.mStep%128;
-            if(!isB && cyc>=76 && cyc<80)                          // stair-riser into the summit bar
+            if(cyc>=76 && cyc<80) // stair-riser into the summit bar
               this.noteAt(t,300*Math.pow(2,(cyc-76)/3),stepDur*0.9,"sine",0.03);
-            if(cyc===0) this.crashAt(t,0.14);                      // section downbeat crash
+            if(cyc===0) this.crashAt(t,0.14); // phrase downbeat crash
+          } else if(s16===0){
+            // intensity 1: just the chord bed under the drums — room to grow
+            this.noteAt(t,root,stepDur*15,"sawtooth",0.026);
+            this.noteAt(t,root*Math.pow(2,7/12),stepDur*15,"sawtooth",0.018);
           }
         } else {
-          // breakdown: pulsing low root, airy pad, the theme floating high and bare
+          // breakdown: heartbeat root, airy pad, the hook floating high and bare
           if(s16===0||s16===8) this.noteAt(t,root/2,stepDur*6,"sine",0.07);
-          if(s16===0){ this.noteAt(t,root*2,stepDur*14,"sine",0.035); this.noteAt(t,root*3,stepDur*14,"sine",0.015); }
-          const l=THEME[this.mStep%128];
+          if(s16===0){
+            this.noteAt(t,root*2,stepDur*14,"sine",0.034);
+            this.noteAt(t,root*Math.pow(2,third/12)*2,stepDur*14,"sine",0.018);
+          }
+          const l=HOOK[this.mStep%128];
           if(l>=0) this.noteAt(t,440*Math.pow(2,(l-12)/12)*2,stepDur*4,"sine",0.032);
         }
       } else {
-        // menu & death: the theme as a slow music box over a warm chord bed
+        // menu & death: the same hook as a slow music box over a warm chord bed
         if(this.mStep%2===0){
-          const idx=((this.mStep/2)|0)%128, l=THEME[idx];
+          const idx=((this.mStep/2)|0)%128, l=HOOK[idx];
           if(l>=0){
-            const g=sustain(THEME,128,idx);
+            const g=sustain(HOOK,128,idx);
             this.noteAt(t,440*Math.pow(2,(l-12)/12),Math.min(g,6)*stepDur*1.9,"sine",0.04);
           }
         }
-        if(Math.random()<0.035){
-          const scale=[0,3,5,7,10,12,15];
-          const f=root*Math.pow(2,(pick(scale)+12)/12);
-          this.noteAt(t,f,1.6,"triangle",0.03);
+        if(Math.random()<0.03){ // chord-tone sparkles drifting by
+          const f=220*Math.pow(2,(pick(ARPS[bar])+12)/12);
+          this.noteAt(t,f,1.6,"triangle",0.025);
         }
         if(s16===0){
-          this.noteAt(t,root,stepDur*15,"sine",0.028);                    // chord bed
+          this.noteAt(t,root,stepDur*15,"sine",0.028);
+          this.noteAt(t,root*Math.pow(2,third/12),stepDur*15,"sine",0.016);
           this.noteAt(t,root*Math.pow(2,7/12),stepDur*15,"sine",0.02);
         }
       }
@@ -990,8 +1021,8 @@ const AU = {
     }
   },
   pluck(intensity){
-    // slow chord progression (Am–G–F–E feel) under pentatonic plucks
-    const roots=[110,98,87.31,82.41];
+    // slow chord progression (Am–F–C–G, matching the soundtrack) under pentatonic plucks
+    const roots=[110,87.31,130.81,98];
     const root=roots[(typeof G!=="undefined" ? (G.t/3.2)|0 : 0)%4];
     const scale=[0,3,5,7,10,12,15];
     const f=root*Math.pow(2,(pick(scale)+(intensity>2?12:0))/12);
