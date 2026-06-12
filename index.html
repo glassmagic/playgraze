@@ -2917,17 +2917,45 @@ buildMenu();
 // ---------- background ----------
 const stars=[];
 for(let i=0;i<150;i++) stars.push({x:rnd(1),y:rnd(1),z:rnd(0.2,1),tw:rnd(TAU)});
-let starDrift=0; // slow camera pan on the menu; freezes (no jump) in play
-// parallax wreckage — dead hulls and nebula wisps drifting between the stars and the fight
+// camera tour — an endless cruise through the nebula: mostly drift, the odd glide
+const cam={x:0,y:0,ang:rnd(TAU),spd:8,want:8,holdT:rnd(12,22)};
+function updateCam(dt,now){
+  // heading wanders on slow, never-repeating sines
+  cam.ang += (Math.sin(now*0.00006+1.3)*0.0011 + Math.sin(now*0.000137)*0.0007)*60*dt;
+  cam.holdT-=dt;
+  if(cam.holdT<=0){
+    if(cam.want<20){ cam.want=rnd(42,68); cam.holdT=rnd(3,6); }  // a glide
+    else          { cam.want=rnd(5,12);  cam.holdT=rnd(14,30); } // back to drift
+  }
+  cam.spd=lerp(cam.spd,cam.want,dt*0.8);
+  cam.x+=Math.cos(cam.ang)*cam.spd*dt;
+  cam.y+=Math.sin(cam.ang)*cam.spd*dt*0.6; // flatter vertical travel
+}
+// parallax wreckage — dead hulls drifting between the stars and the fight
 const debris=[];
 for(let i=0;i<9;i++){
   const verts=[]; const n=5+(Math.random()*3|0);
   for(let k=0;k<n;k++) verts.push(rnd(0.55,1));
   debris.push({x:rnd(1),y:rnd(1),z:rnd(0.25,0.7),r:rnd(16,46),rot:rnd(TAU),vr:rnd(0.3,1)*(Math.random()<0.5?-1:1),verts});
 }
+// the nebula itself: large pre-rendered colour fields, layered at different depths.
+// sprites are baked once — per-frame cost is eight drawImage calls
+function nebulaSprite(r,c,a){
+  const s=document.createElement("canvas"); s.width=s.height=r*2;
+  const g2=s.getContext("2d"), g=g2.createRadialGradient(r,r,0,r,r,r);
+  g.addColorStop(0,"rgba("+c+","+a+")");
+  g.addColorStop(0.55,"rgba("+c+","+(a*0.45)+")");
+  g.addColorStop(1,"rgba("+c+",0)");
+  g2.fillStyle=g; g2.beginPath(); g2.arc(r,r,r,0,TAU); g2.fill();
+  return s;
+}
+const NEB_HUES=["40,80,160","96,48,170","160,40,120","20,110,140","150,70,30","60,40,160","30,120,100"];
 const nebulae=[];
-for(let i=0;i<3;i++) nebulae.push({x:rnd(1),y:rnd(1),z:rnd(0.15,0.3),r:rnd(220,420),
-  hue:pick(["18,30,80","60,20,80","10,40,70"])});
+for(let i=0;i<8;i++){
+  const r=rnd(380,760)|0;
+  nebulae.push({x:rnd(1),y:rnd(1),z:rnd(0.14,0.42),r,
+    s:nebulaSprite(r,NEB_HUES[i%NEB_HUES.length],rnd(0.16,0.24))});
+}
 
 // ---------- menu attract demo: a real ship grazing real foes ----------
 let menuFoes=[], menuGlow=0, menuShip={x:0,y:0,a:0};
@@ -2997,27 +3025,28 @@ function render(now){
     ctx.translate(-G.cine.x,-G.cine.y);
   }
 
-  // stars
+  // the nebula — colour fields sliding under everything as the camera tours
   ctx.globalCompositeOperation="source-over";
+  for(const nb of nebulae){
+    const sx=W+nb.r*2, sy=H+nb.r*2;
+    const px=((((nb.x*sx) - (player.x*0.04+cam.x*1.6)*nb.z)%sx)+sx)%sx - nb.r;
+    const py=((((nb.y*sy) - (player.y*0.04+cam.y*1.6)*nb.z)%sy)+sy)%sy - nb.r;
+    ctx.drawImage(nb.s, px-nb.r, py-nb.r);
+  }
+
+  // stars
   for(const st of stars){
-    const px=(((st.x*W - player.x*0.02*st.z - starDrift*st.z)%W)+W)%W;
-    const py=(st.y*H - player.y*0.02*st.z + H)%H;
+    const px=(((st.x*W - (player.x*0.02+cam.x)*st.z)%W)+W)%W;
+    const py=(((st.y*H - (player.y*0.02+cam.y)*st.z)%H)+H)%H;
     const a=0.25*st.z + 0.18*Math.sin(now*0.001+st.tw);
     ctx.fillStyle="rgba(160,200,255,"+Math.max(0,a)+")";
     ctx.fillRect(px,py,st.z*1.8,st.z*1.8);
   }
 
-  // nebula wisps, then wreckage silhouettes — a parallax slab of depth behind the fight
-  for(const nb of nebulae){
-    const px=(((nb.x*W - player.x*0.03*nb.z - starDrift*1.5*nb.z)%W)+W)%W;
-    const py=(((nb.y*H - player.y*0.03*nb.z)%H)+H)%H;
-    const g=ctx.createRadialGradient(px,py,0,px,py,nb.r);
-    g.addColorStop(0,"rgba("+nb.hue+",0.10)"); g.addColorStop(1,"rgba(0,0,0,0)");
-    ctx.fillStyle=g; ctx.fillRect(px-nb.r,py-nb.r,nb.r*2,nb.r*2);
-  }
+  // wreckage silhouettes — a parallax slab of depth behind the fight
   for(const d of debris){
-    const px=(((d.x*W - player.x*0.06*d.z - starDrift*2.2*d.z)%W)+W)%W;
-    const py=(((d.y*H - player.y*0.06*d.z)%H)+H)%H;
+    const px=(((d.x*W - (player.x*0.06+cam.x*2.2)*d.z)%W)+W)%W;
+    const py=(((d.y*H - (player.y*0.06+cam.y*2.2)*d.z)%H)+H)%H;
     const rot=d.rot+now*0.00009*d.vr;
     ctx.save(); ctx.translate(px,py); ctx.rotate(rot);
     ctx.fillStyle="rgba(13,18,40,0.85)"; ctx.strokeStyle="rgba(64,86,150,0.28)"; ctx.lineWidth=1;
@@ -3424,7 +3453,8 @@ function loop(now){
   // juice timers always tick
   G.shake*=Math.pow(0.001,dt);
   G.flash=Math.max(0,G.flash-dt*2.2);
-  if(G.state==="menu"){ starDrift+=dt*22; updateMenuDemo(now,dt); }
+  updateCam(dt,now); // the nebula tour never stops
+  if(G.state==="menu"){ updateMenuDemo(now,dt); }
 
   if(G.state==="playing"){
     if(G.hitstop>0){ G.hitstop-=dt; render(now); return; }
