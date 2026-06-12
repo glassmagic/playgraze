@@ -43,6 +43,6 @@ Progress saves to `localStorage` (a double-click reset button in settings wipes 
 - Vanilla JavaScript on a single `<canvas>` — no frameworks, no assets.
 - The leaderboard is a single Netlify function ([netlify/functions/scores.mjs](netlify/functions/scores.mjs)) storing scores in Netlify Blobs, exposed at `/api/scores`. It keeps the max score per username and applies basic plausibility checks on submissions.
 - All audio is synthesized live with the Web Audio API, including the soundtrack, which layers up as a run gets more intense.
-- Cinematic dressing (film grain, letterboxing, color grade, anamorphic title flare) is done in CSS on top of the canvas.
+- Cinematic dressing (film grain, letterboxing, color grade, anamorphic title flare) is done in CSS on top of the canvas; in-engine cinematics — the launch flythrough, boss intro slow-mo, kill-cam, and a parallax wreckage layer — run on the canvas itself.
 - Works with touch — the ship follows your finger.
 - Installable as a **PWA** (settings → INSTALL): a service worker keeps the shell cached for instant, offline-capable launches while deploys still land immediately.
