@@ -1586,6 +1586,8 @@ function killEnemy(i){
   // bosses go down like a second sun (the herald a touch dimmer)
   if(e.boss){
     banner("☠ "+e.name+" DESTROYED ☠");
+    // a slain boss opens the devil's table
+    if(!G.pactsOpen){ G.pactsOpen=true; G.pactDue=true; }
     // kill-cam: a beat of slow-mo on the wreck while explosions chain through it
     G.cine={t:0.8,max:0.8,x:clamp(e.x,120,W-120),y:clamp(e.y,120,H-120),zoom:0.18,boom:true};
     for(let k=0;k<(e.mini?1:3);k++) shards.push({x:e.x+rnd(-30,30),y:e.y+rnd(-30,30),vx:rnd(-70,70),vy:rnd(-70,70),core:5,t:rnd(TAU)});
@@ -2236,8 +2238,10 @@ function levelUp(){
       offered[(Math.random()*offered.length)|0]=pick(cands);
     }
   }
-  // sometimes the devil deals a fourth card — never the only option, never early
-  if(G.level>=3 && Math.random()<0.22) offered.push(pick(PACTS));
+  // the devil only deals once you've slain a boss: guaranteed fourth card in the
+  // first draft after, a 22% visitor thereafter — never the only option
+  if(G.pactDue){ G.pactDue=false; offered.push(pick(PACTS)); }
+  else if(G.pactsOpen && Math.random()<0.22) offered.push(pick(PACTS));
   const cardsEl=document.getElementById("cards");
   cardsEl.innerHTML="";
   offered.forEach((u,i)=>{
@@ -2343,6 +2347,7 @@ function startRun(){
   });
   G.introAt=rollIntroPlan();
   G.pactScore=1; G.pactGraze=1; G.pactEspd=1; G.pactEbul=1;
+  G.pactsOpen=false; G.pactDue=false;
   // rival line: hunt the top ten live (your own callsign doesn't count)
   G.rivals=null; G.rivalPlace=null; G.rivalEntry=0;
   try{
