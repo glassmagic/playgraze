@@ -61,6 +61,9 @@
   #mult{font-size:15px;letter-spacing:3px;color:var(--c2);text-shadow:0 0 12px var(--c2);
     transition:transform .08s;}
   #mult.hot{color:#ffd84e;text-shadow:0 0 14px #ffb84e,0 0 30px #ff7b3d;}
+  #rival{margin-top:6px;font-size:10px;letter-spacing:2px;color:#ffd84e;opacity:.75;
+    text-shadow:0 0 8px rgba(255,216,78,.4);min-height:12px;}
+  #rival.lead{color:#fff;text-shadow:0 0 12px var(--c1);}
   #hearts{position:absolute;top:22px;left:22px;display:flex;gap:6px;}
   .hseg{width:30px;height:9px;transform:skewX(-18deg);background:rgba(255,255,255,.06);
     border:1px solid rgba(120,150,220,.25);border-radius:1px;transition:background .25s, box-shadow .25s;}
@@ -219,6 +222,13 @@
   .card.legend .rar{color:#ff4ecd;letter-spacing:5px;}
   .card.legend:hover{border-color:#fff;}
   @keyframes legendglow{from{box-shadow:0 0 16px rgba(255,78,205,.35);}to{box-shadow:0 0 44px rgba(255,78,205,.85);}}
+  /* devil's pact — blood red, and it knows what it's asking */
+  .card.pact{border-color:#ff2d3a;background:linear-gradient(160deg,rgba(54,6,10,.96),rgba(20,4,16,.96));
+    animation:pactglow 1.1s ease-in-out infinite alternate;}
+  .card.pact .rar{color:#ff4d5a;letter-spacing:6px;}
+  .card.pact .ico{color:#ff4d5a;}
+  .card.pact:hover{border-color:#fff;}
+  @keyframes pactglow{from{box-shadow:0 0 14px rgba(255,45,58,.35);}to{box-shadow:0 0 40px rgba(255,45,58,.8);}}
   /* death screen — the score is the hero, everything else supports it */
   #deathTitle{font-size:26px;letter-spacing:12px;text-indent:12px;color:#ff5d7e;font-weight:300;
     font-family:"Helvetica Neue","Inter",-apple-system,"Segoe UI",Arial,sans-serif;
@@ -503,6 +513,7 @@
       <div id="scoreBox">
         <div id="score">0</div>
         <div id="mult">×1.0</div>
+        <div id="rival"></div>
       </div>
     </div>
     <div id="hearts">♥ ♥ ♥</div>
@@ -618,6 +629,7 @@
         <span class="sbtn" data-net="fb">FACEBOOK</span>
         <span class="sbtn" data-net="tg">TELEGRAM</span>
         <span class="sbtn" data-net="rd">REDDIT</span>
+        <span class="sbtn" data-net="poster">◉ POSTER</span>
         <span class="sbtn" data-net="sys" hidden>⤴ MORE</span>
         <span class="sbtn" data-net="copy">⧉ COPY LINK</span>
       </div>
@@ -664,7 +676,7 @@ const lerp = (a,b,t)=> a+(b-a)*t;
 const d2 = (ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy;};
 const fmtT = s =>{s|=0;return ((s/60)|0)+":"+("0"+(s%60)).slice(-2);};
 const fmtN = n => (n|0).toLocaleString("en-US");
-const VERSION="1.9.0"; // bump the minor on every PR — shown in settings to track deploys
+const VERSION="1.10.0"; // bump the minor on every PR — shown in settings to track deploys
 
 // ---------- persistence ----------
 const store = {
@@ -1108,7 +1120,19 @@ const UPGRADES = [
   {id:"echo",   ico:"⌬", nm:"Echo Phantom",   ds:"a mirror twin echoes your volleys",        rar:3, f:s=>s.echo+=1},
   {id:"horizon",ico:"⊚", nm:"Event Horizon",  ds:"your nova collapses into a black hole",    rar:3, f:s=>s.horizon+=1},
 ];
-const RARNAMES=["COMMON","RARE","EPIC","LEGENDARY"], RARCLS=["common","rare","epic","legend"];
+const RARNAMES=["COMMON","RARE","EPIC","LEGENDARY","PACT"], RARCLS=["common","rare","epic","legend","pact"];
+
+// ---------- devil's pacts — every bargain cuts both ways ----------
+const PACTS=[
+  {id:"pact_blood", ico:"⛧", nm:"Blood Price",  ds:"burn a heart — +60% damage", rar:4,
+    f:s=>{ G.maxHp=Math.max(1,G.maxHp-1); G.hp=Math.min(G.hp,G.maxHp); drawHearts(); s.damage*=1.6; }},
+  {id:"pact_wind",  ico:"⛧", nm:"Red Wind",     ds:"enemies +25% faster — score ×1.5", rar:4,
+    f:s=>{ G.pactEspd*=1.25; G.pactScore*=1.5; }},
+  {id:"pact_ice",   ico:"⛧", nm:"Thin Ice",     ds:"graze ring −30% — grazes ×3 score", rar:4,
+    f:s=>{ s.grazeR*=0.7; G.pactGraze*=3; }},
+  {id:"pact_clock", ico:"⛧", nm:"Overclock",    ds:"+40% fire rate — enemy shots +20% faster", rar:4,
+    f:s=>{ s.fireRate*=1.4; G.pactEbul*=1.2; }},
+];
 
 // ---------- juice helpers ----------
 function shake(n){ G.shake = Math.min(G.shake+n, 26); }
@@ -1141,7 +1165,7 @@ function clearBanner(){
 // ---------- scoring ----------
 function addScore(n){
   const mult = 1 + G.combo*0.1;
-  const v = Math.round(n*mult*(MUT.score||1));
+  const v = Math.round(n*mult*(MUT.score||1)*(G.pactScore||1));
   G.score += v; G.scoredThisRun += v;
   return v;
 }
@@ -1165,6 +1189,8 @@ const ETYPES = {
   warden:  {r:12, hp:32,  sc:35, c:"#7dffe0", at:265, name:"WARDENS RAISE SHIELDS"},
   bomber:  {r:13, hp:38,  sc:35, c:"#d8ff4e", at:295, name:"BOMBERS SEEDING THE FIELD"},
   leech:   {r:9,  hp:24,  sc:30, c:"#ff7bff", at:325, name:"LEECHES SMELL YOUR SURGE"},
+  // not part of the spawn rotation — a rare treasure that runs for the exit
+  courier: {r:10, hp:30,  sc:120, c:"#ffd84e", at:1e9, name:null},
 };
 const WSPAWN={chaser:3,drifter:1.5,weaver:1.4,phantom:1.0,sniper:1.2,charger:1.1,splitter:1.2,mortar:0.6,tank:0.7,
   warden:1.0,bomber:0.7,leech:1.0};
@@ -1197,7 +1223,7 @@ const AFFIX_NAMES={shield:"⚜ SHIELDED ELITE ⚜", split:"⚜ FISSILE ELITE ⚜
 // every run meets chaser/drifter/weaver first, then the rest arrive in a shuffled order
 function rollIntroPlan(){
   const plan={chaser:0, drifter:25, weaver:55};
-  const rest=Object.keys(ETYPES).filter(k=>!(k in plan));
+  const rest=Object.keys(ETYPES).filter(k=>!(k in plan) && k!=="courier");
   for(let i=rest.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [rest[i],rest[j]]=[rest[j],rest[i]]; }
   rest.forEach((k,i)=>plan[k]=85+i*30);
   return plan;
@@ -1240,6 +1266,33 @@ function director(dt){
   // bosses — an easier herald at 1:30, then something with a real name every three minutes
   if(!G.miniDone && G.t>=90 && !enemies.some(e=>e.boss)){ G.miniDone=true; spawnBoss(true); }
   if(G.t >= (G.bossN+1)*180 && !enemies.some(e=>e.boss)) spawnBoss();
+  // golden couriers — rare, rich, and running for the exit
+  if(G.t>40){
+    G.courierAcc=(G.courierAcc||0)+dt;
+    if(G.courierAcc>70){
+      G.courierAcc=0;
+      if(Math.random()<0.8){
+        const e=spawnEnemy("courier");
+        e.fleeT=0;
+        banner("⬢ COURIER ON THE RUN ⬢");
+        AU.tone(880,0.3,"triangle",0.12,220);
+      }
+    }
+  }
+  // bounty marks — every ~45s a target worth chasing into the fire
+  if(G.t>30){
+    G.bountyAcc=(G.bountyAcc||0)+dt;
+    if(G.bountyAcc>45){
+      G.bountyAcc=0;
+      const cands=enemies.filter(e=>!e.boss && !e.bounty && e.hp>0);
+      if(cands.length){
+        const e=pick(cands);
+        e.bounty=10; e.bountyMax=10;
+        banner("⬢ BOUNTY MARKED — 10s ⬢");
+        AU.tone(620,0.25,"triangle",0.12,180);
+      }
+    }
+  }
 }
 
 // ---------- bosses ----------
@@ -1337,7 +1390,7 @@ function updateEnemies(dt){
     const e=enemies[i];
     e.hitT=Math.max(0,e.hitT-dt);
     const dx=px-e.x, dy=py-e.y, dd=Math.sqrt(dx*dx+dy*dy)||1;
-    const sMul = (e.elite?0.8:1)*(MUT.espd||1);
+    const sMul = (e.elite?0.8:1)*(MUT.espd||1)*(G.pactEspd||1);
     switch(e.type){
       case "chaser":{ const sp=95*sMul*(1+G.t/200); e.vx=lerp(e.vx,dx/dd*sp,dt*2.4); e.vy=lerp(e.vy,dy/dd*sp,dt*2.4); break; }
       case "drifter":{
@@ -1432,6 +1485,20 @@ function updateEnemies(dt){
           AU.tone(110,0.2,"square",0.07,-40);
         }
         break; }
+      case "courier":{
+        // flees you in a glittering serpentine, making for the nearest edge
+        e.fleeT=(e.fleeT||0)+dt;
+        const away=Math.atan2(-dy,-dx)+Math.sin(e.fleeT*5)*0.5;
+        const sp=235*sMul;
+        e.vx=lerp(e.vx,Math.cos(away)*sp,dt*3); e.vy=lerp(e.vy,Math.sin(away)*sp,dt*3);
+        if(Math.random()<0.4)
+          parts.push({x:e.x,y:e.y,vx:rnd(-15,15),vy:rnd(-15,15),life:0.4,max:0.4,r:1.8,c:"#ffd84e",drag:0.96});
+        if(e.x<-70||e.x>W+70||e.y<-70||e.y>H+70){
+          enemies.splice(i,1);
+          banner("COURIER ESCAPED");
+          continue;
+        }
+        break; }
       case "leech":{
         // smells a charged surge meter — drains it through a tether, and speeds up while feeding
         const draining = dd<260 && G.surge>0;
@@ -1466,6 +1533,7 @@ function updateEnemies(dt){
         AU.tone(260,0.15,"square",0.07,-100);
       }
     }
+    if(e.bounty){ e.bounty-=dt; if(e.bounty<=0){ e.bounty=0; ftext(e.x,e.y-24,"BOUNTY LAPSED","#7d92b8",12); } }
     let slowF=1;
     if(e.slowT>0){ e.slowT-=dt; slowF=0.6; }
     e.x+=e.vx*dt*slowF; e.y+=e.vy*dt*slowF;
@@ -1494,6 +1562,18 @@ function killEnemy(i){
   }
   if(e.type==="splitter"){
     spawnEnemy("chaser",false,e.x-12,e.y); spawnEnemy("chaser",false,e.x+12,e.y);
+  }
+  // a caught courier spills its cargo
+  if(e.type==="courier"){
+    for(let k=0;k<4;k++) shards.push({x:e.x+rnd(-24,24),y:e.y+rnd(-24,24),vx:rnd(-80,80),vy:rnd(-80,80),core:3,t:rnd(TAU)});
+    ftext(e.x,e.y-30,"⬢ CARGO +12","#ffd84e",18);
+    AU.coin(); flashScreen(0.1); shake(5);
+  }
+  // bounty cashed — paid in cores, on the spot
+  if(e.bounty>0){
+    shards.push({x:e.x,y:e.y,vx:rnd(-50,50),vy:rnd(-50,50),core:3,t:rnd(TAU)});
+    ftext(e.x,e.y-30,"⬢ BOUNTY +3","#ffd84e",18);
+    AU.coin(); flashScreen(0.08);
   }
   // a dead bomber is still a bomber — give its corpse a wide berth
   if(e.type==="bomber"){
@@ -1920,7 +2000,7 @@ function updateBullets(dt){
   for(let i=ebul.length-1;i>=0;i--){
     const b=ebul[i];
     // chrono field — bullets crawl inside your sphere of influence
-    let ts=MUT.ebulSpd||1;
+    let ts=(MUT.ebulSpd||1)*(G.pactEbul||1);
     if(stats.chrono>0){
       const R=stats.grazeR*2.2;
       if(d2(b.x,b.y,player.x,player.y)<R*R) ts=0.28;
@@ -1951,7 +2031,7 @@ function doGraze(x,y){
       coachMsg("surge ready — press SPACE for a nova scaled by your multiplier");
     }
   }
-  addScore(5*(MUT.grazeScore||1));
+  addScore(5*(MUT.grazeScore||1)*(G.pactGraze||1));
   burst(lerp(x,player.x,0.5),lerp(y,player.y,0.5),scheme().c2,3,120,2,0.4);
   AU.graze();
   if(G.grazes%10===0) ftext(player.x,player.y-26,"GRAZE ×"+G.grazes,scheme().c2,13);
@@ -2157,6 +2237,8 @@ function levelUp(){
       offered[(Math.random()*offered.length)|0]=pick(cands);
     }
   }
+  // sometimes the devil deals a fourth card — never the only option, never early
+  if(G.level>=3 && Math.random()<0.22) offered.push(pick(PACTS));
   const cardsEl=document.getElementById("cards");
   cardsEl.innerHTML="";
   offered.forEach((u,i)=>{
@@ -2184,7 +2266,7 @@ function chooseCard(i){
 
 // ---------- death & meta (near-miss framing) ----------
 function startDeath(){
-  G.state="dying"; G.deathT=0;
+  G.state="dying"; G.deathT=0; G.deathShot=null;
   // the crash site becomes a singularity that swallows the whole arena
   G.deathHole={x:player.x,y:player.y,collapsed:false};
   zones=[]; waves=[]; bolts=[]; flail=null; G.arena=null; G.cine=null;
@@ -2261,6 +2343,17 @@ function startRun(){
     cine:null,launch:1.3,miniDone:false,
   });
   G.introAt=rollIntroPlan();
+  G.pactScore=1; G.pactGraze=1; G.pactEspd=1; G.pactEbul=1;
+  // rival line: hunt the top ten live (your own callsign doesn't count)
+  G.rivals=null; G.rivalTarget=null; G.rivalCrown=false;
+  try{
+    fetch(LB_API).then(r=>r.ok?r.json():null).then(d=>{
+      if(d&&d.scores) G.rivals=d.scores.slice(0,10)
+        .filter(s=>String(s.name).toLowerCase()!==(meta.player||"").toLowerCase())
+        .map(s=>({name:s.name,score:s.score}))
+        .sort((a,b)=>a.score-b.score);
+    }).catch(()=>{});
+  }catch(e){}
   G.maxHp = Math.max(1, G.maxHp + (meta.shop.hull||0) + (MUT.hearts||0));
   G.hp=G.maxHp;
   G.coresRun=0; player.volleys=0;
@@ -2315,6 +2408,7 @@ function handleKey(code){
     if(code==="Digit1")chooseCard(0);
     if(code==="Digit2")chooseCard(1);
     if(code==="Digit3")chooseCard(2);
+    if(code==="Digit4")chooseCard(3);
   }
   else if(G.state==="dead" && (code==="Space"||code==="KeyR")){ AU.init(); startRun(); }
   else if(G.state==="dead" && code==="Escape"){ goMenu(); }
@@ -2505,6 +2599,66 @@ document.getElementById("setNameSave").addEventListener("pointerdown",e=>{ e.sto
 for(const id of ["coffeeMenu","coffeeDeath"])
   document.getElementById(id).addEventListener("pointerdown",e=>e.stopPropagation());
 
+// ---------- photo-finish poster ----------
+// composes the death-moment snapshot + run stats into a 1080px share image
+function buildPoster(cb){
+  const done=img=>{
+    const S=1080, pc=document.createElement("canvas"); pc.width=S; pc.height=S;
+    const c=pc.getContext("2d");
+    c.fillStyle="#04040c"; c.fillRect(0,0,S,S);
+    if(img){ // cover-crop the snapshot
+      const sc=Math.max(S/img.width,S/img.height), w=img.width*sc, h=img.height*sc;
+      c.drawImage(img,(S-w)/2,(S-h)/2,w,h);
+    }
+    // dark frames top & bottom so the type always reads
+    let g=c.createLinearGradient(0,0,0,260);
+    g.addColorStop(0,"rgba(4,4,12,.92)"); g.addColorStop(1,"rgba(4,4,12,0)");
+    c.fillStyle=g; c.fillRect(0,0,S,260);
+    g=c.createLinearGradient(0,S-380,0,S);
+    g.addColorStop(0,"rgba(4,4,12,0)"); g.addColorStop(1,"rgba(4,4,12,.96)");
+    c.fillStyle=g; c.fillRect(0,S-380,S,380);
+    c.textAlign="center";
+    try{ c.letterSpacing="18px"; }catch(e){}
+    c.fillStyle="#eef6ff"; c.font="200 92px 'Helvetica Neue',Inter,Arial,sans-serif";
+    c.shadowColor="rgba(78,243,255,.5)"; c.shadowBlur=30;
+    c.fillText("GRAZE", S/2, 130);
+    c.shadowBlur=0;
+    try{ c.letterSpacing="4px"; }catch(e){}
+    c.fillStyle="#ff5d7e"; c.font="28px ui-monospace,Menlo,monospace";
+    c.fillText("SIGNAL LOST", S/2, 182);
+    c.fillStyle="#fff"; c.font="700 130px ui-monospace,Menlo,monospace";
+    c.shadowColor="rgba(78,243,255,.6)"; c.shadowBlur=40;
+    c.fillText(fmtN(G.score), S/2, S-200);
+    c.shadowBlur=0;
+    c.fillStyle="#ffd84e"; c.font="30px ui-monospace,Menlo,monospace";
+    c.fillText((lbResult?rankText(lbResult.rank,lbResult.total)+"  ·  ":"")+
+      (meta.player?meta.player.toUpperCase():"").trim(), S/2, S-130);
+    c.fillStyle="#9fb6d8"; c.font="26px ui-monospace,Menlo,monospace";
+    c.fillText("playgraze.com — danger pays", S/2, S-70);
+    cb(pc);
+  };
+  if(G.deathShot){ const img=new Image(); img.onload=()=>done(img); img.onerror=()=>done(null); img.src=G.deathShot; }
+  else done(null);
+}
+function sharePoster(el){
+  buildPoster(pc=>{
+    pc.toBlob(blob=>{
+      if(!blob) return;
+      const file=new File([blob],"graze-"+G.score+".png",{type:"image/png"});
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        navigator.share({files:[file],title:"GRAZE",text:shareData().text}).catch(()=>{});
+      } else {
+        const a=document.createElement("a");
+        a.href=URL.createObjectURL(blob); a.download=file.name;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+        el.textContent="✓ SAVED"; setTimeout(()=>{ el.textContent="◉ POSTER"; },2200);
+      }
+      AU.coin();
+    },"image/png");
+  });
+}
+
 // ---------- share your rank ----------
 function shareData(){
   const base=location.href.split("?")[0].split("#")[0];
@@ -2542,6 +2696,7 @@ document.querySelectorAll("#shareRow .sbtn").forEach(b=>{
     const net=b.dataset.net;
     if(net==="copy") copyText(url,b,"⧉ COPY LINK");
     else if(net==="sys") navigator.share({title:"GRAZE",text,url}).catch(()=>{});
+    else if(net==="poster") sharePoster(b);
     else window.open(links[net],"_blank","noopener");
     AU.ui();
   });
@@ -3054,6 +3209,15 @@ function render(now){
       }
       ctx.globalAlpha=1;
     }
+    if(e.bounty>0){
+      // gold bounty ring with the remaining time as a draining arc
+      const frac=e.bounty/e.bountyMax;
+      ctx.strokeStyle="#ffd84e"; ctx.globalAlpha=0.85; ctx.lineWidth=2.5;
+      ctx.setLineDash([6,5]);
+      ctx.beginPath(); ctx.arc(e.x,e.y,e.r+11,now*0.003,now*0.003+TAU*frac); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha=1;
+    }
     if(e.type==="warden" && e.shieldA!==undefined){
       // the shield face — bright arc you must get behind
       ctx.strokeStyle="#7dffe0"; ctx.globalAlpha=0.85; ctx.lineWidth=3.5;
@@ -3277,6 +3441,23 @@ function syncHUD(dt){
   document.getElementById("surgewrap").classList.toggle("full",full);
   document.getElementById("surgelabel").textContent =
     full ? (TOUCH?"⚡ TAP — RELEASE":"⚡ SPACE — RELEASE") : (TOUCH?"SURGE — TAP":"SURGE — SPACE");
+  // rival line — the next top-10 score above you, hunted live
+  const rEl=document.getElementById("rival");
+  if(G.rivals && G.rivals.length){
+    const next=G.rivals.find(r=>r.score>G.score);
+    if(!next){
+      if(!G.rivalCrown){ G.rivalCrown=true; ftext(player.x,player.y-44,"★ YOU LEAD THE BOARD ★","#ffd84e",18); AU.bigkill(); flashScreen(0.15); }
+      rEl.textContent="★ YOU LEAD THE BOARD ★"; rEl.classList.add("lead");
+    } else {
+      if(G.rivalTarget && next.score!==G.rivalTarget.score && G.score>=G.rivalTarget.score){
+        ftext(player.x,player.y-44,"RIVAL DOWN — "+G.rivalTarget.name.toUpperCase(),"#ffd84e",16);
+        AU.coin(); flashScreen(0.1);
+      }
+      G.rivalTarget=next;
+      rEl.textContent="NEXT — "+next.name.toUpperCase()+" "+fmtN(next.score);
+      rEl.classList.remove("lead");
+    }
+  } else rEl.textContent="";
 }
 
 // ---------- main loop ----------
@@ -3371,6 +3552,10 @@ function loop(now){
       parts.push({x:h.x+Math.cos(a)*R,y:h.y+Math.sin(a)*R,
         vx:-Math.cos(a)*(180+240*pull),vy:-Math.sin(a)*(180+240*pull),
         life:0.45,max:0.45,r:2.2,c:"#9ef7ff",drag:0.97});
+    }
+    // photo finish: freeze the singularity mid-collapse for the poster
+    if(!G.deathShot && G.deathT>1.0){
+      try{ G.deathShot=document.getElementById("cv").toDataURL("image/jpeg",0.85); }catch(err){}
     }
     // final collapse — one hard flash, then the report card fades in
     if(!h.collapsed && G.deathT>1.7){
