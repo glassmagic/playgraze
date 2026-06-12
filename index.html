@@ -1214,23 +1214,24 @@ function director(dt){
     G.arenaAcc=(G.arenaAcc||0)+dt;
     if(G.arenaAcc>50){ G.arenaAcc=0; startArenaEvent(); }
   }
-  // bosses — every three minutes, something with a name shows up
+  // bosses — an easier herald at 1:30, then something with a real name every three minutes
+  if(!G.miniDone && G.t>=90 && !enemies.some(e=>e.boss)){ G.miniDone=true; spawnBoss(true); }
   if(G.t >= (G.bossN+1)*180 && !enemies.some(e=>e.boss)) spawnBoss();
 }
 
 // ---------- bosses ----------
 const BOSS_NAMES=["VOIDMAW","THE WARDEN","HEXAGON PRIME","NULL TYRANT","OMEGA SHARD"];
-function spawnBoss(){
-  G.bossN++;
-  const name=BOSS_NAMES[(G.bossN-1)%BOSS_NAMES.length];
+function spawnBoss(mini=false){
+  if(!mini) G.bossN++;
+  const name=mini ? "THE HERALD" : BOSS_NAMES[(G.bossN-1)%BOSS_NAMES.length];
   const side=(Math.random()*4)|0, m=80; let x,y;
   if(side===0){x=rnd(W);y=-m;} else if(side===1){x=W+m;y=rnd(H);}
   else if(side===2){x=rnd(W);y=H+m;} else {x=-m;y=rnd(H);}
-  const hp=1500*G.bossN*(1+G.t/300)*(MUT.ehp||1);
+  const hp=(mini?520:1500*G.bossN)*(1+G.t/300)*(MUT.ehp||1);
   enemies.push({
-    type:"boss", boss:true, name, x, y, vx:0, vy:0, r:42,
-    hp, maxhp:hp, sc:600*G.bossN, c:"#ff3df0", elite:false, affix:null,
-    grazed:0, shootT:2, phase:rnd(TAU), hitT:0, mode:"approach", mt:2.4, alpha:1, dashAng:0,
+    type:"boss", boss:true, mini, name, x, y, vx:0, vy:0, r:mini?30:42,
+    hp, maxhp:hp, sc:mini?250:600*G.bossN, c:"#ff3df0", elite:false, affix:null,
+    grazed:0, shootT:2, phase:rnd(TAU), hitT:0, mode:"approach", mt:mini?3:2.4, alpha:1, dashAng:0,
   });
   banner("⚠ "+name+" APPROACHES ⚠");
   AU.tone(70,1.2,"sawtooth",0.22,30); AU.noise(0.5,0.2,500);
@@ -1243,8 +1244,9 @@ function bossAttack(e,px,py){
   const dx=px-e.x, dy=py-e.y, dd=Math.hypot(dx,dy)||1;
   const atk=pick(["ring","burst","charge","summon"]);
   if(atk==="ring"){
-    for(let ring=0;ring<2;ring++){
-      const n=14, sp=150+ring*55;
+    // the herald throws one sparse ring; real bosses throw a double
+    for(let ring=0;ring<(e.mini?1:2);ring++){
+      const n=e.mini?9:14, sp=150+ring*55;
       for(let k=0;k<n;k++){
         const a=k/n*TAU+e.phase+ring*0.22;
         ebul.push({x:e.x,y:e.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,r:5,grazed:0,life:6});
@@ -1252,16 +1254,18 @@ function bossAttack(e,px,py){
     }
     AU.tone(180,0.3,"square",0.12,-80);
   } else if(atk==="burst"){
-    for(let k=-2;k<=2;k++){
-      const a=Math.atan2(dy,dx)+k*0.13, sp=270+G.t*0.3;
+    const half=e.mini?1:2;
+    for(let k=-half;k<=half;k++){
+      const a=Math.atan2(dy,dx)+k*0.13, sp=(e.mini?230:270+G.t*0.3);
       ebul.push({x:e.x,y:e.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,r:6,grazed:0,life:6});
     }
     AU.tone(300,0.18,"square",0.1,-150);
   } else if(atk==="charge"){
-    e.vx=dx/dd*430; e.vy=dy/dd*430;
+    const sp=e.mini?340:430;
+    e.vx=dx/dd*sp; e.vy=dy/dd*sp;
     AU.dash(); burst(e.x,e.y,e.c,10,260,3.5,0.4);
   } else {
-    for(let k=0;k<3;k++) spawnEnemy("chaser",false,e.x+rnd(-50,50),e.y+rnd(-50,50));
+    for(let k=0;k<(e.mini?2:3);k++) spawnEnemy("chaser",false,e.x+rnd(-50,50),e.y+rnd(-50,50));
     burst(e.x,e.y,"#cf7dff",12,240,3,0.5);
     AU.tone(140,0.4,"sawtooth",0.1,60);
   }
@@ -1390,7 +1394,7 @@ function updateEnemies(dt){
         e.vx=lerp(e.vx,dx/dd*sp,dt*1.2); e.vy=lerp(e.vy,dy/dd*sp,dt*1.2);
         e.phase+=dt*0.7;
         e.mt-=dt;
-        if(e.mt<=0){ e.mt=rnd(2.2,3.0); bossAttack(e,px,py); }
+        if(e.mt<=0){ e.mt=e.mini?rnd(3.0,3.8):rnd(2.2,3.0); bossAttack(e,px,py); }
         break; }
     }
     // burst elites periodically ring the field with bullets
@@ -1440,13 +1444,13 @@ function killEnemy(i){
     for(let k=0;k<3;k++) spawnEnemy("chaser",false,e.x+rnd(-20,20),e.y+rnd(-20,20));
     ftext(e.x,e.y-34,"FISSION!","#cf7dff",15);
   }
-  // bosses go down like a second sun
+  // bosses go down like a second sun (the herald a touch dimmer)
   if(e.boss){
     banner("☠ "+e.name+" DESTROYED ☠");
     // kill-cam: a beat of slow-mo on the wreck while explosions chain through it
     G.cine={t:0.8,max:0.8,x:clamp(e.x,120,W-120),y:clamp(e.y,120,H-120),zoom:0.18,boom:true};
-    for(let k=0;k<3;k++) shards.push({x:e.x+rnd(-30,30),y:e.y+rnd(-30,30),vx:rnd(-70,70),vy:rnd(-70,70),core:5,t:rnd(TAU)});
-    for(let k=0;k<12;k++) shards.push({x:e.x+rnd(-40,40),y:e.y+rnd(-40,40),vx:rnd(-90,90),vy:rnd(-90,90),v:5,t:rnd(TAU)});
+    for(let k=0;k<(e.mini?1:3);k++) shards.push({x:e.x+rnd(-30,30),y:e.y+rnd(-30,30),vx:rnd(-70,70),vy:rnd(-70,70),core:5,t:rnd(TAU)});
+    for(let k=0;k<(e.mini?6:12);k++) shards.push({x:e.x+rnd(-40,40),y:e.y+rnd(-40,40),vx:rnd(-90,90),vy:rnd(-90,90),v:5,t:rnd(TAU)});
     if(G.hp<G.maxHp){ G.hp++; drawHearts(); ftext(e.x,e.y-44,"+ HULL","#7fe8a8",16); }
     addFlare(e.x,e.y, W, "255,61,240", 0.8);
     flashScreen(0.4); shake(18); hitstop(0.12); AU.nova();
@@ -2184,7 +2188,7 @@ function startRun(){
     surge:0,level:1,xp:0,xpNext:8,maxHp:hull.hp,
     invuln:1.2,shake:0,hitstop:0,timeScale:1,flash:0,
     spawnAcc:0,eliteAcc:0,introduced:{},scoredThisRun:0,musicAcc:0,arena:null,arenaAcc:0,bossN:0,
-    cine:null,launch:1.3,
+    cine:null,launch:1.3,miniDone:false,
   });
   G.maxHp = Math.max(1, G.maxHp + (meta.shop.hull||0) + (MUT.hearts||0));
   G.hp=G.maxHp;
