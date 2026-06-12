@@ -153,9 +153,10 @@
   /* the graze line is now a quiet typographic rule — the live demo happens on canvas */
   .tagline{font-size:11px;letter-spacing:10px;color:#9fb6d8;margin:40px 0 0 10px;animation:fadeUp 1.2s 1.05s both;}
   .tagline b{color:var(--c2);font-weight:400;text-shadow:0 0 14px var(--c2);}
-  #mutLine{margin-top:18px;font-size:9.5px;letter-spacing:3px;color:#ffd84e;
-    text-shadow:0 0 10px rgba(255,216,78,.4);animation:fadeUp 1.2s 1.25s both;}
-  #mutLine i{font-style:normal;color:#9fb6d8;letter-spacing:2px;}
+  #mutLine{margin-top:18px;font-size:9.5px;letter-spacing:3px;color:#ffd84e;text-align:center;
+    max-width:92vw;text-shadow:0 0 10px rgba(255,216,78,.4);animation:fadeUp 1.2s 1.25s both;}
+  /* the rule sits on its own line so narrow screens never squash the title */
+  #mutLine i{display:block;margin-top:6px;font-style:normal;color:#9fb6d8;letter-spacing:2px;line-height:1.7;}
   .cta{margin-top:56px;padding:17px 78px;font:inherit;font-size:14px;letter-spacing:9px;color:#eef6ff;
     background:transparent;border:1px solid rgba(140,180,230,.38);border-radius:2px;cursor:pointer;
     position:relative;transition:all .25s ease;animation:fadeUp 1s 1.3s both;}
@@ -652,7 +653,7 @@ const lerp = (a,b,t)=> a+(b-a)*t;
 const d2 = (ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy;};
 const fmtT = s =>{s|=0;return ((s/60)|0)+":"+("0"+(s%60)).slice(-2);};
 const fmtN = n => (n|0).toLocaleString("en-US");
-const VERSION="1.7.0"; // bump the minor on every PR — shown in settings to track deploys
+const VERSION="1.8.0"; // bump the minor on every PR — shown in settings to track deploys
 
 // ---------- persistence ----------
 const store = {
@@ -2714,7 +2715,7 @@ function buildMenu(){
     "⬢ "+fmtN(meta.cores)+" · BEST "+fmtN(meta.best)+
     (meta.streak>1 ? " · <b>DAY "+meta.streak+" +"+(meta.streak*5)+"%</b>" : "")+
     "<br><span class='dim'>"+(TOUCH?"touch to move · two-finger tap to surge":"mouse to move · space to surge")+" · v"+VERSION+"</span>";
-  document.getElementById("mutLine").innerHTML="THIS WEEK — "+MUT.nm+" <i>· "+MUT.ds+"</i>";
+  document.getElementById("mutLine").innerHTML="THIS WEEK — "+MUT.nm+"<i>"+MUT.ds+"</i>";
   document.getElementById("muteBtn").textContent="M — SOUND "+(AU.muted?"OFF":"ON");
   document.getElementById("hCores").textContent=fmtN(meta.cores);
   applySchemeCSS();
