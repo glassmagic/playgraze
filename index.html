@@ -629,7 +629,6 @@
         <span class="sbtn" data-net="fb">FACEBOOK</span>
         <span class="sbtn" data-net="tg">TELEGRAM</span>
         <span class="sbtn" data-net="rd">REDDIT</span>
-        <span class="sbtn" data-net="poster">◉ POSTER</span>
         <span class="sbtn" data-net="sys" hidden>⤴ MORE</span>
         <span class="sbtn" data-net="copy">⧉ COPY LINK</span>
       </div>
@@ -2266,7 +2265,7 @@ function chooseCard(i){
 
 // ---------- death & meta (near-miss framing) ----------
 function startDeath(){
-  G.state="dying"; G.deathT=0; G.deathShot=null;
+  G.state="dying"; G.deathT=0;
   // the crash site becomes a singularity that swallows the whole arena
   G.deathHole={x:player.x,y:player.y,collapsed:false};
   zones=[]; waves=[]; bolts=[]; flail=null; G.arena=null; G.cine=null;
@@ -2604,66 +2603,6 @@ document.getElementById("setNameSave").addEventListener("pointerdown",e=>{ e.sto
 for(const id of ["coffeeMenu","coffeeDeath"])
   document.getElementById(id).addEventListener("pointerdown",e=>e.stopPropagation());
 
-// ---------- photo-finish poster ----------
-// composes the death-moment snapshot + run stats into a 1080px share image
-function buildPoster(cb){
-  const done=img=>{
-    const S=1080, pc=document.createElement("canvas"); pc.width=S; pc.height=S;
-    const c=pc.getContext("2d");
-    c.fillStyle="#04040c"; c.fillRect(0,0,S,S);
-    if(img){ // cover-crop the snapshot
-      const sc=Math.max(S/img.width,S/img.height), w=img.width*sc, h=img.height*sc;
-      c.drawImage(img,(S-w)/2,(S-h)/2,w,h);
-    }
-    // dark frames top & bottom so the type always reads
-    let g=c.createLinearGradient(0,0,0,260);
-    g.addColorStop(0,"rgba(4,4,12,.92)"); g.addColorStop(1,"rgba(4,4,12,0)");
-    c.fillStyle=g; c.fillRect(0,0,S,260);
-    g=c.createLinearGradient(0,S-380,0,S);
-    g.addColorStop(0,"rgba(4,4,12,0)"); g.addColorStop(1,"rgba(4,4,12,.96)");
-    c.fillStyle=g; c.fillRect(0,S-380,S,380);
-    c.textAlign="center";
-    try{ c.letterSpacing="18px"; }catch(e){}
-    c.fillStyle="#eef6ff"; c.font="200 92px 'Helvetica Neue',Inter,Arial,sans-serif";
-    c.shadowColor="rgba(78,243,255,.5)"; c.shadowBlur=30;
-    c.fillText("GRAZE", S/2, 130);
-    c.shadowBlur=0;
-    try{ c.letterSpacing="4px"; }catch(e){}
-    c.fillStyle="#ff5d7e"; c.font="28px ui-monospace,Menlo,monospace";
-    c.fillText("SIGNAL LOST", S/2, 182);
-    c.fillStyle="#fff"; c.font="700 130px ui-monospace,Menlo,monospace";
-    c.shadowColor="rgba(78,243,255,.6)"; c.shadowBlur=40;
-    c.fillText(fmtN(G.score), S/2, S-200);
-    c.shadowBlur=0;
-    c.fillStyle="#ffd84e"; c.font="30px ui-monospace,Menlo,monospace";
-    c.fillText((lbResult?rankText(lbResult.rank,lbResult.total)+"  ·  ":"")+
-      (meta.player?meta.player.toUpperCase():"").trim(), S/2, S-130);
-    c.fillStyle="#9fb6d8"; c.font="26px ui-monospace,Menlo,monospace";
-    c.fillText("playgraze.com — danger pays", S/2, S-70);
-    cb(pc);
-  };
-  if(G.deathShot){ const img=new Image(); img.onload=()=>done(img); img.onerror=()=>done(null); img.src=G.deathShot; }
-  else done(null);
-}
-function sharePoster(el){
-  buildPoster(pc=>{
-    pc.toBlob(blob=>{
-      if(!blob) return;
-      const file=new File([blob],"graze-"+G.score+".png",{type:"image/png"});
-      if(navigator.canShare && navigator.canShare({files:[file]})){
-        navigator.share({files:[file],title:"GRAZE",text:shareData().text}).catch(()=>{});
-      } else {
-        const a=document.createElement("a");
-        a.href=URL.createObjectURL(blob); a.download=file.name;
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(()=>URL.revokeObjectURL(a.href),5000);
-        el.textContent="✓ SAVED"; setTimeout(()=>{ el.textContent="◉ POSTER"; },2200);
-      }
-      AU.coin();
-    },"image/png");
-  });
-}
-
 // ---------- share your rank ----------
 function shareData(){
   const base=location.href.split("?")[0].split("#")[0];
@@ -2701,7 +2640,6 @@ document.querySelectorAll("#shareRow .sbtn").forEach(b=>{
     const net=b.dataset.net;
     if(net==="copy") copyText(url,b,"⧉ COPY LINK");
     else if(net==="sys") navigator.share({title:"GRAZE",text,url}).catch(()=>{});
-    else if(net==="poster") sharePoster(b);
     else window.open(links[net],"_blank","noopener");
     AU.ui();
   });
@@ -3563,10 +3501,6 @@ function loop(now){
       parts.push({x:h.x+Math.cos(a)*R,y:h.y+Math.sin(a)*R,
         vx:-Math.cos(a)*(180+240*pull),vy:-Math.sin(a)*(180+240*pull),
         life:0.45,max:0.45,r:2.2,c:"#9ef7ff",drag:0.97});
-    }
-    // photo finish: freeze the singularity mid-collapse for the poster
-    if(!G.deathShot && G.deathT>1.0){
-      try{ G.deathShot=document.getElementById("cv").toDataURL("image/jpeg",0.85); }catch(err){}
     }
     // final collapse — one hard flash, then the report card fades in
     if(!h.collapsed && G.deathT>1.7){
