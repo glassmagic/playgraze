@@ -9,7 +9,14 @@
 <link rel="apple-touch-icon" href="icon.svg">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>GRAZE — ride the edge</title>
+<title>GRAZE — danger pays</title>
+<meta name="description" content="A neon survival arena where almost-dying is the point — skim bullets, build your combo, unleash the nova. Danger pays.">
+<meta property="og:title" content="GRAZE — danger pays">
+<meta property="og:description" content="A neon survival arena where almost-dying is the point — skim bullets, build your combo, unleash the nova.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://playgraze.com/">
+<meta property="og:image" content="https://playgraze.com/icon.svg">
+<meta name="twitter:card" content="summary">
 <style>
   :root{
     --c1:#4ef3ff; --c2:#ff3df0; --bg:#04040c;
@@ -455,8 +462,12 @@
   #muteBtn{position:absolute;bottom:56px;right:26px;font-size:9px;color:#5a6e92;letter-spacing:2px;
     cursor:pointer;pointer-events:auto;z-index:6;opacity:.7;transition:opacity .2s;}
   /* the scrolling overlays have their own room — get the floating toggle out of the way */
-  #tut.on~#muteBtn,#store.on~#muteBtn,#board.on~#muteBtn,#settings.on~#muteBtn,#shareCard.on~#muteBtn{
-    opacity:0;pointer-events:none;}
+  #tut.on~#muteBtn,#store.on~#muteBtn,#board.on~#muteBtn,#settings.on~#muteBtn,#shareCard.on~#muteBtn,
+  #death.on~#muteBtn{opacity:0;pointer-events:none;}
+  /* the death report can outgrow a phone screen once the top ten renders — let it scroll.
+     flex-shrink:0 matters: otherwise the column squashes its children into each other */
+  #death{justify-content:flex-start;padding:6vh 0 40px;overflow-y:auto;}
+  #death > *{flex-shrink:0;}
   @media (max-width:760px){
     #cards{flex-direction:column;gap:12px;} .card{width:260px;padding:14px;}
     #score{font-size:26px;} #dScore{font-size:56px;}
@@ -653,7 +664,7 @@ const lerp = (a,b,t)=> a+(b-a)*t;
 const d2 = (ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy;};
 const fmtT = s =>{s|=0;return ((s/60)|0)+":"+("0"+(s%60)).slice(-2);};
 const fmtN = n => (n|0).toLocaleString("en-US");
-const VERSION="1.8.0"; // bump the minor on every PR — shown in settings to track deploys
+const VERSION="1.9.0"; // bump the minor on every PR — shown in settings to track deploys
 
 // ---------- persistence ----------
 const store = {
@@ -1151,8 +1162,12 @@ const ETYPES = {
   splitter:{r:15, hp:42,  sc:20, c:"#cf7dff", at:175, name:"SPLITTERS EMERGE"},
   mortar:  {r:16, hp:60,  sc:40, c:"#ff7b3d", at:205, name:"MORTAR BATTERY ONLINE"},
   tank:    {r:24, hp:160, sc:60, c:"#ff5d5d", at:235, name:"HEAVY SIGNATURES DETECTED"},
+  warden:  {r:12, hp:32,  sc:35, c:"#7dffe0", at:265, name:"WARDENS RAISE SHIELDS"},
+  bomber:  {r:13, hp:38,  sc:35, c:"#d8ff4e", at:295, name:"BOMBERS SEEDING THE FIELD"},
+  leech:   {r:9,  hp:24,  sc:30, c:"#ff7bff", at:325, name:"LEECHES SMELL YOUR SURGE"},
 };
-const WSPAWN={chaser:3,drifter:1.5,weaver:1.4,phantom:1.0,sniper:1.2,charger:1.1,splitter:1.2,mortar:0.6,tank:0.7};
+const WSPAWN={chaser:3,drifter:1.5,weaver:1.4,phantom:1.0,sniper:1.2,charger:1.1,splitter:1.2,mortar:0.6,tank:0.7,
+  warden:1.0,bomber:0.7,leech:1.0};
 function spawnEnemy(type, elite=false, px, py){
   const t = ETYPES[type];
   let x,y;
@@ -1179,14 +1194,22 @@ function spawnEnemy(type, elite=false, px, py){
 const AFFIX_NAMES={shield:"⚜ SHIELDED ELITE ⚜", split:"⚜ FISSILE ELITE ⚜", spray:"⚜ BURST ELITE ⚜"};
 
 // difficulty director — flow: pressure tracks time survived
+// every run meets chaser/drifter/weaver first, then the rest arrive in a shuffled order
+function rollIntroPlan(){
+  const plan={chaser:0, drifter:25, weaver:55};
+  const rest=Object.keys(ETYPES).filter(k=>!(k in plan));
+  for(let i=rest.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [rest[i],rest[j]]=[rest[j],rest[i]]; }
+  rest.forEach((k,i)=>plan[k]=85+i*30);
+  return plan;
+}
 function director(dt){
   if(G.launch>0) return; // hold the spawns until the ship has landed in frame
   const it = 1 + G.t/40;                 // intensity — eases in, the first minutes breathe
   for(const k in ETYPES){
-    const e=ETYPES[k];
-    if(e.at<=G.t && !G.introduced[k]){
+    if(G.introAt[k]<=G.t && !G.introduced[k]){
       G.introduced[k]=true;
-      if(e.name){ banner(e.name); AU.tone(180,0.5,"sawtooth",0.15,60); }
+      const nm=ETYPES[k].name;
+      if(nm){ banner(nm); AU.tone(180,0.5,"sawtooth",0.15,60); }
     }
   }
   G.spawnAcc += dt*it;
@@ -1194,7 +1217,7 @@ function director(dt){
   while(G.spawnAcc > interval){
     G.spawnAcc -= interval;
     if(enemies.length > 130) break;
-    const pool = Object.keys(ETYPES).filter(k=>ETYPES[k].at<=G.t);
+    const pool = Object.keys(ETYPES).filter(k=>G.introAt[k]<=G.t);
     const weights = pool.map(k=>WSPAWN[k]||1);
     let r=rnd(weights.reduce((a,b)=>a+b)), idx=0;
     while(r>weights[idx]){ r-=weights[idx]; idx++; }
@@ -1204,7 +1227,7 @@ function director(dt){
     G.eliteAcc += dt;
     if(G.eliteAcc > 42){
       G.eliteAcc = 0;
-      const pool = Object.keys(ETYPES).filter(k=>ETYPES[k].at<=G.t && k!=="tank");
+      const pool = Object.keys(ETYPES).filter(k=>G.introAt[k]<=G.t && k!=="tank");
       const e=spawnEnemy(pick(pool), true);
       banner(AFFIX_NAMES[e.affix]||"⚜ ELITE SIGNATURE ⚜");
     }
@@ -1214,23 +1237,24 @@ function director(dt){
     G.arenaAcc=(G.arenaAcc||0)+dt;
     if(G.arenaAcc>50){ G.arenaAcc=0; startArenaEvent(); }
   }
-  // bosses — every three minutes, something with a name shows up
+  // bosses — an easier herald at 1:30, then something with a real name every three minutes
+  if(!G.miniDone && G.t>=90 && !enemies.some(e=>e.boss)){ G.miniDone=true; spawnBoss(true); }
   if(G.t >= (G.bossN+1)*180 && !enemies.some(e=>e.boss)) spawnBoss();
 }
 
 // ---------- bosses ----------
 const BOSS_NAMES=["VOIDMAW","THE WARDEN","HEXAGON PRIME","NULL TYRANT","OMEGA SHARD"];
-function spawnBoss(){
-  G.bossN++;
-  const name=BOSS_NAMES[(G.bossN-1)%BOSS_NAMES.length];
+function spawnBoss(mini=false){
+  if(!mini) G.bossN++;
+  const name=mini ? "THE HERALD" : BOSS_NAMES[(G.bossN-1)%BOSS_NAMES.length];
   const side=(Math.random()*4)|0, m=80; let x,y;
   if(side===0){x=rnd(W);y=-m;} else if(side===1){x=W+m;y=rnd(H);}
   else if(side===2){x=rnd(W);y=H+m;} else {x=-m;y=rnd(H);}
-  const hp=1500*G.bossN*(1+G.t/300)*(MUT.ehp||1);
+  const hp=(mini?520:1500*G.bossN)*(1+G.t/300)*(MUT.ehp||1);
   enemies.push({
-    type:"boss", boss:true, name, x, y, vx:0, vy:0, r:42,
-    hp, maxhp:hp, sc:600*G.bossN, c:"#ff3df0", elite:false, affix:null,
-    grazed:0, shootT:2, phase:rnd(TAU), hitT:0, mode:"approach", mt:2.4, alpha:1, dashAng:0,
+    type:"boss", boss:true, mini, name, x, y, vx:0, vy:0, r:mini?30:42,
+    hp, maxhp:hp, sc:mini?250:600*G.bossN, c:"#ff3df0", elite:false, affix:null,
+    grazed:0, shootT:2, phase:rnd(TAU), hitT:0, mode:"approach", mt:mini?3:2.4, alpha:1, dashAng:0,
   });
   banner("⚠ "+name+" APPROACHES ⚠");
   AU.tone(70,1.2,"sawtooth",0.22,30); AU.noise(0.5,0.2,500);
@@ -1243,8 +1267,9 @@ function bossAttack(e,px,py){
   const dx=px-e.x, dy=py-e.y, dd=Math.hypot(dx,dy)||1;
   const atk=pick(["ring","burst","charge","summon"]);
   if(atk==="ring"){
-    for(let ring=0;ring<2;ring++){
-      const n=14, sp=150+ring*55;
+    // the herald throws one sparse ring; real bosses throw a double
+    for(let ring=0;ring<(e.mini?1:2);ring++){
+      const n=e.mini?9:14, sp=150+ring*55;
       for(let k=0;k<n;k++){
         const a=k/n*TAU+e.phase+ring*0.22;
         ebul.push({x:e.x,y:e.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,r:5,grazed:0,life:6});
@@ -1252,16 +1277,18 @@ function bossAttack(e,px,py){
     }
     AU.tone(180,0.3,"square",0.12,-80);
   } else if(atk==="burst"){
-    for(let k=-2;k<=2;k++){
-      const a=Math.atan2(dy,dx)+k*0.13, sp=270+G.t*0.3;
+    const half=e.mini?1:2;
+    for(let k=-half;k<=half;k++){
+      const a=Math.atan2(dy,dx)+k*0.13, sp=(e.mini?230:270+G.t*0.3);
       ebul.push({x:e.x,y:e.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,r:6,grazed:0,life:6});
     }
     AU.tone(300,0.18,"square",0.1,-150);
   } else if(atk==="charge"){
-    e.vx=dx/dd*430; e.vy=dy/dd*430;
+    const sp=e.mini?340:430;
+    e.vx=dx/dd*sp; e.vy=dy/dd*sp;
     AU.dash(); burst(e.x,e.y,e.c,10,260,3.5,0.4);
   } else {
-    for(let k=0;k<3;k++) spawnEnemy("chaser",false,e.x+rnd(-50,50),e.y+rnd(-50,50));
+    for(let k=0;k<(e.mini?2:3);k++) spawnEnemy("chaser",false,e.x+rnd(-50,50),e.y+rnd(-50,50));
     burst(e.x,e.y,"#cf7dff",12,240,3,0.5);
     AU.tone(140,0.4,"sawtooth",0.1,60);
   }
@@ -1385,12 +1412,45 @@ function updateEnemies(dt){
         break; }
       case "splitter":{ const sp=75*sMul; e.vx=lerp(e.vx,dx/dd*sp,dt*2); e.vy=lerp(e.vy,dy/dd*sp,dt*2); break; }
       case "tank":{ const sp=46*sMul; e.vx=lerp(e.vx,dx/dd*sp,dt*1.5); e.vy=lerp(e.vy,dy/dd*sp,dt*1.5); break; }
+      case "warden":{
+        // carries a directional shield — bullets only land from behind it
+        const sp=82*sMul; e.vx=lerp(e.vx,dx/dd*sp,dt*2); e.vy=lerp(e.vy,dy/dd*sp,dt*2);
+        const want=Math.atan2(dy,dx);
+        if(e.shieldA===undefined) e.shieldA=want;
+        let diff=want-e.shieldA; while(diff>Math.PI)diff-=TAU; while(diff<-Math.PI)diff+=TAU;
+        e.shieldA+=clamp(diff,-0.85*dt,0.85*dt); // the shield turns slower than you can flank
+        break; }
+      case "bomber":{
+        // lazy zigzag, seeding proximity charges — and a parting gift when it dies
+        if(e.vx===0&&e.vy===0){ const a=rnd(TAU); e.vx=Math.cos(a)*95; e.vy=Math.sin(a)*95; }
+        if(e.x<e.r&&e.vx<0||e.x>W-e.r&&e.vx>0) e.vx*=-1;
+        if(e.y<e.r&&e.vy<0||e.y>H-e.r&&e.vy>0) e.vy*=-1;
+        e.shootT-=dt;
+        if(e.shootT<=0){
+          e.shootT=4.2;
+          zones.push({x:e.x,y:e.y,r:58,t:2.4,max:2.4});
+          AU.tone(110,0.2,"square",0.07,-40);
+        }
+        break; }
+      case "leech":{
+        // smells a charged surge meter — drains it through a tether, and speeds up while feeding
+        const draining = dd<260 && G.surge>0;
+        const sp=(draining?175:120)*sMul;
+        e.vx=lerp(e.vx,dx/dd*sp,dt*2.6); e.vy=lerp(e.vy,dy/dd*sp,dt*2.6);
+        e.drain=draining;
+        if(draining){
+          G.surge=Math.max(0,G.surge-9*dt);
+          if(Math.random()<0.25)
+            parts.push({x:lerp(e.x,px,rnd(1)),y:lerp(e.y,py,rnd(1)),vx:rnd(-20,20),vy:rnd(-20,20),
+              life:0.3,max:0.3,r:1.8,c:"#ff7bff",drag:0.95});
+        }
+        break; }
       case "boss":{
         const sp=44*sMul;
         e.vx=lerp(e.vx,dx/dd*sp,dt*1.2); e.vy=lerp(e.vy,dy/dd*sp,dt*1.2);
         e.phase+=dt*0.7;
         e.mt-=dt;
-        if(e.mt<=0){ e.mt=rnd(2.2,3.0); bossAttack(e,px,py); }
+        if(e.mt<=0){ e.mt=e.mini?rnd(3.0,3.8):rnd(2.2,3.0); bossAttack(e,px,py); }
         break; }
     }
     // burst elites periodically ring the field with bullets
@@ -1435,18 +1495,22 @@ function killEnemy(i){
   if(e.type==="splitter"){
     spawnEnemy("chaser",false,e.x-12,e.y); spawnEnemy("chaser",false,e.x+12,e.y);
   }
+  // a dead bomber is still a bomber — give its corpse a wide berth
+  if(e.type==="bomber"){
+    for(let k=0;k<3;k++) zones.push({x:e.x+rnd(-46,46),y:e.y+rnd(-46,46),r:58,t:rnd(1.6,2.4),max:2.4});
+  }
   // fissile elites break into a trio of fresh chasers
   if(e.affix==="split"){
     for(let k=0;k<3;k++) spawnEnemy("chaser",false,e.x+rnd(-20,20),e.y+rnd(-20,20));
     ftext(e.x,e.y-34,"FISSION!","#cf7dff",15);
   }
-  // bosses go down like a second sun
+  // bosses go down like a second sun (the herald a touch dimmer)
   if(e.boss){
     banner("☠ "+e.name+" DESTROYED ☠");
     // kill-cam: a beat of slow-mo on the wreck while explosions chain through it
     G.cine={t:0.8,max:0.8,x:clamp(e.x,120,W-120),y:clamp(e.y,120,H-120),zoom:0.18,boom:true};
-    for(let k=0;k<3;k++) shards.push({x:e.x+rnd(-30,30),y:e.y+rnd(-30,30),vx:rnd(-70,70),vy:rnd(-70,70),core:5,t:rnd(TAU)});
-    for(let k=0;k<12;k++) shards.push({x:e.x+rnd(-40,40),y:e.y+rnd(-40,40),vx:rnd(-90,90),vy:rnd(-90,90),v:5,t:rnd(TAU)});
+    for(let k=0;k<(e.mini?1:3);k++) shards.push({x:e.x+rnd(-30,30),y:e.y+rnd(-30,30),vx:rnd(-70,70),vy:rnd(-70,70),core:5,t:rnd(TAU)});
+    for(let k=0;k<(e.mini?6:12);k++) shards.push({x:e.x+rnd(-40,40),y:e.y+rnd(-40,40),vx:rnd(-90,90),vy:rnd(-90,90),v:5,t:rnd(TAU)});
     if(G.hp<G.maxHp){ G.hp++; drawHearts(); ftext(e.x,e.y-44,"+ HULL","#7fe8a8",16); }
     addFlare(e.x,e.y, W, "255,61,240", 0.8);
     flashScreen(0.4); shake(18); hitstop(0.12); AU.nova();
@@ -1809,6 +1873,16 @@ function updateBullets(dt){
       if(e.hp<=0) continue;
       if(d2(b.x,b.y,e.x,e.y)<rr){
         if(b.mine) continue; // mines damage via their own proximity blast
+        // wardens block bullets on their shielded face — flank, or bring a heavy weapon
+        if(e.type==="warden" && !b.glaive){
+          const ia=Math.atan2(b.y-e.y,b.x-e.x);
+          let da=ia-e.shieldA; while(da>Math.PI)da-=TAU; while(da<-Math.PI)da+=TAU;
+          if(Math.abs(da)<1.15){
+            burst(b.x,b.y,"#7dffe0",3,130,2,0.25);
+            AU.tone(900,0.05,"triangle",0.04,-300);
+            pbul.splice(i,1); break;
+          }
+        }
         if(b.glaive){
           // passes through, re-hits each enemy once per pass
           if(e.hitT<=0){
@@ -2184,8 +2258,9 @@ function startRun(){
     surge:0,level:1,xp:0,xpNext:8,maxHp:hull.hp,
     invuln:1.2,shake:0,hitstop:0,timeScale:1,flash:0,
     spawnAcc:0,eliteAcc:0,introduced:{},scoredThisRun:0,musicAcc:0,arena:null,arenaAcc:0,bossN:0,
-    cine:null,launch:1.3,
+    cine:null,launch:1.3,miniDone:false,
   });
+  G.introAt=rollIntroPlan();
   G.maxHp = Math.max(1, G.maxHp + (meta.shop.hull||0) + (MUT.hearts||0));
   G.hp=G.maxHp;
   G.coresRun=0; player.volleys=0;
@@ -2243,11 +2318,18 @@ function handleKey(code){
   }
   else if(G.state==="dead" && (code==="Space"||code==="KeyR")){ AU.init(); startRun(); }
   else if(G.state==="dead" && code==="Escape"){ goMenu(); }
-  else if(G.state==="menu" && (code==="Space"||code==="Enter")){ AU.init(); startRun(); }
+  else if(G.state==="menu" && (code==="Space"||code==="Enter")){ tryStart(); }
 }
 // restarting is deliberate: the ONE MORE RUN button, SPACE, or R — never a stray click
+// first flight ever gets the protocol first — skippable, and launching either way
+let pendingLaunch=false;
+function tryStart(){
+  AU.init();
+  if(meta.runs===0){ pendingLaunch=true; openTut(); }
+  else startRun();
+}
 document.getElementById("startBtn").addEventListener("pointerdown",e=>{
-  e.stopPropagation(); AU.init(); startRun();
+  e.stopPropagation(); tryStart();
 });
 
 // ---------- tutorial (protocol) ----------
@@ -2274,8 +2356,15 @@ function renderTut(){
   document.getElementById("tutPrev").style.visibility=tutPage>0?"visible":"hidden";
   document.getElementById("tutNext").textContent = tutPage<TUT.length-1 ? "→" : "✓";
 }
-function openTut(){ AU.init(); tutPage=0; renderTut(); document.getElementById("tut").classList.add("on"); AU.ui(); }
-function closeTut(){ document.getElementById("tut").classList.remove("on"); AU.ui(); }
+function openTut(){
+  AU.init(); tutPage=0; renderTut();
+  document.getElementById("tutClose").textContent = pendingLaunch ? "SKIP — LAUNCH" : "BACK";
+  document.getElementById("tut").classList.add("on"); AU.ui();
+}
+function closeTut(){
+  document.getElementById("tut").classList.remove("on"); AU.ui();
+  if(pendingLaunch){ pendingLaunch=false; startRun(); }
+}
 function tutNav(dir){
   const n=tutPage+dir;
   if(n>=TUT.length){ closeTut(); return; }
@@ -2963,6 +3052,18 @@ function render(now){
         ctx.strokeStyle=ac; ctx.globalAlpha=0.55; ctx.lineWidth=e.affix==="shield"?3:1.5;
         ctx.beginPath(); ctx.arc(e.x,e.y,e.r+13+Math.sin(now*0.011)*3,0,TAU); ctx.stroke();
       }
+      ctx.globalAlpha=1;
+    }
+    if(e.type==="warden" && e.shieldA!==undefined){
+      // the shield face — bright arc you must get behind
+      ctx.strokeStyle="#7dffe0"; ctx.globalAlpha=0.85; ctx.lineWidth=3.5;
+      ctx.beginPath(); ctx.arc(e.x,e.y,e.r+7,e.shieldA-1.15,e.shieldA+1.15); ctx.stroke();
+      ctx.globalAlpha=1;
+    }
+    if(e.type==="leech" && e.drain){
+      // feeding tether back to the ship
+      ctx.strokeStyle="#ff7bff"; ctx.globalAlpha=0.3+0.15*Math.sin(now*0.03); ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(e.x,e.y); ctx.lineTo(player.x,player.y); ctx.stroke();
       ctx.globalAlpha=1;
     }
     if(e.boss){
