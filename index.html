@@ -61,6 +61,9 @@
   #mult{font-size:15px;letter-spacing:3px;color:var(--c2);text-shadow:0 0 12px var(--c2);
     transition:transform .08s;}
   #mult.hot{color:#ffd84e;text-shadow:0 0 14px #ffb84e,0 0 30px #ff7b3d;}
+  #rival{margin-top:6px;font-size:10px;letter-spacing:2px;color:#ffd84e;opacity:.75;
+    text-shadow:0 0 8px rgba(255,216,78,.4);min-height:12px;}
+  #rival.lead{color:#fff;text-shadow:0 0 12px var(--c1);}
   #hearts{position:absolute;top:22px;left:22px;display:flex;gap:6px;}
   .hseg{width:30px;height:9px;transform:skewX(-18deg);background:rgba(255,255,255,.06);
     border:1px solid rgba(120,150,220,.25);border-radius:1px;transition:background .25s, box-shadow .25s;}
@@ -219,6 +222,13 @@
   .card.legend .rar{color:#ff4ecd;letter-spacing:5px;}
   .card.legend:hover{border-color:#fff;}
   @keyframes legendglow{from{box-shadow:0 0 16px rgba(255,78,205,.35);}to{box-shadow:0 0 44px rgba(255,78,205,.85);}}
+  /* devil's pact — blood red, and it knows what it's asking */
+  .card.pact{border-color:#ff2d3a;background:linear-gradient(160deg,rgba(54,6,10,.96),rgba(20,4,16,.96));
+    animation:pactglow 1.1s ease-in-out infinite alternate;}
+  .card.pact .rar{color:#ff4d5a;letter-spacing:6px;}
+  .card.pact .ico{color:#ff4d5a;}
+  .card.pact:hover{border-color:#fff;}
+  @keyframes pactglow{from{box-shadow:0 0 14px rgba(255,45,58,.35);}to{box-shadow:0 0 40px rgba(255,45,58,.8);}}
   /* death screen — the score is the hero, everything else supports it */
   #deathTitle{font-size:26px;letter-spacing:12px;text-indent:12px;color:#ff5d7e;font-weight:300;
     font-family:"Helvetica Neue","Inter",-apple-system,"Segoe UI",Arial,sans-serif;
@@ -503,6 +513,7 @@
       <div id="scoreBox">
         <div id="score">0</div>
         <div id="mult">×1.0</div>
+        <div id="rival"></div>
       </div>
     </div>
     <div id="hearts">♥ ♥ ♥</div>
@@ -664,7 +675,7 @@ const lerp = (a,b,t)=> a+(b-a)*t;
 const d2 = (ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy;};
 const fmtT = s =>{s|=0;return ((s/60)|0)+":"+("0"+(s%60)).slice(-2);};
 const fmtN = n => (n|0).toLocaleString("en-US");
-const VERSION="1.9.0"; // bump the minor on every PR — shown in settings to track deploys
+const VERSION="1.10.0"; // bump the minor on every PR — shown in settings to track deploys
 
 // ---------- persistence ----------
 const store = {
@@ -854,7 +865,7 @@ const AU = {
   levelup(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>this.tone(f,0.3,"triangle",0.12),i*70)); },
   ui(){ this.tone(660,0.07,"sine",0.08); },
   die(){ this.noise(1.2,0.5,300); this.tone(220,1.4,"sawtooth",0.25,-180); },
-  // ---- composed soundtrack: 8-bar A-minor loop, layered by intensity ----
+  // ---- composed soundtrack: Am–F–C–G (i–♭VI–♭III–♭VII) at 126bpm, layered by intensity ----
   mStep:0, mNext:0, mStarted:false,
   noteAt(t,f,dur,type="sine",vol=0.1){
     if(!this.ctx||this.muted) return;
@@ -881,6 +892,20 @@ const AU = {
     s.buffer=buf; f.type="highpass"; f.frequency.value=6000; g.gain.value=vol;
     s.connect(f); f.connect(g); g.connect(this.mbus||this.master); s.start(t);
   },
+  snareAt(t,vol=0.12){
+    if(!this.ctx||this.muted) return;
+    const n=this.ctx.sampleRate*0.12|0, buf=this.ctx.createBuffer(1,n,this.ctx.sampleRate), d=buf.getChannelData(0);
+    for(let i=0;i<n;i++){ const e=1-i/n; d[i]=(Math.random()*2-1)*e*e; }
+    const s=this.ctx.createBufferSource(), f=this.ctx.createBiquadFilter(), g=this.ctx.createGain();
+    s.buffer=buf; f.type="bandpass"; f.frequency.value=1900; f.Q.value=0.8; g.gain.value=vol;
+    s.connect(f); f.connect(g); g.connect(this.mbus||this.master); s.start(t);
+    // a little tonal body under the noise
+    const o=this.ctx.createOscillator(), og=this.ctx.createGain();
+    o.type="triangle"; o.frequency.setValueAtTime(210,t);
+    o.frequency.exponentialRampToValueAtTime(140,t+0.08);
+    og.gain.setValueAtTime(vol*0.7,t); og.gain.exponentialRampToValueAtTime(0.0001,t+0.09);
+    o.connect(og); og.connect(this.mbus||this.master); o.start(t); o.stop(t+0.12);
+  },
   crashAt(t,vol=0.16){
     if(!this.ctx||this.muted) return;
     const n=this.ctx.sampleRate*0.7|0, buf=this.ctx.createBuffer(1,n,this.ctx.sampleRate), d=buf.getChannelData(0);
@@ -892,86 +917,103 @@ const AU = {
   musicTick(intensity){
     if(!this.ctx||this.muted||this.ctx.state!=="running"){ this.mStarted=false; return; }
     if(!this.mStarted){ this.mStarted=true; this.mStep=0; this.mNext=this.ctx.currentTime+0.05; }
-    const stepDur=60/112/4; // 16ths at 112bpm
-    const ROOTS=[110,110,87.31,98,110,110,87.31,82.41]; // Am Am F G / Am Am F E
-    const BASS=[0,-1,-1,0, -1,-1,0,-1, 0,-1,-1,0, -1,7,-1,10]; // riff w/ bar-end walkup
-    // THE THEME — 8 bars, semitones above A. a heroic "short-short-LONG" cell,
-    // held notes answered by driving pickups, a climb to a held high-A summit,
-    // then a cascade and a high-G# cliffhanger that aches back home to A.
-    const THEME=[
-      12,-1,15,-1, 19,-1,-1,-1, -1,-1,17,-1, 15,-1,14,-1,   // Am: A-C-E——  ... D-C-B
-      12,-1,-1,-1, -1,-1,-1,-1,  7,-1,12,-1, 14,-1,15,-1,   // Am: A——      ... e-a-b-c (pickup)
-      17,-1,15,-1, 20,-1,-1,-1, -1,-1,-1,-1, 19,-1,17,-1,   // F:  D-C-F——  ... E-D
-      14,-1,-1,-1, -1,-1,-1,-1, 10,-1,14,-1, 17,-1,19,-1,   // G:  B——      ... G-B-D-E (coil)
-      12,-1,15,-1, 19,-1,-1,-1, -1,-1,19,-1, 20,-1,22,-1,   // Am: motif    ... E-F-G (climb!)
-      24,-1,-1,-1, -1,-1,-1,-1, 22,-1,19,-1, 22,-1,-1,-1,   // Am: A''——!   ... G'-E'-G' (summit)
-      20,-1,19,-1, 17,-1,-1,-1, -1,-1,15,-1, 17,-1,19,-1,   // F:  F-E-D——  ... C-D-E (cascade)
-      23,-1,-1,-1, -1,-1,-1,-1, 19,-1,14,-1, 11,-1,-1,-1];  // E:  G#'——    ... E'-B'-g# (cliffhanger)
-    const LEAD_B=[12,-1,-1,10, -1,7,-1,5, 7,-1,-1,3, -1,5,-1,-1,
-                  12,-1,-1,10, -1,7,-1,12, 15,-1,-1,12, -1,10,-1,7]; // answer phrase
+    const stepDur=60/126/4; // 16ths at a driving 126bpm
+    // i–♭VI–♭III–♭VII — the minor four-chord loop (Am F C G): the arcade earworm engine
+    const ROOTS =[110,87.31,130.81,98, 110,87.31,130.81,98];
+    const THIRDS=[3,4,4,4, 3,4,4,4]; // minor third on Am, major on F/C/G
+    const BASS=[0,-1,12,-1, 0,-1,12,-1, 0,-1,12,-1, 0,-1,12,12]; // pumping octaves, 16th push at bar end
+    // chord-tone arps per bar (semitones above A3) — the chiptune sparkle
+    const ARPS=[[12,15,19,24],[8,12,15,20],[15,19,22,27],[10,14,17,22],
+                [12,15,19,24],[8,12,15,20],[15,19,22,27],[10,14,17,22]];
+    const ARPSEQ=[0,1,2,3,2,1]; // up-and-over
+    // THE HOOK — 8 bars over Am F C G ×2. A two-bar cell stated twice (that's the
+    // earworm), then restated with a climb to a held high-A summit and a C6 peak,
+    // cascading down to an E that aches back home to A as the loop turns over.
+    const HOOK=[
+      12,-1,15,-1, 17,-1,19,-1, -1,-1,-1,-1, 17,-1,15,-1,   // Am: A-C-D-E——  D-C
+      17,-1,15,-1, 12,-1,-1,-1, -1,-1,12,-1, 15,-1,17,-1,   // F:  D-C-A——    A-C-D pickup
+      19,-1,-1,-1, 22,-1,19,-1, -1,-1,17,-1, 15,-1,17,-1,   // C:  E——G-E     D-C-D turn
+      14,-1,17,-1, 14,-1,-1,-1, 10,-1,-1,-1, 14,-1,17,-1,   // G:  B-D-B——    G—— B-D lift
+      12,-1,15,-1, 17,-1,19,-1, -1,-1,-1,-1, 19,-1,20,-1,   // Am: the cell    E-F climb!
+      24,-1,-1,-1, -1,-1,22,-1, 24,-1,-1,-1, 22,-1,20,-1,   // F:  A'——! G-A'  G-F summit ride
+      19,-1,-1,-1, 22,-1,24,-1, 27,-1,-1,-1, 24,-1,22,-1,   // C:  E—G-A' C''! A'-G peak
+      22,-1,-1,-1, 19,-1,17,-1, 14,-1,17,-1, 19,-1,-1,-1];  // G:  G'—E-D B-D-E → resolves to A
     // notes ring until the next one arrives — phrasing, not plinking
     const sustain=(arr,len,idx)=>{let g=1;while(g<8&&arr[(idx+g)%len]<0)g++;return Math.min(g,6);};
     while(this.mNext < this.ctx.currentTime+0.18){
       const t=this.mNext, s16=this.mStep%16, bar=((this.mStep/16)|0)%8,
-            sect=((this.mStep/128)|0)%4, root=ROOTS[bar],
+            sect=((this.mStep/128)|0)%4, root=ROOTS[bar], third=THIRDS[bar],
             lastBar=bar===7, hum=()=>rnd(0.85,1.15);
       if(intensity>=1){
-        const breakdown = sect===3; // every 4th 8-bar section drops the drums
+        const breakdown = sect===3; // every 4th 8-bar phrase opens the sky
         if(!breakdown){
-          if(s16%4===0) this.kickAt(t,0.19*hum());
+          // drums: four-on-the-floor, offbeat hats, real snare backbeat
+          if(s16%4===0) this.kickAt(t,0.2*hum());
           if(s16%4===2) this.hatAt(t,0.05*hum());
-          if(intensity>=3 && s16%2===1) this.hatAt(t,0.02*hum()); // late-game ghost 16ths
-          if((s16===4||s16===12) && intensity>=2) this.hatAt(t,0.1);
+          if(s16===4||s16===12){ if(intensity>=2) this.snareAt(t,0.11*hum()); else this.hatAt(t,0.09); }
+          if(intensity>=3 && s16%2===1) this.hatAt(t,0.022*hum()); // late-game ghost 16ths
+          if(lastBar && s16>=12) this.snareAt(t,0.05+0.02*(s16-12)); // phrase-end fill
+          // bass: pumping octaves
           let b=BASS[s16];
-          if(lastBar && s16>=12) b=(b>=0?b:0)+12; // section-end fill: octave jump
-          if(b>=0) this.noteAt(t,(root/2)*Math.pow(2,b/12),stepDur*0.9,"sawtooth",0.08*hum());
-          if(intensity>=2 && sect>=1){
-            const isB=sect===2, arr=isB?LEAD_B:THEME, len=isB?32:128, idx=this.mStep%len;
-            const l=arr[idx];
+          if(b>=0) this.noteAt(t,(root/2)*Math.pow(2,b/12),stepDur*0.85,"sawtooth",0.085*hum());
+          // chiptune arp — quiet 16th sparkle riding the chord
+          if(intensity>=2){
+            const a=ARPS[bar][ARPSEQ[this.mStep%ARPSEQ.length]];
+            this.noteAt(t,220*Math.pow(2,a/12)*2,stepDur*0.8,"square",0.016*hum());
+          }
+          // THE HOOK — square lead with detune, sub-octave weight and a slap echo
+          if(intensity>=2){
+            const idx=this.mStep%128, l=HOOK[idx];
             if(l>=0){
-              const g=sustain(arr,len,idx);
-              const f=220*Math.pow(2,l/12), big=l>=19;
-              const dur=stepDur*g*0.95, vol=(big?0.08:0.062)*hum();
-              this.noteAt(t,f,dur,"triangle",vol);
-              this.noteAt(t,f*1.004,dur,"triangle",vol*0.5);      // detuned double
-              this.noteAt(t,f/2,dur,"triangle",vol*0.45);          // octave below — weight
-              if(s16%8===0) this.noteAt(t,f*Math.pow(2,-7/12),dur,"triangle",vol*0.5); // power fifth
-              this.noteAt(t+stepDur*3,f,dur*0.7,"triangle",0.02);  // echo
+              const g=sustain(HOOK,128,idx);
+              const f=220*Math.pow(2,l/12), big=l>=20;
+              const dur=stepDur*g*0.95, vol=(big?0.075:0.058)*hum();
+              this.noteAt(t,f,dur,"square",vol*0.8);
+              this.noteAt(t,f*1.005,dur,"triangle",vol*0.7);       // detuned warm double
+              this.noteAt(t,f/2,dur,"triangle",vol*0.4);           // octave below — weight
+              this.noteAt(t+stepDur*3,f,dur*0.6,"triangle",0.018); // slap echo
             }
-            // power-chord bed under the theme — the epic floor
+            // chord pad — root/third/fifth saw bed, the epic floor
             if(s16===0){
-              this.noteAt(t,root,stepDur*15,"sawtooth",0.034);
+              this.noteAt(t,root,stepDur*15,"sawtooth",0.032);
+              this.noteAt(t,root*Math.pow(2,third/12),stepDur*15,"sawtooth",0.022);
               this.noteAt(t,root*Math.pow(2,7/12),stepDur*15,"sawtooth",0.026);
-              this.noteAt(t,root*2,stepDur*15,"sawtooth",0.02);
             }
             const cyc=this.mStep%128;
-            if(!isB && cyc>=76 && cyc<80)                          // stair-riser into the summit bar
+            if(cyc>=76 && cyc<80) // stair-riser into the summit bar
               this.noteAt(t,300*Math.pow(2,(cyc-76)/3),stepDur*0.9,"sine",0.03);
-            if(cyc===0) this.crashAt(t,0.14);                      // section downbeat crash
+            if(cyc===0) this.crashAt(t,0.14); // phrase downbeat crash
+          } else if(s16===0){
+            // intensity 1: just the chord bed under the drums — room to grow
+            this.noteAt(t,root,stepDur*15,"sawtooth",0.026);
+            this.noteAt(t,root*Math.pow(2,7/12),stepDur*15,"sawtooth",0.018);
           }
         } else {
-          // breakdown: pulsing low root, airy pad, the theme floating high and bare
+          // breakdown: heartbeat root, airy pad, the hook floating high and bare
           if(s16===0||s16===8) this.noteAt(t,root/2,stepDur*6,"sine",0.07);
-          if(s16===0){ this.noteAt(t,root*2,stepDur*14,"sine",0.035); this.noteAt(t,root*3,stepDur*14,"sine",0.015); }
-          const l=THEME[this.mStep%128];
+          if(s16===0){
+            this.noteAt(t,root*2,stepDur*14,"sine",0.034);
+            this.noteAt(t,root*Math.pow(2,third/12)*2,stepDur*14,"sine",0.018);
+          }
+          const l=HOOK[this.mStep%128];
           if(l>=0) this.noteAt(t,440*Math.pow(2,(l-12)/12)*2,stepDur*4,"sine",0.032);
         }
       } else {
-        // menu & death: the theme as a slow music box over a warm chord bed
+        // menu & death: the same hook as a slow music box over a warm chord bed
         if(this.mStep%2===0){
-          const idx=((this.mStep/2)|0)%128, l=THEME[idx];
+          const idx=((this.mStep/2)|0)%128, l=HOOK[idx];
           if(l>=0){
-            const g=sustain(THEME,128,idx);
+            const g=sustain(HOOK,128,idx);
             this.noteAt(t,440*Math.pow(2,(l-12)/12),Math.min(g,6)*stepDur*1.9,"sine",0.04);
           }
         }
-        if(Math.random()<0.035){
-          const scale=[0,3,5,7,10,12,15];
-          const f=root*Math.pow(2,(pick(scale)+12)/12);
-          this.noteAt(t,f,1.6,"triangle",0.03);
+        if(Math.random()<0.03){ // chord-tone sparkles drifting by
+          const f=220*Math.pow(2,(pick(ARPS[bar])+12)/12);
+          this.noteAt(t,f,1.6,"triangle",0.025);
         }
         if(s16===0){
-          this.noteAt(t,root,stepDur*15,"sine",0.028);                    // chord bed
+          this.noteAt(t,root,stepDur*15,"sine",0.028);
+          this.noteAt(t,root*Math.pow(2,third/12),stepDur*15,"sine",0.016);
           this.noteAt(t,root*Math.pow(2,7/12),stepDur*15,"sine",0.02);
         }
       }
@@ -979,8 +1021,8 @@ const AU = {
     }
   },
   pluck(intensity){
-    // slow chord progression (Am–G–F–E feel) under pentatonic plucks
-    const roots=[110,98,87.31,82.41];
+    // slow chord progression (Am–F–C–G, matching the soundtrack) under pentatonic plucks
+    const roots=[110,87.31,130.81,98];
     const root=roots[(typeof G!=="undefined" ? (G.t/3.2)|0 : 0)%4];
     const scale=[0,3,5,7,10,12,15];
     const f=root*Math.pow(2,(pick(scale)+(intensity>2?12:0))/12);
@@ -1108,7 +1150,19 @@ const UPGRADES = [
   {id:"echo",   ico:"⌬", nm:"Echo Phantom",   ds:"a mirror twin echoes your volleys",        rar:3, f:s=>s.echo+=1},
   {id:"horizon",ico:"⊚", nm:"Event Horizon",  ds:"your nova collapses into a black hole",    rar:3, f:s=>s.horizon+=1},
 ];
-const RARNAMES=["COMMON","RARE","EPIC","LEGENDARY"], RARCLS=["common","rare","epic","legend"];
+const RARNAMES=["COMMON","RARE","EPIC","LEGENDARY","PACT"], RARCLS=["common","rare","epic","legend","pact"];
+
+// ---------- devil's pacts — every bargain cuts both ways ----------
+const PACTS=[
+  {id:"pact_blood", ico:"⛧", nm:"Blood Price",  ds:"burn a heart — +60% damage", rar:4,
+    f:s=>{ G.maxHp=Math.max(1,G.maxHp-1); G.hp=Math.min(G.hp,G.maxHp); drawHearts(); s.damage*=1.6; }},
+  {id:"pact_wind",  ico:"⛧", nm:"Red Wind",     ds:"enemies +25% faster — score ×1.5", rar:4,
+    f:s=>{ G.pactEspd*=1.25; G.pactScore*=1.5; }},
+  {id:"pact_ice",   ico:"⛧", nm:"Thin Ice",     ds:"graze ring −30% — grazes ×3 score", rar:4,
+    f:s=>{ s.grazeR*=0.7; G.pactGraze*=3; }},
+  {id:"pact_clock", ico:"⛧", nm:"Overclock",    ds:"+40% fire rate — enemy shots +20% faster", rar:4,
+    f:s=>{ s.fireRate*=1.4; G.pactEbul*=1.2; }},
+];
 
 // ---------- juice helpers ----------
 function shake(n){ G.shake = Math.min(G.shake+n, 26); }
@@ -1141,7 +1195,7 @@ function clearBanner(){
 // ---------- scoring ----------
 function addScore(n){
   const mult = 1 + G.combo*0.1;
-  const v = Math.round(n*mult*(MUT.score||1));
+  const v = Math.round(n*mult*(MUT.score||1)*(G.pactScore||1));
   G.score += v; G.scoredThisRun += v;
   return v;
 }
@@ -1165,6 +1219,8 @@ const ETYPES = {
   warden:  {r:12, hp:32,  sc:35, c:"#7dffe0", at:265, name:"WARDENS RAISE SHIELDS"},
   bomber:  {r:13, hp:38,  sc:35, c:"#d8ff4e", at:295, name:"BOMBERS SEEDING THE FIELD"},
   leech:   {r:9,  hp:24,  sc:30, c:"#ff7bff", at:325, name:"LEECHES SMELL YOUR SURGE"},
+  // not part of the spawn rotation — a rare treasure that runs for the exit
+  courier: {r:10, hp:30,  sc:120, c:"#ffd84e", at:1e9, name:null},
 };
 const WSPAWN={chaser:3,drifter:1.5,weaver:1.4,phantom:1.0,sniper:1.2,charger:1.1,splitter:1.2,mortar:0.6,tank:0.7,
   warden:1.0,bomber:0.7,leech:1.0};
@@ -1197,7 +1253,7 @@ const AFFIX_NAMES={shield:"⚜ SHIELDED ELITE ⚜", split:"⚜ FISSILE ELITE ⚜
 // every run meets chaser/drifter/weaver first, then the rest arrive in a shuffled order
 function rollIntroPlan(){
   const plan={chaser:0, drifter:25, weaver:55};
-  const rest=Object.keys(ETYPES).filter(k=>!(k in plan));
+  const rest=Object.keys(ETYPES).filter(k=>!(k in plan) && k!=="courier");
   for(let i=rest.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [rest[i],rest[j]]=[rest[j],rest[i]]; }
   rest.forEach((k,i)=>plan[k]=85+i*30);
   return plan;
@@ -1240,6 +1296,33 @@ function director(dt){
   // bosses — an easier herald at 1:30, then something with a real name every three minutes
   if(!G.miniDone && G.t>=90 && !enemies.some(e=>e.boss)){ G.miniDone=true; spawnBoss(true); }
   if(G.t >= (G.bossN+1)*180 && !enemies.some(e=>e.boss)) spawnBoss();
+  // golden couriers — rare, rich, and running for the exit
+  if(G.t>40){
+    G.courierAcc=(G.courierAcc||0)+dt;
+    if(G.courierAcc>70){
+      G.courierAcc=0;
+      if(Math.random()<0.8){
+        const e=spawnEnemy("courier");
+        e.fleeT=0;
+        banner("⬢ COURIER ON THE RUN ⬢");
+        AU.tone(880,0.3,"triangle",0.12,220);
+      }
+    }
+  }
+  // bounty marks — every ~45s a target worth chasing into the fire
+  if(G.t>30){
+    G.bountyAcc=(G.bountyAcc||0)+dt;
+    if(G.bountyAcc>45){
+      G.bountyAcc=0;
+      const cands=enemies.filter(e=>!e.boss && !e.bounty && e.hp>0);
+      if(cands.length){
+        const e=pick(cands);
+        e.bounty=10; e.bountyMax=10;
+        banner("⬢ BOUNTY MARKED — 10s ⬢");
+        AU.tone(620,0.25,"triangle",0.12,180);
+      }
+    }
+  }
 }
 
 // ---------- bosses ----------
@@ -1337,7 +1420,7 @@ function updateEnemies(dt){
     const e=enemies[i];
     e.hitT=Math.max(0,e.hitT-dt);
     const dx=px-e.x, dy=py-e.y, dd=Math.sqrt(dx*dx+dy*dy)||1;
-    const sMul = (e.elite?0.8:1)*(MUT.espd||1);
+    const sMul = (e.elite?0.8:1)*(MUT.espd||1)*(G.pactEspd||1);
     switch(e.type){
       case "chaser":{ const sp=95*sMul*(1+G.t/200); e.vx=lerp(e.vx,dx/dd*sp,dt*2.4); e.vy=lerp(e.vy,dy/dd*sp,dt*2.4); break; }
       case "drifter":{
@@ -1432,6 +1515,20 @@ function updateEnemies(dt){
           AU.tone(110,0.2,"square",0.07,-40);
         }
         break; }
+      case "courier":{
+        // flees you in a glittering serpentine, making for the nearest edge
+        e.fleeT=(e.fleeT||0)+dt;
+        const away=Math.atan2(-dy,-dx)+Math.sin(e.fleeT*5)*0.5;
+        const sp=235*sMul;
+        e.vx=lerp(e.vx,Math.cos(away)*sp,dt*3); e.vy=lerp(e.vy,Math.sin(away)*sp,dt*3);
+        if(Math.random()<0.4)
+          parts.push({x:e.x,y:e.y,vx:rnd(-15,15),vy:rnd(-15,15),life:0.4,max:0.4,r:1.8,c:"#ffd84e",drag:0.96});
+        if(e.x<-70||e.x>W+70||e.y<-70||e.y>H+70){
+          enemies.splice(i,1);
+          banner("COURIER ESCAPED");
+          continue;
+        }
+        break; }
       case "leech":{
         // smells a charged surge meter — drains it through a tether, and speeds up while feeding
         const draining = dd<260 && G.surge>0;
@@ -1466,6 +1563,7 @@ function updateEnemies(dt){
         AU.tone(260,0.15,"square",0.07,-100);
       }
     }
+    if(e.bounty){ e.bounty-=dt; if(e.bounty<=0){ e.bounty=0; ftext(e.x,e.y-24,"BOUNTY LAPSED","#7d92b8",12); } }
     let slowF=1;
     if(e.slowT>0){ e.slowT-=dt; slowF=0.6; }
     e.x+=e.vx*dt*slowF; e.y+=e.vy*dt*slowF;
@@ -1495,6 +1593,18 @@ function killEnemy(i){
   if(e.type==="splitter"){
     spawnEnemy("chaser",false,e.x-12,e.y); spawnEnemy("chaser",false,e.x+12,e.y);
   }
+  // a caught courier spills its cargo
+  if(e.type==="courier"){
+    for(let k=0;k<4;k++) shards.push({x:e.x+rnd(-24,24),y:e.y+rnd(-24,24),vx:rnd(-80,80),vy:rnd(-80,80),core:3,t:rnd(TAU)});
+    ftext(e.x,e.y-30,"⬢ CARGO +12","#ffd84e",18);
+    AU.coin(); flashScreen(0.1); shake(5);
+  }
+  // bounty cashed — paid in cores, on the spot
+  if(e.bounty>0){
+    shards.push({x:e.x,y:e.y,vx:rnd(-50,50),vy:rnd(-50,50),core:3,t:rnd(TAU)});
+    ftext(e.x,e.y-30,"⬢ BOUNTY +3","#ffd84e",18);
+    AU.coin(); flashScreen(0.08);
+  }
   // a dead bomber is still a bomber — give its corpse a wide berth
   if(e.type==="bomber"){
     for(let k=0;k<3;k++) zones.push({x:e.x+rnd(-46,46),y:e.y+rnd(-46,46),r:58,t:rnd(1.6,2.4),max:2.4});
@@ -1507,6 +1617,8 @@ function killEnemy(i){
   // bosses go down like a second sun (the herald a touch dimmer)
   if(e.boss){
     banner("☠ "+e.name+" DESTROYED ☠");
+    // a slain boss opens the devil's table
+    if(!G.pactsOpen){ G.pactsOpen=true; G.pactDue=true; }
     // kill-cam: a beat of slow-mo on the wreck while explosions chain through it
     G.cine={t:0.8,max:0.8,x:clamp(e.x,120,W-120),y:clamp(e.y,120,H-120),zoom:0.18,boom:true};
     for(let k=0;k<(e.mini?1:3);k++) shards.push({x:e.x+rnd(-30,30),y:e.y+rnd(-30,30),vx:rnd(-70,70),vy:rnd(-70,70),core:5,t:rnd(TAU)});
@@ -1920,7 +2032,7 @@ function updateBullets(dt){
   for(let i=ebul.length-1;i>=0;i--){
     const b=ebul[i];
     // chrono field — bullets crawl inside your sphere of influence
-    let ts=MUT.ebulSpd||1;
+    let ts=(MUT.ebulSpd||1)*(G.pactEbul||1);
     if(stats.chrono>0){
       const R=stats.grazeR*2.2;
       if(d2(b.x,b.y,player.x,player.y)<R*R) ts=0.28;
@@ -1951,7 +2063,7 @@ function doGraze(x,y){
       coachMsg("surge ready — press SPACE for a nova scaled by your multiplier");
     }
   }
-  addScore(5*(MUT.grazeScore||1));
+  addScore(5*(MUT.grazeScore||1)*(G.pactGraze||1));
   burst(lerp(x,player.x,0.5),lerp(y,player.y,0.5),scheme().c2,3,120,2,0.4);
   AU.graze();
   if(G.grazes%10===0) ftext(player.x,player.y-26,"GRAZE ×"+G.grazes,scheme().c2,13);
@@ -2157,6 +2269,10 @@ function levelUp(){
       offered[(Math.random()*offered.length)|0]=pick(cands);
     }
   }
+  // the devil only deals once you've slain a boss: guaranteed fourth card in the
+  // first draft after, a 22% visitor thereafter — never the only option
+  if(G.pactDue){ G.pactDue=false; offered.push(pick(PACTS)); }
+  else if(G.pactsOpen && Math.random()<0.22) offered.push(pick(PACTS));
   const cardsEl=document.getElementById("cards");
   cardsEl.innerHTML="";
   offered.forEach((u,i)=>{
@@ -2261,6 +2377,23 @@ function startRun(){
     cine:null,launch:1.3,miniDone:false,
   });
   G.introAt=rollIntroPlan();
+  G.pactScore=1; G.pactGraze=1; G.pactEspd=1; G.pactEbul=1;
+  G.pactsOpen=false; G.pactDue=false;
+  // rival line: hunt the top ten live (your own callsign doesn't count)
+  G.rivals=null; G.rivalPlace=null; G.rivalEntry=0;
+  try{
+    fetch(LB_API).then(r=>r.ok?r.json():null).then(d=>{
+      if(d&&d.scores){
+        const top=d.scores.slice(0,10);
+        // the door into the top ten: beat the current #10 (open if the board isn't full)
+        G.rivalEntry = top.length>=10 ? top[top.length-1].score : 0;
+        G.rivals=top
+          .filter(s=>String(s.name).toLowerCase()!==(meta.player||"").toLowerCase())
+          .map(s=>({name:s.name,score:s.score}))
+          .sort((a,b)=>a.score-b.score);
+      }
+    }).catch(()=>{});
+  }catch(e){}
   G.maxHp = Math.max(1, G.maxHp + (meta.shop.hull||0) + (MUT.hearts||0));
   G.hp=G.maxHp;
   G.coresRun=0; player.volleys=0;
@@ -2315,6 +2448,7 @@ function handleKey(code){
     if(code==="Digit1")chooseCard(0);
     if(code==="Digit2")chooseCard(1);
     if(code==="Digit3")chooseCard(2);
+    if(code==="Digit4")chooseCard(3);
   }
   else if(G.state==="dead" && (code==="Space"||code==="KeyR")){ AU.init(); startRun(); }
   else if(G.state==="dead" && code==="Escape"){ goMenu(); }
@@ -2814,17 +2948,45 @@ buildMenu();
 // ---------- background ----------
 const stars=[];
 for(let i=0;i<150;i++) stars.push({x:rnd(1),y:rnd(1),z:rnd(0.2,1),tw:rnd(TAU)});
-let starDrift=0; // slow camera pan on the menu; freezes (no jump) in play
-// parallax wreckage — dead hulls and nebula wisps drifting between the stars and the fight
+// camera tour — an endless cruise through the nebula: mostly drift, the odd glide
+const cam={x:0,y:0,ang:rnd(TAU),spd:8,want:8,holdT:rnd(12,22)};
+function updateCam(dt,now){
+  // heading wanders on slow, never-repeating sines
+  cam.ang += (Math.sin(now*0.00006+1.3)*0.0011 + Math.sin(now*0.000137)*0.0007)*60*dt;
+  cam.holdT-=dt;
+  if(cam.holdT<=0){
+    if(cam.want<20){ cam.want=rnd(42,68); cam.holdT=rnd(3,6); }  // a glide
+    else          { cam.want=rnd(5,12);  cam.holdT=rnd(14,30); } // back to drift
+  }
+  cam.spd=lerp(cam.spd,cam.want,dt*0.8);
+  cam.x+=Math.cos(cam.ang)*cam.spd*dt;
+  cam.y+=Math.sin(cam.ang)*cam.spd*dt*0.6; // flatter vertical travel
+}
+// parallax wreckage — dead hulls drifting between the stars and the fight
 const debris=[];
 for(let i=0;i<9;i++){
   const verts=[]; const n=5+(Math.random()*3|0);
   for(let k=0;k<n;k++) verts.push(rnd(0.55,1));
   debris.push({x:rnd(1),y:rnd(1),z:rnd(0.25,0.7),r:rnd(16,46),rot:rnd(TAU),vr:rnd(0.3,1)*(Math.random()<0.5?-1:1),verts});
 }
+// the nebula itself: large pre-rendered colour fields, layered at different depths.
+// sprites are baked once — per-frame cost is eight drawImage calls
+function nebulaSprite(r,c,a){
+  const s=document.createElement("canvas"); s.width=s.height=r*2;
+  const g2=s.getContext("2d"), g=g2.createRadialGradient(r,r,0,r,r,r);
+  g.addColorStop(0,"rgba("+c+","+a+")");
+  g.addColorStop(0.55,"rgba("+c+","+(a*0.45)+")");
+  g.addColorStop(1,"rgba("+c+",0)");
+  g2.fillStyle=g; g2.beginPath(); g2.arc(r,r,r,0,TAU); g2.fill();
+  return s;
+}
+const NEB_HUES=["40,80,160","96,48,170","160,40,120","20,110,140","150,70,30","60,40,160","30,120,100"];
 const nebulae=[];
-for(let i=0;i<3;i++) nebulae.push({x:rnd(1),y:rnd(1),z:rnd(0.15,0.3),r:rnd(220,420),
-  hue:pick(["18,30,80","60,20,80","10,40,70"])});
+for(let i=0;i<8;i++){
+  const r=rnd(380,760)|0;
+  nebulae.push({x:rnd(1),y:rnd(1),z:rnd(0.14,0.42),r,
+    s:nebulaSprite(r,NEB_HUES[i%NEB_HUES.length],rnd(0.16,0.24))});
+}
 
 // ---------- menu attract demo: a real ship grazing real foes ----------
 let menuFoes=[], menuGlow=0, menuShip={x:0,y:0,a:0};
@@ -2894,27 +3056,28 @@ function render(now){
     ctx.translate(-G.cine.x,-G.cine.y);
   }
 
-  // stars
+  // the nebula — colour fields sliding under everything as the camera tours
   ctx.globalCompositeOperation="source-over";
+  for(const nb of nebulae){
+    const sx=W+nb.r*2, sy=H+nb.r*2;
+    const px=((((nb.x*sx) - (player.x*0.04+cam.x*1.6)*nb.z)%sx)+sx)%sx - nb.r;
+    const py=((((nb.y*sy) - (player.y*0.04+cam.y*1.6)*nb.z)%sy)+sy)%sy - nb.r;
+    ctx.drawImage(nb.s, px-nb.r, py-nb.r);
+  }
+
+  // stars
   for(const st of stars){
-    const px=(((st.x*W - player.x*0.02*st.z - starDrift*st.z)%W)+W)%W;
-    const py=(st.y*H - player.y*0.02*st.z + H)%H;
+    const px=(((st.x*W - (player.x*0.02+cam.x)*st.z)%W)+W)%W;
+    const py=(((st.y*H - (player.y*0.02+cam.y)*st.z)%H)+H)%H;
     const a=0.25*st.z + 0.18*Math.sin(now*0.001+st.tw);
     ctx.fillStyle="rgba(160,200,255,"+Math.max(0,a)+")";
     ctx.fillRect(px,py,st.z*1.8,st.z*1.8);
   }
 
-  // nebula wisps, then wreckage silhouettes — a parallax slab of depth behind the fight
-  for(const nb of nebulae){
-    const px=(((nb.x*W - player.x*0.03*nb.z - starDrift*1.5*nb.z)%W)+W)%W;
-    const py=(((nb.y*H - player.y*0.03*nb.z)%H)+H)%H;
-    const g=ctx.createRadialGradient(px,py,0,px,py,nb.r);
-    g.addColorStop(0,"rgba("+nb.hue+",0.10)"); g.addColorStop(1,"rgba(0,0,0,0)");
-    ctx.fillStyle=g; ctx.fillRect(px-nb.r,py-nb.r,nb.r*2,nb.r*2);
-  }
+  // wreckage silhouettes — a parallax slab of depth behind the fight
   for(const d of debris){
-    const px=(((d.x*W - player.x*0.06*d.z - starDrift*2.2*d.z)%W)+W)%W;
-    const py=(((d.y*H - player.y*0.06*d.z)%H)+H)%H;
+    const px=(((d.x*W - (player.x*0.06+cam.x*2.2)*d.z)%W)+W)%W;
+    const py=(((d.y*H - (player.y*0.06+cam.y*2.2)*d.z)%H)+H)%H;
     const rot=d.rot+now*0.00009*d.vr;
     ctx.save(); ctx.translate(px,py); ctx.rotate(rot);
     ctx.fillStyle="rgba(13,18,40,0.85)"; ctx.strokeStyle="rgba(64,86,150,0.28)"; ctx.lineWidth=1;
@@ -3052,6 +3215,15 @@ function render(now){
         ctx.strokeStyle=ac; ctx.globalAlpha=0.55; ctx.lineWidth=e.affix==="shield"?3:1.5;
         ctx.beginPath(); ctx.arc(e.x,e.y,e.r+13+Math.sin(now*0.011)*3,0,TAU); ctx.stroke();
       }
+      ctx.globalAlpha=1;
+    }
+    if(e.bounty>0){
+      // gold bounty ring with the remaining time as a draining arc
+      const frac=e.bounty/e.bountyMax;
+      ctx.strokeStyle="#ffd84e"; ctx.globalAlpha=0.85; ctx.lineWidth=2.5;
+      ctx.setLineDash([6,5]);
+      ctx.beginPath(); ctx.arc(e.x,e.y,e.r+11,now*0.003,now*0.003+TAU*frac); ctx.stroke();
+      ctx.setLineDash([]);
       ctx.globalAlpha=1;
     }
     if(e.type==="warden" && e.shieldA!==undefined){
@@ -3277,6 +3449,29 @@ function syncHUD(dt){
   document.getElementById("surgewrap").classList.toggle("full",full);
   document.getElementById("surgelabel").textContent =
     full ? (TOUCH?"⚡ TAP — RELEASE":"⚡ SPACE — RELEASE") : (TOUCH?"SURGE — TAP":"SURGE — SPACE");
+  // rival line — silent until you breach the top ten, then a countdown of places
+  const rEl=document.getElementById("rival");
+  if(G.rivals && G.rivals.length && G.score>G.rivalEntry){
+    const place=G.rivals.filter(r=>r.score>G.score).length+1;
+    if(G.rivalPlace===null){
+      ftext(player.x,player.y-44,"★ TOP 10 ★","#ffd84e",20);
+      banner("★ YOU'VE BREACHED THE TOP 10 ★");
+      AU.bigkill(); flashScreen(0.15);
+    } else if(place<G.rivalPlace){
+      const ord=place===1?"★ YOU LEAD THE BOARD ★":place+(place===2?"ND":place===3?"RD":"TH")+" PLACE!";
+      ftext(player.x,player.y-44,ord,"#ffd84e",18);
+      if(place===1){ AU.bigkill(); flashScreen(0.15); } else { AU.coin(); flashScreen(0.08); }
+    }
+    G.rivalPlace=place;
+    const next=G.rivals.find(r=>r.score>G.score);
+    if(next){
+      rEl.textContent="NEXT — "+next.name.toUpperCase()+" "+fmtN(next.score);
+      rEl.classList.remove("lead");
+    } else {
+      rEl.textContent="★ YOU LEAD THE BOARD ★";
+      rEl.classList.add("lead");
+    }
+  } else rEl.textContent="";
 }
 
 // ---------- main loop ----------
@@ -3289,7 +3484,8 @@ function loop(now){
   // juice timers always tick
   G.shake*=Math.pow(0.001,dt);
   G.flash=Math.max(0,G.flash-dt*2.2);
-  if(G.state==="menu"){ starDrift+=dt*22; updateMenuDemo(now,dt); }
+  updateCam(dt,now); // the nebula tour never stops
+  if(G.state==="menu"){ updateMenuDemo(now,dt); }
 
   if(G.state==="playing"){
     if(G.hitstop>0){ G.hitstop-=dt; render(now); return; }
