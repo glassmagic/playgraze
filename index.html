@@ -2345,13 +2345,18 @@ function startRun(){
   G.introAt=rollIntroPlan();
   G.pactScore=1; G.pactGraze=1; G.pactEspd=1; G.pactEbul=1;
   // rival line: hunt the top ten live (your own callsign doesn't count)
-  G.rivals=null; G.rivalTarget=null; G.rivalCrown=false;
+  G.rivals=null; G.rivalPlace=null; G.rivalEntry=0;
   try{
     fetch(LB_API).then(r=>r.ok?r.json():null).then(d=>{
-      if(d&&d.scores) G.rivals=d.scores.slice(0,10)
-        .filter(s=>String(s.name).toLowerCase()!==(meta.player||"").toLowerCase())
-        .map(s=>({name:s.name,score:s.score}))
-        .sort((a,b)=>a.score-b.score);
+      if(d&&d.scores){
+        const top=d.scores.slice(0,10);
+        // the door into the top ten: beat the current #10 (open if the board isn't full)
+        G.rivalEntry = top.length>=10 ? top[top.length-1].score : 0;
+        G.rivals=top
+          .filter(s=>String(s.name).toLowerCase()!==(meta.player||"").toLowerCase())
+          .map(s=>({name:s.name,score:s.score}))
+          .sort((a,b)=>a.score-b.score);
+      }
     }).catch(()=>{});
   }catch(e){}
   G.maxHp = Math.max(1, G.maxHp + (meta.shop.hull||0) + (MUT.hearts||0));
@@ -3441,21 +3446,27 @@ function syncHUD(dt){
   document.getElementById("surgewrap").classList.toggle("full",full);
   document.getElementById("surgelabel").textContent =
     full ? (TOUCH?"⚡ TAP — RELEASE":"⚡ SPACE — RELEASE") : (TOUCH?"SURGE — TAP":"SURGE — SPACE");
-  // rival line — the next top-10 score above you, hunted live
+  // rival line — silent until you breach the top ten, then a countdown of places
   const rEl=document.getElementById("rival");
-  if(G.rivals && G.rivals.length){
+  if(G.rivals && G.rivals.length && G.score>G.rivalEntry){
+    const place=G.rivals.filter(r=>r.score>G.score).length+1;
+    if(G.rivalPlace===null){
+      ftext(player.x,player.y-44,"★ TOP 10 ★","#ffd84e",20);
+      banner("★ YOU'VE BREACHED THE TOP 10 ★");
+      AU.bigkill(); flashScreen(0.15);
+    } else if(place<G.rivalPlace){
+      const ord=place===1?"★ YOU LEAD THE BOARD ★":place+(place===2?"ND":place===3?"RD":"TH")+" PLACE!";
+      ftext(player.x,player.y-44,ord,"#ffd84e",18);
+      if(place===1){ AU.bigkill(); flashScreen(0.15); } else { AU.coin(); flashScreen(0.08); }
+    }
+    G.rivalPlace=place;
     const next=G.rivals.find(r=>r.score>G.score);
-    if(!next){
-      if(!G.rivalCrown){ G.rivalCrown=true; ftext(player.x,player.y-44,"★ YOU LEAD THE BOARD ★","#ffd84e",18); AU.bigkill(); flashScreen(0.15); }
-      rEl.textContent="★ YOU LEAD THE BOARD ★"; rEl.classList.add("lead");
-    } else {
-      if(G.rivalTarget && next.score!==G.rivalTarget.score && G.score>=G.rivalTarget.score){
-        ftext(player.x,player.y-44,"RIVAL DOWN — "+G.rivalTarget.name.toUpperCase(),"#ffd84e",16);
-        AU.coin(); flashScreen(0.1);
-      }
-      G.rivalTarget=next;
+    if(next){
       rEl.textContent="NEXT — "+next.name.toUpperCase()+" "+fmtN(next.score);
       rEl.classList.remove("lead");
+    } else {
+      rEl.textContent="★ YOU LEAD THE BOARD ★";
+      rEl.classList.add("lead");
     }
   } else rEl.textContent="";
 }
