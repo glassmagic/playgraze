@@ -652,7 +652,7 @@ const lerp = (a,b,t)=> a+(b-a)*t;
 const d2 = (ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy;};
 const fmtT = s =>{s|=0;return ((s/60)|0)+":"+("0"+(s%60)).slice(-2);};
 const fmtN = n => (n|0).toLocaleString("en-US");
-const VERSION="1.6.0"; // bump the minor on every PR — shown in settings to track deploys
+const VERSION="1.7.0"; // bump the minor on every PR — shown in settings to track deploys
 
 // ---------- persistence ----------
 const store = {
@@ -1179,6 +1179,7 @@ const AFFIX_NAMES={shield:"⚜ SHIELDED ELITE ⚜", split:"⚜ FISSILE ELITE ⚜
 
 // difficulty director — flow: pressure tracks time survived
 function director(dt){
+  if(G.launch>0) return; // hold the spawns until the ship has landed in frame
   const it = 1 + G.t/40;                 // intensity — eases in, the first minutes breathe
   for(const k in ETYPES){
     const e=ETYPES[k];
@@ -1233,6 +1234,9 @@ function spawnBoss(){
   banner("⚠ "+name+" APPROACHES ⚠");
   AU.tone(70,1.2,"sawtooth",0.22,30); AU.noise(0.5,0.2,500);
   shake(10); flashScreen(0.15);
+  // intro: bars close, time crawls, the camera leans toward the arrival
+  G.cine={t:1.6,max:1.6,x:clamp(x,120,W-120),y:clamp(y,120,H-120),zoom:0.12,bars:true};
+  document.getElementById("wrap").classList.add("cine");
 }
 function bossAttack(e,px,py){
   const dx=px-e.x, dy=py-e.y, dd=Math.hypot(dx,dy)||1;
@@ -1438,6 +1442,8 @@ function killEnemy(i){
   // bosses go down like a second sun
   if(e.boss){
     banner("☠ "+e.name+" DESTROYED ☠");
+    // kill-cam: a beat of slow-mo on the wreck while explosions chain through it
+    G.cine={t:0.8,max:0.8,x:clamp(e.x,120,W-120),y:clamp(e.y,120,H-120),zoom:0.18,boom:true};
     for(let k=0;k<3;k++) shards.push({x:e.x+rnd(-30,30),y:e.y+rnd(-30,30),vx:rnd(-70,70),vy:rnd(-70,70),core:5,t:rnd(TAU)});
     for(let k=0;k<12;k++) shards.push({x:e.x+rnd(-40,40),y:e.y+rnd(-40,40),vx:rnd(-90,90),vy:rnd(-90,90),v:5,t:rnd(TAU)});
     if(G.hp<G.maxHp){ G.hp++; drawHearts(); ftext(e.x,e.y-44,"+ HULL","#7fe8a8",16); }
@@ -1478,6 +1484,23 @@ function reap(){
 // ---------- player ----------
 function updatePlayer(dt){
   const s=stats;
+  // launch flythrough: the ship streaks up into the arena before control hands over
+  if(G.launch>0){
+    G.launch-=dt;
+    const p=clamp(1-G.launch/1.3,0,1), e=1-Math.pow(1-p,3);
+    player.x=W/2; player.y=lerp(H+90,H/2,e);
+    player.vx=0; player.vy=-520*(1-p);
+    player.angle=-Math.PI/2;
+    player.trail.push({x:player.x,y:player.y,life:0.35});
+    if(player.trail.length>40) player.trail.shift();
+    for(const t of player.trail) t.life-=dt;
+    if(Math.random()<0.85)
+      parts.push({x:player.x+rnd(-4,4),y:player.y+12,vx:rnd(-30,30),vy:rnd(140,240),
+        life:0.4,max:0.4,r:2.4,c:scheme().c1,drag:0.96});
+    G.invuln=Math.max(G.invuln,0.8);
+    if(G.launch<=0){ banner("SURVIVE"); flashScreen(0.12); AU.tone(520,0.2,"triangle",0.1,140); }
+    return;
+  }
   let ax=0,ay=0,keyed=false;
   if(keys.KeyW||keys.ArrowUp){ay-=1;keyed=true;}
   if(keys.KeyS||keys.ArrowDown){ay+=1;keyed=true;}
@@ -2089,7 +2112,7 @@ function startDeath(){
   G.state="dying"; G.deathT=0;
   // the crash site becomes a singularity that swallows the whole arena
   G.deathHole={x:player.x,y:player.y,collapsed:false};
-  zones=[]; waves=[]; bolts=[]; flail=null; G.arena=null;
+  zones=[]; waves=[]; bolts=[]; flail=null; G.arena=null; G.cine=null;
   document.getElementById("wrap").classList.add("cine"); // bars close in as the signal dies
   addFlare(player.x,player.y, W*1.5, "255,93,126", 1.7);  // the signal collapses to a line
   AU.die();
@@ -2160,22 +2183,23 @@ function startRun(){
     surge:0,level:1,xp:0,xpNext:8,maxHp:hull.hp,
     invuln:1.2,shake:0,hitstop:0,timeScale:1,flash:0,
     spawnAcc:0,eliteAcc:0,introduced:{},scoredThisRun:0,musicAcc:0,arena:null,arenaAcc:0,bossN:0,
+    cine:null,launch:1.3,
   });
   G.maxHp = Math.max(1, G.maxHp + (meta.shop.hull||0) + (MUT.hearts||0));
   G.hp=G.maxHp;
   G.coresRun=0; player.volleys=0;
   G.coach=(meta.runs===0); G.coachStep=0; G.coachSurge=false;
   G.runWeapon=null;
-  player.x=W/2; player.y=H/2; player.vx=player.vy=0; player.trail=[];
+  player.x=W/2; player.y=H+90; player.vx=player.vy=0; player.trail=[]; // launch from below the frame
   drawHearts();
   document.getElementById("lvl").textContent="LV 1";
   document.getElementById("best").textContent="BEST "+fmtN(meta.best);
   document.getElementById("menu").classList.remove("on");
   document.getElementById("death").classList.remove("on");
   document.getElementById("hud").classList.add("on");
-  document.getElementById("wrap").classList.remove("cine"); // letterbox opens for play
+  document.getElementById("wrap").classList.remove("cine"); // letterbox opens as the ship streaks in
   applySchemeCSS();
-  banner("SURVIVE");
+  AU.dash();
 }
 function drawHearts(){
   const el=document.getElementById("hearts");
@@ -2701,6 +2725,16 @@ buildMenu();
 const stars=[];
 for(let i=0;i<150;i++) stars.push({x:rnd(1),y:rnd(1),z:rnd(0.2,1),tw:rnd(TAU)});
 let starDrift=0; // slow camera pan on the menu; freezes (no jump) in play
+// parallax wreckage — dead hulls and nebula wisps drifting between the stars and the fight
+const debris=[];
+for(let i=0;i<9;i++){
+  const verts=[]; const n=5+(Math.random()*3|0);
+  for(let k=0;k<n;k++) verts.push(rnd(0.55,1));
+  debris.push({x:rnd(1),y:rnd(1),z:rnd(0.25,0.7),r:rnd(16,46),rot:rnd(TAU),vr:rnd(0.3,1)*(Math.random()<0.5?-1:1),verts});
+}
+const nebulae=[];
+for(let i=0;i<3;i++) nebulae.push({x:rnd(1),y:rnd(1),z:rnd(0.15,0.3),r:rnd(220,420),
+  hue:pick(["18,30,80","60,20,80","10,40,70"])});
 
 // ---------- menu attract demo: a real ship grazing real foes ----------
 let menuFoes=[], menuGlow=0, menuShip={x:0,y:0,a:0};
@@ -2761,6 +2795,14 @@ function render(now){
     ctx.translate(G.deathHole.x,G.deathHole.y); ctx.scale(z,z);
     ctx.translate(-G.deathHole.x,-G.deathHole.y);
   }
+  // cinematic moments: ease toward the subject, ease back out at the end
+  if(G.state==="playing" && G.cine){
+    const p=1-G.cine.t/G.cine.max;
+    const k=Math.max(0,Math.min(p/0.25,1,(1-p)/0.2));
+    const z=1+G.cine.zoom*k;
+    ctx.translate(G.cine.x,G.cine.y); ctx.scale(z,z);
+    ctx.translate(-G.cine.x,-G.cine.y);
+  }
 
   // stars
   ctx.globalCompositeOperation="source-over";
@@ -2770,6 +2812,29 @@ function render(now){
     const a=0.25*st.z + 0.18*Math.sin(now*0.001+st.tw);
     ctx.fillStyle="rgba(160,200,255,"+Math.max(0,a)+")";
     ctx.fillRect(px,py,st.z*1.8,st.z*1.8);
+  }
+
+  // nebula wisps, then wreckage silhouettes — a parallax slab of depth behind the fight
+  for(const nb of nebulae){
+    const px=(((nb.x*W - player.x*0.03*nb.z - starDrift*1.5*nb.z)%W)+W)%W;
+    const py=(((nb.y*H - player.y*0.03*nb.z)%H)+H)%H;
+    const g=ctx.createRadialGradient(px,py,0,px,py,nb.r);
+    g.addColorStop(0,"rgba("+nb.hue+",0.10)"); g.addColorStop(1,"rgba(0,0,0,0)");
+    ctx.fillStyle=g; ctx.fillRect(px-nb.r,py-nb.r,nb.r*2,nb.r*2);
+  }
+  for(const d of debris){
+    const px=(((d.x*W - player.x*0.06*d.z - starDrift*2.2*d.z)%W)+W)%W;
+    const py=(((d.y*H - player.y*0.06*d.z)%H)+H)%H;
+    const rot=d.rot+now*0.00009*d.vr;
+    ctx.save(); ctx.translate(px,py); ctx.rotate(rot);
+    ctx.fillStyle="rgba(13,18,40,0.85)"; ctx.strokeStyle="rgba(64,86,150,0.28)"; ctx.lineWidth=1;
+    ctx.beginPath();
+    d.verts.forEach((v,k)=>{
+      const a=k/d.verts.length*TAU, rr=d.r*v*d.z;
+      k?ctx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr):ctx.moveTo(Math.cos(a)*rr,Math.sin(a)*rr);
+    });
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.restore();
   }
 
   // menu backdrop — the game in miniature: a ship riding the orbit, grazing real foes
@@ -3126,6 +3191,18 @@ function loop(now){
 
   if(G.state==="playing"){
     if(G.hitstop>0){ G.hitstop-=dt; render(now); return; }
+    // cinematic moments: world crawls, camera leans in
+    if(G.cine){
+      G.cine.t-=dt;
+      if(G.cine.t<=0){
+        if(G.cine.bars) document.getElementById("wrap").classList.remove("cine");
+        G.cine=null;
+      } else {
+        if(G.cine.boom && Math.random()<0.4)
+          burst(G.cine.x+rnd(-50,50),G.cine.y+rnd(-50,50),pick(["#ff3df0","#ffd84e","#ffffff"]),6,260,3,0.4);
+        dt*=0.3;
+      }
+    }
     G.t+=dt;
     // combo decay — tension between safety and the timer
     if(G.comboTimer>0) G.comboTimer-=dt;
