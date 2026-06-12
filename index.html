@@ -3,6 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#04040c">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>GRAZE — ride the edge</title>
 <style>
   :root{
@@ -147,6 +153,9 @@
   /* the graze line is now a quiet typographic rule — the live demo happens on canvas */
   .tagline{font-size:11px;letter-spacing:10px;color:#9fb6d8;margin:40px 0 0 10px;animation:fadeUp 1.2s 1.05s both;}
   .tagline b{color:var(--c2);font-weight:400;text-shadow:0 0 14px var(--c2);}
+  #mutLine{margin-top:18px;font-size:9.5px;letter-spacing:3px;color:#ffd84e;
+    text-shadow:0 0 10px rgba(255,216,78,.4);animation:fadeUp 1.2s 1.25s both;}
+  #mutLine i{font-style:normal;color:#9fb6d8;letter-spacing:2px;}
   .cta{margin-top:56px;padding:17px 78px;font:inherit;font-size:14px;letter-spacing:9px;color:#eef6ff;
     background:transparent;border:1px solid rgba(140,180,230,.38);border-radius:2px;cursor:pointer;
     position:relative;transition:all .25s ease;animation:fadeUp 1s 1.3s both;}
@@ -277,7 +286,7 @@
     transition:all .15s;}
   .stab:hover{color:#fff;border-color:var(--c1);}
   .stab.sel{color:#04040c;background:var(--c1);border-color:var(--c1);font-weight:700;}
-  #sWeapons{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:740px;}
+  #sWeapons,#sHulls{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:740px;}
   .wcard{padding:12px 16px;border:1px solid rgba(140,170,220,.25);border-radius:4px;cursor:pointer;
     text-align:center;min-width:128px;transition:all .15s;background:rgba(10,14,30,.6);}
   .wcard .wn{font-size:12px;letter-spacing:2px;color:#dfe9ff;}
@@ -365,6 +374,7 @@
   #bTitle{font-size:26px;letter-spacing:14px;font-weight:200;color:#eef6ff;
     font-family:"Helvetica Neue","Inter",-apple-system,"Segoe UI",Arial,sans-serif;}
   #bSub{margin-top:10px;font-size:10px;letter-spacing:4px;color:#5a6e92;}
+  #bTabs{margin-top:18px;display:flex;gap:8px;}
   #bList{margin-top:26px;width:min(560px,92vw);display:flex;flex-direction:column;gap:6px;}
   #bStatus{padding:30px 0;font-size:11px;letter-spacing:4px;color:#7d92b8;text-align:center;
     animation:pulse 1.2s infinite alternate;}
@@ -457,7 +467,7 @@
     #store{padding:34px 0 30px;}
     #sTitle{font-size:20px;letter-spacing:10px;}
     #sTabs{margin:18px 0 16px;} .stab{padding:8px 12px;letter-spacing:2px;}
-    #sWeapons{gap:8px;width:94vw;}
+    #sWeapons,#sHulls{gap:8px;width:94vw;}
     .wcard{min-width:0;flex:1 1 calc(50% - 8px);padding:10px 8px;}
     #sShip{width:94vw;gap:6px;}
     .srow{flex-wrap:wrap;gap:8px 12px;padding:10px 12px;}
@@ -501,6 +511,7 @@
       <div id="flare"><i class="fStreak"></i><i class="fStreak2"></i><i class="fCore"></i><i class="fGhost g1"></i><i class="fGhost g2"></i></div>
       <div id="wordmark"><span>G</span><span>R</span><span>A</span><span>Z</span><span>E</span></div>
       <div class="tagline">DANGER <b>PAYS</b></div>
+      <div id="mutLine"></div>
     </div>
     <button id="startBtn">ENGAGE</button>
     <div id="tutBtn">HOW TO PLAY</div>
@@ -532,10 +543,12 @@
     <div id="sCores"></div>
     <div id="sTabs">
       <span class="stab sel" data-tab="weapons">WEAPONS</span>
+      <span class="stab" data-tab="hulls">HULLS</span>
       <span class="stab" data-tab="ship">SHIP SYSTEMS</span>
       <span class="stab" data-tab="paint">PAINTWORK</span>
     </div>
     <div id="sWeapons"></div>
+    <div id="sHulls"></div>
     <div id="sShip"></div>
     <div id="schemes"></div>
     <button class="cta small" id="storeBack">BACK</button>
@@ -544,6 +557,11 @@
   <div id="board" class="overlay">
     <div id="bTitle">GLOBAL LEADERBOARD</div>
     <div id="bSub">BEST RUN PER CALLSIGN</div>
+    <div id="bTabs">
+      <span class="stab sel" data-win="all">ALL TIME</span>
+      <span class="stab" data-win="week">THIS WEEK</span>
+      <span class="stab" data-win="day">TODAY</span>
+    </div>
     <div id="bList"></div>
     <button class="cta small" id="boardBack">BACK</button>
   </div>
@@ -554,6 +572,7 @@
       <div class="setrow"><span class="setk">SOUND</span><button class="setbtn" id="setSound">ON</button></div>
       <div class="setrow"><span class="setk">CALLSIGN</span><input id="setName" maxlength="16" placeholder="NOT SET" spellcheck="false" autocomplete="off"><button class="setbtn" id="setNameSave">SAVE</button></div>
       <div class="setrow"><span class="setk">RECORD</span><span class="setv" id="setStats"></span></div>
+      <div class="setrow"><span class="setk">APP</span><span class="setv" id="setInstallHint"></span><button class="setbtn" id="setInstall">INSTALL</button></div>
       <div class="setrow"><span class="setk">DANGER ZONE</span><button class="setbtn danger" id="setReset">RESET PROGRESS</button></div>
     </div>
     <div id="setVersion"></div>
@@ -633,7 +652,7 @@ const lerp = (a,b,t)=> a+(b-a)*t;
 const d2 = (ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy;};
 const fmtT = s =>{s|=0;return ((s/60)|0)+":"+("0"+(s%60)).slice(-2);};
 const fmtN = n => (n|0).toLocaleString("en-US");
-const VERSION="1.5.0"; // bump the minor on every PR — shown in settings to track deploys
+const VERSION="1.6.0"; // bump the minor on every PR — shown in settings to track deploys
 
 // ---------- persistence ----------
 const store = {
@@ -648,6 +667,8 @@ const meta = Object.assign({
 meta.owned = Object.assign({pulse:true}, meta.owned||{});
 meta.shop  = Object.assign({gun:0,cycle:0,hull:0,thrust:0,magnet:0,graze:0,surge:0,luck:0}, meta.shop||{});
 meta.seen  = Object.assign({}, meta.seen||{}); // weapons used mid-run — only these surface in the hangar
+meta.hull  = meta.hull||"vector";
+meta.hulls = Object.assign({vector:true}, meta.hulls||{});
 
 // daily streak (a reason to come back tomorrow)
 (function(){
@@ -659,6 +680,23 @@ meta.seen  = Object.assign({}, meta.seen||{}); // weapons used mid-run — only 
     store.save(meta);
   }
 })();
+
+// ---------- weekly mutator — one shared twist, derived from the date ----------
+const MUTATORS=[
+  {nm:"OVERDRIVE",   ds:"enemy fire +25% faster · score ×1.4",            ebulSpd:1.25, score:1.4},
+  {nm:"SWARM WEEK",  ds:"+40% spawns · enemies −20% hull",                spawn:1.4, ehp:0.8},
+  {nm:"GLASS CANNON",ds:"your damage ×1.6 · one less heart",              dmg:1.6, hearts:-1},
+  {nm:"TIGHT ROPE",  ds:"graze ring −25% · grazes ×2 score, +60% surge",  graze:0.75, grazeScore:2, surge:1.6},
+  {nm:"HEAVYWEIGHT", ds:"enemies +40% hull · cores ×2",                   ehp:1.4, cores:2},
+  {nm:"SLIPSTREAM",  ds:"everyone moves +20% faster",                     speed:1.2, espd:1.2},
+];
+function isoWeek(d){
+  const t=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()));
+  t.setUTCDate(t.getUTCDate()+4-(t.getUTCDay()||7));
+  const y0=new Date(Date.UTC(t.getUTCFullYear(),0,1));
+  return t.getUTCFullYear()*100+Math.ceil(((t-y0)/86400000+1)/7);
+}
+const MUT = MUTATORS[isoWeek(new Date())%MUTATORS.length];
 
 const SCHEMES = {
   pulse:       {c1:"#4ef3ff", c2:"#ff3df0", bullet:"#9ef7ff"},
@@ -683,6 +721,12 @@ const WEAPONS = {
   mitosis:{nm:"MITOSIS ARRAY",ds:"shots divide in two, four times over",price:3800},
   flail:  {nm:"ION FLAIL",    ds:"a tethered wrecking orb — swing it",price:4500},
   well:   {nm:"SINGULARITY SEED",ds:"every 6th shot plants a gravity well",price:5500},
+};
+// ship hulls — real tradeoffs, chosen before a run
+const HULLS = {
+  vector:{nm:"VECTOR", ds:"the baseline — balanced in all things",      price:0,    speed:1,   graze:1,    hp:3, shape:[1,1]},
+  dart:  {nm:"DART",   ds:"+30% speed, +25% graze ring — two hearts",   price:2000, speed:1.3, graze:1.25, hp:2, shape:[1.25,0.72]},
+  aegis: {nm:"AEGIS",  ds:"four hearts of plate — slow, narrow ring",   price:3000, speed:0.8, graze:0.85, hp:4, shape:[0.9,1.35]},
 };
 const SHOP = [
   {id:"gun",   nm:"GUN CALIBRATION", ds:"+8% damage per level",         max:5, base:40},
@@ -1085,7 +1129,7 @@ function clearBanner(){
 // ---------- scoring ----------
 function addScore(n){
   const mult = 1 + G.combo*0.1;
-  const v = Math.round(n*mult);
+  const v = Math.round(n*mult*(MUT.score||1));
   G.score += v; G.scoredThisRun += v;
   return v;
 }
@@ -1117,15 +1161,21 @@ function spawnEnemy(type, elite=false, px, py){
     if(side===0){x=rnd(W);y=-m;} else if(side===1){x=W+m;y=rnd(H);}
     else if(side===2){x=rnd(W);y=H+m;} else {x=-m;y=rnd(H);}
   }
-  const hpScale = 1 + G.t/75;
-  enemies.push({
+  const hpScale = (1 + G.t/75)*(MUT.ehp||1);
+  // elites carry an affix — each warps the fight a different way
+  const affix = elite ? pick(["shield","split","spray"]) : null;
+  const hpMul = (elite?5:1) * (affix==="shield"?1.8:1);
+  const e = {
     type, x, y, vx:0, vy:0,
     r: t.r*(elite?1.7:1),
-    hp: t.hp*hpScale*(elite?5:1), maxhp: t.hp*hpScale*(elite?5:1),
-    sc: t.sc*(elite?6:1), c: t.c, elite,
+    hp: t.hp*hpScale*hpMul, maxhp: t.hp*hpScale*hpMul,
+    sc: t.sc*(elite?6:1), c: t.c, elite, affix,
     grazed:0, shootT:rnd(1,2), phase:rnd(TAU), hitT:0, mode:"", mt:0, alpha:1, dashAng:0,
-  });
+  };
+  enemies.push(e);
+  return e;
 }
+const AFFIX_NAMES={shield:"⚜ SHIELDED ELITE ⚜", split:"⚜ FISSILE ELITE ⚜", spray:"⚜ BURST ELITE ⚜"};
 
 // difficulty director — flow: pressure tracks time survived
 function director(dt){
@@ -1138,7 +1188,7 @@ function director(dt){
     }
   }
   G.spawnAcc += dt*it;
-  const interval = 1.65;
+  const interval = 1.65/(MUT.spawn||1);
   while(G.spawnAcc > interval){
     G.spawnAcc -= interval;
     if(enemies.length > 130) break;
@@ -1153,10 +1203,100 @@ function director(dt){
     if(G.eliteAcc > 42){
       G.eliteAcc = 0;
       const pool = Object.keys(ETYPES).filter(k=>ETYPES[k].at<=G.t && k!=="tank");
-      spawnEnemy(pick(pool), true);
-      banner("⚜ ELITE SIGNATURE ⚜");
+      const e=spawnEnemy(pick(pool), true);
+      banner(AFFIX_NAMES[e.affix]||"⚜ ELITE SIGNATURE ⚜");
     }
   }
+  // arena events — past 90s the arena itself turns hostile every so often
+  if(G.t>90 && !G.arena){
+    G.arenaAcc=(G.arenaAcc||0)+dt;
+    if(G.arenaAcc>50){ G.arenaAcc=0; startArenaEvent(); }
+  }
+  // bosses — every three minutes, something with a name shows up
+  if(G.t >= (G.bossN+1)*180 && !enemies.some(e=>e.boss)) spawnBoss();
+}
+
+// ---------- bosses ----------
+const BOSS_NAMES=["VOIDMAW","THE WARDEN","HEXAGON PRIME","NULL TYRANT","OMEGA SHARD"];
+function spawnBoss(){
+  G.bossN++;
+  const name=BOSS_NAMES[(G.bossN-1)%BOSS_NAMES.length];
+  const side=(Math.random()*4)|0, m=80; let x,y;
+  if(side===0){x=rnd(W);y=-m;} else if(side===1){x=W+m;y=rnd(H);}
+  else if(side===2){x=rnd(W);y=H+m;} else {x=-m;y=rnd(H);}
+  const hp=1500*G.bossN*(1+G.t/300)*(MUT.ehp||1);
+  enemies.push({
+    type:"boss", boss:true, name, x, y, vx:0, vy:0, r:42,
+    hp, maxhp:hp, sc:600*G.bossN, c:"#ff3df0", elite:false, affix:null,
+    grazed:0, shootT:2, phase:rnd(TAU), hitT:0, mode:"approach", mt:2.4, alpha:1, dashAng:0,
+  });
+  banner("⚠ "+name+" APPROACHES ⚠");
+  AU.tone(70,1.2,"sawtooth",0.22,30); AU.noise(0.5,0.2,500);
+  shake(10); flashScreen(0.15);
+}
+function bossAttack(e,px,py){
+  const dx=px-e.x, dy=py-e.y, dd=Math.hypot(dx,dy)||1;
+  const atk=pick(["ring","burst","charge","summon"]);
+  if(atk==="ring"){
+    for(let ring=0;ring<2;ring++){
+      const n=14, sp=150+ring*55;
+      for(let k=0;k<n;k++){
+        const a=k/n*TAU+e.phase+ring*0.22;
+        ebul.push({x:e.x,y:e.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,r:5,grazed:0,life:6});
+      }
+    }
+    AU.tone(180,0.3,"square",0.12,-80);
+  } else if(atk==="burst"){
+    for(let k=-2;k<=2;k++){
+      const a=Math.atan2(dy,dx)+k*0.13, sp=270+G.t*0.3;
+      ebul.push({x:e.x,y:e.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,r:6,grazed:0,life:6});
+    }
+    AU.tone(300,0.18,"square",0.1,-150);
+  } else if(atk==="charge"){
+    e.vx=dx/dd*430; e.vy=dy/dd*430;
+    AU.dash(); burst(e.x,e.y,e.c,10,260,3.5,0.4);
+  } else {
+    for(let k=0;k<3;k++) spawnEnemy("chaser",false,e.x+rnd(-50,50),e.y+rnd(-50,50));
+    burst(e.x,e.y,"#cf7dff",12,240,3,0.5);
+    AU.tone(140,0.4,"sawtooth",0.1,60);
+  }
+}
+
+// ---------- arena events ----------
+function startArenaEvent(){
+  const type=pick(["meteor","laser","storm"]);
+  AU.warn();
+  if(type==="meteor"){
+    G.arena={type,t:8,acc:0};
+    banner("☄ METEOR SHOWER ☄");
+  } else if(type==="laser"){
+    const dir=Math.random()<0.5?1:-1;
+    G.arena={type,t:6.8,warn:1.4,dir,x:dir>0?-20:W+20,speed:(W+80)/5};
+    banner("⚠ LASER SWEEP ⚠");
+  } else {
+    G.arena={type,t:9};
+    holes.push({x:rnd(W*0.25,W*0.75),y:rnd(H*0.25,H*0.75),t:9,soft:true,storm:true});
+    banner("◉ GRAVITY STORM ◉");
+  }
+}
+function updateArena(dt){
+  const a=G.arena; if(!a) return;
+  a.t-=dt;
+  if(a.type==="meteor"){
+    a.acc+=dt;
+    while(a.acc>0.32){
+      a.acc-=0.32;
+      ebul.push({x:rnd(W),y:-26,vx:rnd(-70,70),vy:rnd(190,270),r:11,grazed:0,life:9,meteor:1});
+    }
+  } else if(a.type==="laser"){
+    if(a.warn>0) a.warn-=dt;
+    else {
+      a.x+=a.dir*a.speed*dt;
+      if(Math.abs(player.x-a.x)<12) damagePlayer();
+      for(const e of enemies){ if(Math.abs(e.x-a.x)<14){ e.hp-=140*dt; e.hitT=0.05; } }
+    }
+  }
+  if(a.t<=0) G.arena=null;
 }
 
 function updateEnemies(dt){
@@ -1165,7 +1305,7 @@ function updateEnemies(dt){
     const e=enemies[i];
     e.hitT=Math.max(0,e.hitT-dt);
     const dx=px-e.x, dy=py-e.y, dd=Math.sqrt(dx*dx+dy*dy)||1;
-    const sMul = e.elite?0.8:1;
+    const sMul = (e.elite?0.8:1)*(MUT.espd||1);
     switch(e.type){
       case "chaser":{ const sp=95*sMul*(1+G.t/200); e.vx=lerp(e.vx,dx/dd*sp,dt*2.4); e.vy=lerp(e.vy,dy/dd*sp,dt*2.4); break; }
       case "drifter":{
@@ -1240,6 +1380,26 @@ function updateEnemies(dt){
         break; }
       case "splitter":{ const sp=75*sMul; e.vx=lerp(e.vx,dx/dd*sp,dt*2); e.vy=lerp(e.vy,dy/dd*sp,dt*2); break; }
       case "tank":{ const sp=46*sMul; e.vx=lerp(e.vx,dx/dd*sp,dt*1.5); e.vy=lerp(e.vy,dy/dd*sp,dt*1.5); break; }
+      case "boss":{
+        const sp=44*sMul;
+        e.vx=lerp(e.vx,dx/dd*sp,dt*1.2); e.vy=lerp(e.vy,dy/dd*sp,dt*1.2);
+        e.phase+=dt*0.7;
+        e.mt-=dt;
+        if(e.mt<=0){ e.mt=rnd(2.2,3.0); bossAttack(e,px,py); }
+        break; }
+    }
+    // burst elites periodically ring the field with bullets
+    if(e.affix==="spray"){
+      e.sprayT=(e.sprayT??rnd(1.6,2.6))-dt;
+      if(e.sprayT<=0){
+        e.sprayT=2.8;
+        const m=8;
+        for(let k=0;k<m;k++){
+          const a=k/m*TAU+e.phase;
+          ebul.push({x:e.x,y:e.y,vx:Math.cos(a)*190,vy:Math.sin(a)*190,r:5,grazed:0,life:5});
+        }
+        AU.tone(260,0.15,"square",0.07,-100);
+      }
     }
     let slowF=1;
     if(e.slowT>0){ e.slowT-=dt; slowF=0.6; }
@@ -1269,6 +1429,20 @@ function killEnemy(i){
   }
   if(e.type==="splitter"){
     spawnEnemy("chaser",false,e.x-12,e.y); spawnEnemy("chaser",false,e.x+12,e.y);
+  }
+  // fissile elites break into a trio of fresh chasers
+  if(e.affix==="split"){
+    for(let k=0;k<3;k++) spawnEnemy("chaser",false,e.x+rnd(-20,20),e.y+rnd(-20,20));
+    ftext(e.x,e.y-34,"FISSION!","#cf7dff",15);
+  }
+  // bosses go down like a second sun
+  if(e.boss){
+    banner("☠ "+e.name+" DESTROYED ☠");
+    for(let k=0;k<3;k++) shards.push({x:e.x+rnd(-30,30),y:e.y+rnd(-30,30),vx:rnd(-70,70),vy:rnd(-70,70),core:5,t:rnd(TAU)});
+    for(let k=0;k<12;k++) shards.push({x:e.x+rnd(-40,40),y:e.y+rnd(-40,40),vx:rnd(-90,90),vy:rnd(-90,90),v:5,t:rnd(TAU)});
+    if(G.hp<G.maxHp){ G.hp++; drawHearts(); ftext(e.x,e.y-44,"+ HULL","#7fe8a8",16); }
+    addFlare(e.x,e.y, W, "255,61,240", 0.8);
+    flashScreen(0.4); shake(18); hitstop(0.12); AU.nova();
   }
   if(e.type==="tank"){
     for(let k=0;k<10;k++){
@@ -1648,7 +1822,7 @@ function updateBullets(dt){
   for(let i=ebul.length-1;i>=0;i--){
     const b=ebul[i];
     // chrono field — bullets crawl inside your sphere of influence
-    let ts=1;
+    let ts=MUT.ebulSpd||1;
     if(stats.chrono>0){
       const R=stats.grazeR*2.2;
       if(d2(b.x,b.y,player.x,player.y)<R*R) ts=0.28;
@@ -1679,7 +1853,7 @@ function doGraze(x,y){
       coachMsg("surge ready — press SPACE for a nova scaled by your multiplier");
     }
   }
-  addScore(5);
+  addScore(5*(MUT.grazeScore||1));
   burst(lerp(x,player.x,0.5),lerp(y,player.y,0.5),scheme().c2,3,120,2,0.4);
   AU.graze();
   if(G.grazes%10===0) ftext(player.x,player.y-26,"GRAZE ×"+G.grazes,scheme().c2,13);
@@ -1790,8 +1964,20 @@ function updateZones(dt){
 function updateHoles(dt){
   for(let i=holes.length-1;i>=0;i--){
     const h=holes[i]; h.t-=dt;
+    // gravity storms wander, and tug at the ship too
+    if(h.storm){
+      h.wt=(h.wt||0)-dt;
+      if(h.wt<=0){ h.wt=rnd(0.8,1.5); h.tvx=rnd(-90,90); h.tvy=rnd(-90,90); }
+      h.x=clamp(h.x+(h.tvx||0)*dt, 60, W-60);
+      h.y=clamp(h.y+(h.tvy||0)*dt, 60, H-60);
+      if(G.state==="playing"){
+        const dx=h.x-player.x, dy=h.y-player.y, dd=Math.hypot(dx,dy)||1;
+        if(dd<300){ const f=(1-dd/300)*230; player.x+=dx/dd*f*dt; player.y+=dy/dd*f*dt; }
+      }
+    }
     const R=h.soft?260:320, F=h.soft?1300:1100;
     for(const e of enemies){
+      if(e.boss) continue; // too massive for any well
       const dx=h.x-e.x,dy=h.y-e.y,dd=Math.hypot(dx,dy)||1;
       if(dd<R){
         const f=(1-dd/R)*F;
@@ -1903,7 +2089,7 @@ function startDeath(){
   G.state="dying"; G.deathT=0;
   // the crash site becomes a singularity that swallows the whole arena
   G.deathHole={x:player.x,y:player.y,collapsed:false};
-  zones=[]; waves=[]; bolts=[]; flail=null;
+  zones=[]; waves=[]; bolts=[]; flail=null; G.arena=null;
   document.getElementById("wrap").classList.add("cine"); // bars close in as the signal dies
   addFlare(player.x,player.y, W*1.5, "255,93,126", 1.7);  // the signal collapses to a line
   AU.die();
@@ -1919,7 +2105,7 @@ function showDeathScreen(){
   const isBest=G.score>meta.best;
   if(isBest) meta.best=G.score;
   // bank cores: score conversion + in-run pickups
-  const coresEarned=Math.floor(G.score/100)+(G.coresRun||0);
+  const coresEarned=Math.round((Math.floor(G.score/100)+(G.coresRun||0))*(MUT.cores||1));
   meta.cores=(meta.cores||0)+coresEarned;
   store.save(meta);
   G.lastEarned=coresEarned;
@@ -1959,13 +2145,23 @@ function startRun(){
   stats.magnet   *= 1 + 0.20*sh.magnet;
   stats.grazeR   *= 1 + 0.10*sh.graze;
   stats.surgeGain*= 1 + 0.12*sh.surge;
+  // hull tradeoffs layer on top of everything
+  if(!meta.hulls[meta.hull]) meta.hull="vector";
+  const hull=HULLS[meta.hull]||HULLS.vector;
+  stats.speed  *= hull.speed;
+  stats.grazeR *= hull.graze;
+  // this week's mutator
+  stats.damage   *= MUT.dmg||1;
+  stats.speed    *= MUT.speed||1;
+  stats.grazeR   *= MUT.graze||1;
+  stats.surgeGain*= MUT.surge||1;
   Object.assign(G,{
     state:"playing",t:0,score:0,kills:0,grazes:0,combo:0,comboTimer:0,peakMult:1,
-    surge:0,level:1,xp:0,xpNext:8,maxHp:3,
+    surge:0,level:1,xp:0,xpNext:8,maxHp:hull.hp,
     invuln:1.2,shake:0,hitstop:0,timeScale:1,flash:0,
-    spawnAcc:0,eliteAcc:0,introduced:{},scoredThisRun:0,musicAcc:0,
+    spawnAcc:0,eliteAcc:0,introduced:{},scoredThisRun:0,musicAcc:0,arena:null,arenaAcc:0,bossN:0,
   });
-  G.maxHp += meta.shop.hull||0;
+  G.maxHp = Math.max(1, G.maxHp + (meta.shop.hull||0) + (MUT.hearts||0));
   G.hp=G.maxHp;
   G.coresRun=0; player.volleys=0;
   G.coach=(meta.runs===0); G.coachStep=0; G.coachSurge=false;
@@ -2110,6 +2306,7 @@ function bindReset(el){
         lastDay:new Date().toISOString().slice(0,10),cores:0,weapon:"pulse",player:""});
       meta.owned={pulse:true};
       meta.seen={};
+      meta.hull="vector"; meta.hulls={vector:true};
       meta.shop={gun:0,cycle:0,hull:0,thrust:0,magnet:0,graze:0,surge:0,luck:0};
       store.save(meta);
       document.querySelectorAll("#setReset").forEach(b=>{
@@ -2132,8 +2329,35 @@ function bindReset(el){
 bindReset(document.getElementById("setReset"));
 
 // ---------- settings ----------
+// ---------- PWA install ----------
+let deferredInstall=null;
+window.addEventListener("beforeinstallprompt",e=>{ e.preventDefault(); deferredInstall=e; });
+if("serviceWorker" in navigator && location.protocol==="https:")
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+function syncInstallRow(){
+  const btn=document.getElementById("setInstall"), hint=document.getElementById("setInstallHint");
+  const standalone=matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  if(standalone){ btn.style.display="none"; hint.textContent="INSTALLED ✓"; }
+  else { btn.style.display="inline-block"; hint.textContent=""; }
+}
+document.getElementById("setInstall").addEventListener("pointerdown",e=>{
+  e.stopPropagation(); AU.ui();
+  if(deferredInstall){
+    deferredInstall.prompt();
+    deferredInstall.userChoice.then(c=>{
+      if(c.outcome==="accepted"){ deferredInstall=null; AU.coin(); }
+      syncInstallRow();
+    });
+  } else {
+    // no native prompt (iOS Safari & friends) — point at the share-sheet route
+    document.getElementById("setInstallHint").textContent=
+      /iphone|ipad|ipod/i.test(navigator.userAgent) ? "SHARE → ADD TO HOME SCREEN" : "USE YOUR BROWSER MENU → INSTALL";
+  }
+});
+
 function buildSettings(){
   document.getElementById("setSound").textContent=AU.muted?"OFF":"ON";
+  syncInstallRow();
   document.getElementById("setName").value=meta.player||"";
   document.getElementById("setStats").innerHTML=
     "<span>"+fmtN(meta.runs)+" RUNS</span><span>BEST "+fmtN(meta.best)+"</span>"+
@@ -2243,29 +2467,36 @@ const LB_NAME_RE=/^[a-z0-9 _.\-]{2,16}$/i;
 let lbSent=false; // one transmission per death
 const escHTML=s=>String(s).replace(/[&<>"']/g,c=>"&#"+c.charCodeAt(0)+";");
 
+let bWin="all"; // which window the board shows: all | week | day
+function loadBoard(){
+  const list=document.getElementById("bList");
+  list.innerHTML="<div id='bStatus'>CONTACTING RELAY…</div>";
+  fetch(LB_API+"?window="+bWin).then(r=>{ if(!r.ok) throw 0; return r.json(); }).then(d=>{
+    if(!d.scores||!d.scores.length){
+      list.innerHTML="<div id='bStatus'>"+(bWin==="all"?"NO SIGNALS YET — BE THE FIRST":"NO RUNS "+(bWin==="day"?"TODAY":"THIS WEEK")+" — CLAIM IT")+"</div>"; return;
+    }
+    const mine=(meta.player||"").toLowerCase();
+    list.innerHTML=d.scores.map((s,i)=>
+      boardRowHTML(i+1,s.name,s.score,s.time,String(s.name).toLowerCase()===mine)).join("");
+  }).catch(()=>{ list.innerHTML="<div id='bStatus'>LEADERBOARD UNREACHABLE</div>"; });
+}
 function openBoard(){
   AU.init();
   document.getElementById("board").classList.add("on");
-  const list=document.getElementById("bList");
-  list.innerHTML="<div id='bStatus'>CONTACTING RELAY…</div>";
-  fetch(LB_API).then(r=>{ if(!r.ok) throw 0; return r.json(); }).then(d=>{
-    if(!d.scores||!d.scores.length){
-      list.innerHTML="<div id='bStatus'>NO SIGNALS YET — BE THE FIRST</div>"; return;
-    }
-    const mine=(meta.player||"").toLowerCase();
-    list.innerHTML=d.scores.map((s,i)=>{
-      const cls="brow"+(i<3?" top"+(i+1):"")+(String(s.name).toLowerCase()===mine?" me":"");
-      return "<div class='"+cls+"'><span class='br'>"+(i+1)+"</span>"+
-        "<span class='bn'>"+escHTML(s.name)+"</span>"+
-        "<span class='bs'>"+fmtN(s.score)+"</span>"+
-        "<span class='bt'>"+fmtT(s.time)+"</span></div>";
-    }).join("");
-  }).catch(()=>{ list.innerHTML="<div id='bStatus'>LEADERBOARD UNREACHABLE</div>"; });
+  loadBoard();
   AU.ui();
 }
 function closeBoard(){ document.getElementById("board").classList.remove("on"); AU.ui(); }
 document.getElementById("lbBtn").addEventListener("pointerdown",e=>{ e.stopPropagation(); openBoard(); });
 document.getElementById("boardBack").addEventListener("pointerdown",e=>{ e.stopPropagation(); closeBoard(); });
+document.querySelectorAll("#bTabs .stab").forEach(b=>{
+  b.addEventListener("pointerdown",e=>{
+    e.stopPropagation();
+    bWin=b.dataset.win;
+    document.querySelectorAll("#bTabs .stab").forEach(x=>x.classList.toggle("sel",x===b));
+    AU.ui(); loadBoard();
+  });
+});
 
 // rank phrasing: a number while you're in the top 10, a percentile beyond it
 let lbResult=null; // the accepted submission for this death, feeds SHARE YOUR RANK
@@ -2383,6 +2614,25 @@ function buildStore(){
     });
     wEl.appendChild(d);
   }
+  // hulls — same buy/equip grammar as weapons
+  const hEl=document.getElementById("sHulls"); hEl.innerHTML="";
+  for(const id in HULLS){
+    const h=HULLS[id], owned=!!meta.hulls[id], sel=meta.hull===id&&owned;
+    const d=document.createElement("div");
+    d.className="wcard"+(sel?" sel":"")+(!owned?" locked":"");
+    d.innerHTML="<div class='wn'>"+h.nm+"</div><div class='wd'>"+h.ds+"</div>"+
+      "<div class='wp'>"+(owned?(sel?"◈ FLYING":"EQUIP"):("⬢ "+fmtN(h.price)))+"</div>";
+    d.addEventListener("pointerenter",()=>AU.hover());
+    d.addEventListener("pointerdown",e=>{
+      e.stopPropagation();
+      if(owned){ meta.hull=id; store.save(meta); AU.ui(); buildStore(); }
+      else if(meta.cores>=h.price){
+        meta.cores-=h.price; meta.hulls[id]=true; meta.hull=id;
+        store.save(meta); AU.buy(); buildStore(); buildMenu();
+      } else AU.deny();
+    });
+    hEl.appendChild(d);
+  }
   const sEl=document.getElementById("sShip"); sEl.innerHTML="";
   for(const it of SHOP){
     const lv=meta.shop[it.id]||0, maxed=lv>=it.max, price=shopPrice(it,lv);
@@ -2406,6 +2656,7 @@ function buildStore(){
 function setStoreTab(t){
   document.querySelectorAll("#sTabs .stab").forEach(b=>b.classList.toggle("sel",b.dataset.tab===t));
   document.getElementById("sWeapons").style.display = t==="weapons"?"":"none";
+  document.getElementById("sHulls").style.display   = t==="hulls"?"":"none";
   document.getElementById("sShip").style.display    = t==="ship"?"":"none";
   document.getElementById("schemes").style.display  = t==="paint"?"":"none";
 }
@@ -2439,6 +2690,7 @@ function buildMenu(){
     "⬢ "+fmtN(meta.cores)+" · BEST "+fmtN(meta.best)+
     (meta.streak>1 ? " · <b>DAY "+meta.streak+" +"+(meta.streak*5)+"%</b>" : "")+
     "<br><span class='dim'>"+(TOUCH?"touch to move · two-finger tap to surge":"mouse to move · space to surge")+" · v"+VERSION+"</span>";
+  document.getElementById("mutLine").innerHTML="THIS WEEK — "+MUT.nm+" <i>· "+MUT.ds+"</i>";
   document.getElementById("muteBtn").textContent="M — SOUND "+(AU.muted?"OFF":"ON");
   document.getElementById("hCores").textContent=fmtN(meta.cores);
   applySchemeCSS();
@@ -2639,7 +2891,24 @@ function render(now){
     if(e.elite){
       ctx.strokeStyle="#ffd84e"; ctx.globalAlpha=0.8; ctx.lineWidth=2;
       ctx.beginPath(); ctx.arc(e.x,e.y,e.r+6+Math.sin(now*0.008)*2,0,TAU); ctx.stroke();
+      // affix tell: a second ring in the affix colour
+      const ac={shield:"#9ef7ff",split:"#cf7dff",spray:"#ff9b3d"}[e.affix];
+      if(ac){
+        ctx.strokeStyle=ac; ctx.globalAlpha=0.55; ctx.lineWidth=e.affix==="shield"?3:1.5;
+        ctx.beginPath(); ctx.arc(e.x,e.y,e.r+13+Math.sin(now*0.011)*3,0,TAU); ctx.stroke();
+      }
       ctx.globalAlpha=1;
+    }
+    if(e.boss){
+      // slow-turning hex cage marks the big one
+      ctx.strokeStyle="#ff3df0"; ctx.globalAlpha=0.7; ctx.lineWidth=2.5;
+      ctx.beginPath();
+      for(let k=0;k<=6;k++){
+        const a=e.phase+k/6*TAU;
+        const hx=e.x+Math.cos(a)*(e.r+14), hy=e.y+Math.sin(a)*(e.r+14);
+        k?ctx.lineTo(hx,hy):ctx.moveTo(hx,hy);
+      }
+      ctx.closePath(); ctx.stroke(); ctx.globalAlpha=1;
     }
     if(e.maxhp>40 && e.hp<e.maxhp){
       ctx.globalCompositeOperation="source-over";
@@ -2690,7 +2959,41 @@ function render(now){
     const fspd=Math.hypot(flail.vx,flail.vy);
     drawGlow(flail.x,flail.y,10+Math.min(6,fspd/120),"#ffd84e",0.8+Math.min(0.2,fspd/2000));
   }
-  for(const b of ebul) drawGlow(b.x,b.y,b.r+1,"#ff5d7e",1);
+  for(const b of ebul) drawGlow(b.x,b.y,b.r+1,b.meteor?"#ff9b3d":"#ff5d7e",1);
+
+  // boss health bar — wide, top-center, under the score
+  if(G.state==="playing"||G.state==="levelup"){
+    const boss=enemies.find(e=>e.boss);
+    if(boss){
+      const bw=Math.min(420,W*0.5), bx=(W-bw)/2, by=78;
+      ctx.globalCompositeOperation="source-over";
+      ctx.font="10px ui-monospace,Menlo,monospace"; ctx.textAlign="center";
+      ctx.fillStyle="#ff8df0"; ctx.globalAlpha=0.9;
+      ctx.fillText(boss.name, W/2, by-7);
+      ctx.fillStyle="rgba(255,255,255,.08)"; ctx.fillRect(bx,by,bw,5);
+      ctx.fillStyle="#ff3df0"; ctx.fillRect(bx,by,bw*Math.max(0,boss.hp/boss.maxhp),5);
+      ctx.globalAlpha=1;
+      ctx.globalCompositeOperation="lighter";
+    }
+  }
+
+  // arena events
+  if(G.arena && G.arena.type==="laser"){
+    const a=G.arena;
+    if(a.warn>0){
+      ctx.strokeStyle="#ff2d5e"; ctx.globalAlpha=0.25+0.25*Math.sin(now*0.02); ctx.lineWidth=3;
+      ctx.setLineDash([14,10]);
+      ctx.beginPath(); ctx.moveTo(a.x,0); ctx.lineTo(a.x,H); ctx.stroke();
+      ctx.setLineDash([]);
+    } else {
+      drawGlow(a.x,H/2,30,"#ff2d5e",0.4);
+      ctx.strokeStyle="#fff"; ctx.globalAlpha=0.9; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(a.x,0); ctx.lineTo(a.x,H); ctx.stroke();
+      ctx.strokeStyle="#ff2d5e"; ctx.globalAlpha=0.5; ctx.lineWidth=9;
+      ctx.beginPath(); ctx.moveTo(a.x,0); ctx.lineTo(a.x,H); ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+  }
 
   // tesla arcs
   for(const bl of bolts){
@@ -2734,6 +3037,8 @@ function render(now){
       // ship core triangle
       ctx.globalCompositeOperation="source-over";
       ctx.save(); ctx.translate(player.x,player.y); ctx.rotate(player.angle);
+      const hs=(HULLS[meta.hull]||HULLS.vector).shape;
+      ctx.scale(hs[0],hs[1]); // dart runs long and lean, aegis broad
       ctx.globalAlpha=shipA; ctx.fillStyle="#fff";
       ctx.beginPath(); ctx.moveTo(8,0); ctx.lineTo(-5,-5); ctx.lineTo(-5,5); ctx.closePath(); ctx.fill();
       ctx.globalAlpha=1;
@@ -2835,6 +3140,7 @@ function loop(now){
     updateShards(dt);
     updateZones(dt);
     updateHoles(dt);
+    updateArena(dt);
     reap();
 
     // enemy body contact + body graze

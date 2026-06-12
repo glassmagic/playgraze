@@ -31,10 +31,10 @@ Fallen enemies drop shards that level you up. Each level pauses the action and o
 
 ## Meta progression
 
-- **Cores (⬢)** drop from elites and heavies, and your score banks more when you die. Spend them in the **HANGAR** on eight permanent ship systems (damage, fire rate, hull, speed, magnet, graze radius, surge gain, luck) and ten unlockable weapons — from scatter pellets and railguns to chain lightning, lasers, and a tethered wrecking orb. Weapons must be **discovered first**: take one as a mid-run refit card and it becomes purchasable; until then the hangar shows an UNDISCOVERED placeholder.
-- **Difficulty director** introduces nine enemy types over the first four minutes, scales pressure with time survived, and starts sending elites after the two-minute mark.
-- A **daily streak** bonus rewards coming back each day.
-- A **global leaderboard** (from the main menu) tracks the best run per callsign. After a death, ADD SCORE TO LEADERBOARD prompts for a callsign (remembered for next time) and shows your rank in the top ten. No sign-in; one entry per name.
+- **Cores (⬢)** drop from elites, heavies, and bosses, and your score banks more when you die. Spend them in the **HANGAR** on permanent ship systems, twelve weapons (from scatter pellets to gravity wells), and **ship hulls** with real tradeoffs — the fast two-heart DART or the four-heart AEGIS. Weapons must be **discovered first**: take one as a mid-run refit card and it becomes purchasable; until then the hangar shows an UNDISCOVERED placeholder.
+- **Difficulty director** introduces nine enemy types over the first four minutes, sends affixed elites (shielded, fissile, burst) after the two-minute mark, summons a **named boss every three minutes**, and past 90 seconds turns the arena itself hostile with meteor showers, laser sweeps, and gravity storms.
+- A **daily streak** bonus rewards coming back each day, and a **weekly mutator** (same for every player, shown on the menu) rewrites one rule of the game each week.
+- A **global leaderboard** (from the main menu) tracks the best run per callsign across ALL TIME / THIS WEEK / TODAY windows. After a death, ADD SCORE TO LEADERBOARD prompts for a callsign (remembered for next time) and shows your rank in the top ten. No sign-in; one entry per name.
 
 Progress saves to `localStorage` (a double-click reset button in settings wipes it).
 
@@ -45,3 +45,4 @@ Progress saves to `localStorage` (a double-click reset button in settings wipes 
 - All audio is synthesized live with the Web Audio API, including the soundtrack, which layers up as a run gets more intense.
 - Cinematic dressing (film grain, letterboxing, color grade, anamorphic title flare) is done in CSS on top of the canvas.
 - Works with touch — the ship follows your finger.
+- Installable as a **PWA** (settings → INSTALL): a service worker keeps the shell cached for instant, offline-capable launches while deploys still land immediately.
