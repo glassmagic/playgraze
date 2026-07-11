@@ -1073,7 +1073,7 @@ function conradiatorRate(heat,fireRate){
   const h=clamp(heat,0,1), knee=0.65;
   const early=Math.pow(Math.min(h/knee,1),0.7);
   const late=Math.pow(Math.max(0,(h-knee)/(1-knee)),1.8);
-  return (1+14*early+19*late)*(fireRate/2.6); // 1→15/s, then a hard late kick to 34/s
+  return (2+13*early+19*late)*(fireRate/2.6); // 2→15/s, then a hard late kick to 34/s
 }
 // the weapon actually in hand: a mid-run refit overrides the hangar loadout
 function curWeapon(){
@@ -2077,7 +2077,7 @@ function updatePlayer(dt){
           rate=conradiatorRate(h,s.fireRate);
           dmg*=0.22; rr=3;
           spread=0.05+0.10*h;               // sloppier as it screams
-          player.heat=Math.min(1,h+0.02825);
+          player.heat=Math.min(1,h+0.025);
           player.lastShot=G.t;
         }
         player.fireT=1/rate;
