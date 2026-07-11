@@ -3218,11 +3218,27 @@ function render(now){
     ctx.globalAlpha=1;
   }
 
-  // shards
+  // shards — sharp spinning slivers (hexes for cores, to match the ⬢), not fuzzy dots
   for(const sh of shards){
     const big=sh.v>=5;
-    const r=(sh.core?7:big?6:3.4)+Math.sin(sh.t*6)*0.8;
-    drawGlow(sh.x,sh.y,r,sh.core?"#ffe44e":big?"#ffd84e":s.c1,sh.core?1:0.9);
+    const r=(sh.core?8:big?6.5:4.5)+Math.sin(sh.t*6)*0.6;
+    const col=sh.core?"#ffe44e":big?"#ffd84e":s.c1;
+    drawGlow(sh.x,sh.y,r*0.8,col,0.28); // faint halo keeps them readable over the nebula
+    ctx.save(); ctx.translate(sh.x,sh.y); ctx.rotate(sh.t*(sh.core?0.9:1.6));
+    ctx.fillStyle=col; ctx.strokeStyle="#ffffff"; ctx.lineWidth=1;
+    ctx.beginPath();
+    if(sh.core){
+      for(let k=0;k<6;k++){
+        const a=k/6*TAU;
+        k?ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r):ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r);
+      }
+    } else {
+      ctx.moveTo(0,-r); ctx.lineTo(r*0.8,r*0.7); ctx.lineTo(-r*0.8,r*0.7);
+    }
+    ctx.closePath();
+    ctx.globalAlpha=0.95; ctx.fill();
+    ctx.globalAlpha=0.85; ctx.stroke();
+    ctx.globalAlpha=1; ctx.restore();
   }
 
   // enemies
