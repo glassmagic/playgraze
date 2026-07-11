@@ -273,6 +273,32 @@
     color:#04040c;background:var(--pilot-accent);border:1px solid var(--pilot-accent);border-radius:3px;
     cursor:pointer;position:relative;box-shadow:0 0 22px rgba(78,243,255,.24);}
   #pilotHint{margin-top:10px;font-size:8px;letter-spacing:3px;color:#3d4a66;position:relative;}
+  /* secret override channel — hidden entry point, unmistakable state once active */
+  #cheatBadge{position:absolute;top:58px;right:18px;z-index:12;display:none;padding:7px 10px;
+    border:1px solid rgba(255,93,126,.65);border-radius:3px;background:rgba(35,4,16,.82);
+    color:#ff5d7e;font-size:9px;letter-spacing:3px;cursor:pointer;text-shadow:0 0 10px #ff2d5e;
+    box-shadow:0 0 16px rgba(255,45,94,.25);}
+  #cheatBadge.on{display:block;animation:cheatPulse 1.4s ease-in-out infinite alternate;}
+  @keyframes cheatPulse{from{opacity:.72;box-shadow:0 0 8px rgba(255,45,94,.18);}
+    to{opacity:1;box-shadow:0 0 22px rgba(255,45,94,.48);}}
+  #cheatEntry,#cheatDisable{z-index:13;}
+  .cheatPanel{width:min(390px,90vw);padding:30px 32px;text-align:center;border-radius:7px;
+    border:1px solid rgba(255,93,126,.5);background:linear-gradient(155deg,rgba(31,7,25,.98),rgba(5,6,18,.98));
+    box-shadow:0 0 48px rgba(255,45,94,.22);}
+  .cheatKicker{font-size:9px;letter-spacing:6px;color:#ff5d7e;text-shadow:0 0 10px #ff2d5e;}
+  .cheatTitle{margin-top:12px;font-size:20px;letter-spacing:7px;color:#ffffff;}
+  .cheatCopy{margin-top:14px;font-size:10px;line-height:1.8;letter-spacing:1.5px;color:#7d92b8;}
+  #cheatCode{display:block;width:100%;margin-top:22px;padding:12px 14px;text-align:center;font:inherit;
+    font-size:13px;letter-spacing:4px;color:#ffffff;background:rgba(4,4,14,.8);outline:none;
+    border:1px solid rgba(140,170,220,.3);border-radius:3px;}
+  #cheatCode:focus{border-color:#ff5d7e;box-shadow:0 0 16px rgba(255,45,94,.28);}
+  #cheatStatus{height:14px;margin-top:10px;font-size:9px;letter-spacing:3px;color:#ff5d7e;}
+  .cheatActions{display:flex;gap:9px;margin-top:16px;}
+  .cheatAction{flex:1;padding:11px 8px;font:inherit;font-size:9px;letter-spacing:3px;cursor:pointer;
+    border:1px solid rgba(140,170,220,.3);border-radius:3px;color:#9fb6d8;background:transparent;}
+  .cheatAction.primary{color:#04040c;background:#ff5d7e;border-color:#ff5d7e;font-weight:700;}
+  .cheatAction:hover{border-color:#ffffff;color:#ffffff;}
+  .cheatAction.primary:hover{color:#04040c;box-shadow:0 0 22px rgba(255,45,94,.45);}
   /* death screen — the score is the hero, everything else supports it */
   #deathTitle{font-size:26px;letter-spacing:12px;text-indent:12px;color:#ff5d7e;font-weight:300;
     font-family:"Helvetica Neue","Inter",-apple-system,"Segoe UI",Arial,sans-serif;
@@ -550,6 +576,8 @@
     #pilotStats{margin-top:13px;gap:7px;}
     .pilotStat{min-width:0;flex:1;padding:8px 5px;}
     #pilotContinue{margin-top:14px;}
+    #cheatBadge{top:50px;right:10px;font-size:8px;letter-spacing:2px;padding:6px 8px;}
+    .cheatPanel{padding:24px 20px;}
   }
 </style>
 </head>
@@ -583,6 +611,7 @@
   </div>
 
   <div id="banner"></div>
+  <div id="cheatBadge">CHEAT MODE</div>
 
   <div id="menu" class="overlay on">
     <div id="titleGroup">
@@ -599,6 +628,32 @@
     <div id="settingsBtn">⚙ SETTINGS</div>
     <a id="coffeeMenu" class="corner cornerR" href="https://buymeacoffee.com/adamcpowell"
        target="_blank" rel="noopener">☕ BUY ME A COFFEE</a>
+  </div>
+
+  <div id="cheatEntry" class="overlay">
+    <div class="cheatPanel">
+      <div class="cheatKicker">OVERRIDE CHANNEL</div>
+      <div class="cheatTitle">IDENTIFY</div>
+      <div class="cheatCopy">authorization string required</div>
+      <input id="cheatCode" type="password" maxlength="32" autocomplete="off" spellcheck="false" aria-label="Authorization string">
+      <div id="cheatStatus"></div>
+      <div class="cheatActions">
+        <button class="cheatAction" id="cheatCancel">CANCEL</button>
+        <button class="cheatAction primary" id="cheatSubmit">ENABLE</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="cheatDisable" class="overlay">
+    <div class="cheatPanel">
+      <div class="cheatKicker">CHEAT MODE ACTIVE</div>
+      <div class="cheatTitle">DISABLE?</div>
+      <div class="cheatCopy">do you want to disable this?<br>your original progress will be restored.</div>
+      <div class="cheatActions">
+        <button class="cheatAction" id="cheatKeep">KEEP IT</button>
+        <button class="cheatAction primary" id="cheatConfirmDisable">DISABLE</button>
+      </div>
+    </div>
   </div>
 
   <div id="tut" class="overlay">
@@ -747,6 +802,7 @@ const d2 = (ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy;};
 const fmtT = s =>{s|=0;return ((s/60)|0)+":"+("0"+(s%60)).slice(-2);};
 const fmtN = n => (n|0).toLocaleString("en-US");
 const VERSION="1.15.0"; // bump the minor on every PR — shown in settings to track deploys
+const CHEAT_DIGEST="ec32b0485b795525c4e600167c76ecb6e7fcc17c3afa27649b705e25022a5c93";
 
 // ---------- persistence ----------
 const store = {
@@ -915,6 +971,88 @@ const SHOP = [
   {id:"surge", nm:"SURGE CAPACITOR", ds:"+12% surge gain per level",    max:6,  base:45},
   {id:"luck",  nm:"LUCKY LOGIC",     ds:"rarer bonuses per level",      max:6,  base:80},
 ];
+const cloneSave=v=>JSON.parse(JSON.stringify(v));
+function applyCheatEntitlements(){
+  meta.cores=999999;
+  for(const id of Object.keys(WEAPONS)){ meta.owned[id]=true; meta.seen[id]=true; }
+  for(const id of Object.keys(HULLS)) meta.hulls[id]=true;
+  for(const id of Object.keys(PILOTS)) meta.pilots[id]=true;
+  for(const it of SHOP) meta.shop[it.id]=it.max;
+}
+if(meta.cheat && meta.cheatBackup) applyCheatEntitlements();
+else { delete meta.cheat; delete meta.cheatBackup; }
+
+function syncCheatBadge(){
+  document.getElementById("cheatBadge").classList.toggle("on",!!meta.cheat);
+}
+function openCheatEntry(){
+  if(meta.cheat||G.state!=="menu") return;
+  const inp=document.getElementById("cheatCode");
+  inp.value="";
+  document.getElementById("cheatStatus").textContent="";
+  document.getElementById("cheatEntry").classList.add("on");
+  inp.focus();
+}
+function closeCheatEntry(){
+  document.getElementById("cheatEntry").classList.remove("on");
+  const inp=document.getElementById("cheatCode");
+  inp.blur(); inp.value="";
+  document.getElementById("cheatStatus").textContent="";
+}
+async function digestCheatCode(value){
+  const bytes=new TextEncoder().encode(value.trim());
+  const hash=await crypto.subtle.digest("SHA-256",bytes);
+  return Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,"0")).join("");
+}
+function enableCheatMode(){
+  if(meta.cheat) return;
+  const backup=cloneSave(meta);
+  delete backup.cheat; delete backup.cheatBackup;
+  meta.cheatBackup=backup;
+  meta.cheat=true;
+  applyCheatEntitlements();
+  store.save(meta);
+  closeCheatEntry();
+  syncCheatBadge();
+  buildMenu(); buildSettings();
+  flashScreen(0.35); AU.levelup();
+}
+async function submitCheatCode(){
+  const inp=document.getElementById("cheatCode"), status=document.getElementById("cheatStatus");
+  if(!inp.value) return;
+  status.textContent="CHECKING…";
+  try{
+    if(await digestCheatCode(inp.value)===CHEAT_DIGEST){ enableCheatMode(); return; }
+  }catch(e){}
+  inp.value=""; status.textContent="ACCESS DENIED"; AU.deny(); inp.focus();
+}
+let cheatReturnState="menu";
+function openCheatDisable(){
+  if(!meta.cheat) return;
+  cheatReturnState=G.state;
+  G.state="cheatprompt";
+  document.getElementById("cheatDisable").classList.add("on");
+  AU.warn();
+}
+function closeCheatDisable(){
+  document.getElementById("cheatDisable").classList.remove("on");
+  if(G.state==="cheatprompt") G.state=cheatReturnState;
+  AU.ui();
+}
+function disableCheatMode(){
+  const backup=meta.cheatBackup ? cloneSave(meta.cheatBackup) : null;
+  for(const k of Object.keys(meta)) delete meta[k];
+  if(backup) Object.assign(meta,backup);
+  else Object.assign(meta,{best:0,totalScore:0,runs:0,scheme:"pulse",streak:1,lastDay:"",muted:false,
+    cores:0,weapon:"pulse",owned:{pulse:true},shop:{gun:0,cycle:0,hull:0,thrust:0,magnet:0,graze:0,surge:0,luck:0},
+    player:"",seen:{},hull:"vector",hulls:{vector:true},pilot:"rex",pilots:{rex:true}});
+  store.save(meta);
+  AU.muted=!!meta.muted;
+  if(AU.master) AU.master.gain.value=AU.muted?0:0.5;
+  document.querySelectorAll(".overlay").forEach(el=>el.classList.remove("on"));
+  syncCheatBadge();
+  goMenu(); buildSettings();
+}
 const shopPrice = (it,lv)=>Math.round(it.base*Math.pow(2.2,lv));
 // the weapon actually in hand: a mid-run refit overrides the hangar loadout
 function curWeapon(){
@@ -2620,6 +2758,14 @@ function drawHearts(){
 
 // ---------- input routing ----------
 function handleKey(code){
+  if(document.getElementById("cheatEntry").classList.contains("on")){
+    if(code==="Escape") closeCheatEntry();
+    return;
+  }
+  if(document.getElementById("cheatDisable").classList.contains("on")){
+    if(code==="Escape") closeCheatDisable();
+    return;
+  }
   if(document.getElementById("pilotReveal").classList.contains("on")){
     if(code==="Escape"||code==="Enter"||code==="Space") dismissPilotCard();
     return;
@@ -2669,6 +2815,25 @@ function tryStart(){
 document.getElementById("startBtn").addEventListener("pointerdown",e=>{
   e.stopPropagation(); tryStart();
 });
+const secretZ=document.querySelector("#wordmark span:nth-child(4)");
+secretZ.addEventListener("pointerdown",e=>{
+  const r=secretZ.getBoundingClientRect(), hit=Math.min(28,r.width*0.38,r.height*0.3);
+  if(e.clientX<=r.left+hit && e.clientY<=r.top+hit){ e.stopPropagation(); openCheatEntry(); }
+});
+{
+  const inp=document.getElementById("cheatCode");
+  inp.addEventListener("pointerdown",e=>e.stopPropagation());
+  inp.addEventListener("keydown",e=>{
+    e.stopPropagation();
+    if(e.key==="Enter") submitCheatCode();
+    else if(e.key==="Escape") closeCheatEntry();
+  });
+}
+document.getElementById("cheatCancel").addEventListener("pointerdown",e=>{ e.stopPropagation(); closeCheatEntry(); AU.ui(); });
+document.getElementById("cheatSubmit").addEventListener("pointerdown",e=>{ e.stopPropagation(); submitCheatCode(); });
+document.getElementById("cheatBadge").addEventListener("pointerdown",e=>{ e.stopPropagation(); openCheatDisable(); });
+document.getElementById("cheatKeep").addEventListener("pointerdown",e=>{ e.stopPropagation(); closeCheatDisable(); });
+document.getElementById("cheatConfirmDisable").addEventListener("pointerdown",e=>{ e.stopPropagation(); disableCheatMode(); });
 
 // ---------- tutorial (protocol) ----------
 const TUT=[
@@ -2770,7 +2935,9 @@ function bindReset(el){
       meta.seen={};
       meta.hull="vector"; meta.hulls={vector:true}; meta.pilot="rex"; meta.pilots={rex:true};
       meta.shop={gun:0,cycle:0,hull:0,thrust:0,magnet:0,graze:0,surge:0,luck:0};
+      delete meta.cheat; delete meta.cheatBackup;
       store.save(meta);
+      syncCheatBadge();
       document.querySelectorAll("#setReset").forEach(b=>{
         b.classList.remove("armed");
         b.textContent="PROGRESS ERASED";
@@ -2967,7 +3134,7 @@ function rankText(rank,total){
   return "TOP "+Math.max(1,Math.ceil(rank/Math.max(total,1)*100))+"% OF PILOTS";
 }
 function sendScore(){
-  if(lbSent||!meta.player||G.score<1||G.t<5) return;
+  if(meta.cheat||lbSent||!meta.player||G.score<1||G.t<5) return;
   lbSent=true;
   const st=document.getElementById("lbStatus");
   st.textContent="TRANSMITTING…";
@@ -3041,10 +3208,10 @@ function joinBoard(){
 }
 function initDeathBoard(){
   lbSent=false; lbResult=null;
-  const eligible=G.score>0 && G.t>=5;
+  const eligible=!meta.cheat && G.score>0 && G.t>=5;
   document.getElementById("lbAddBtn").style.display=eligible?"block":"none";
   document.getElementById("lbJoin").style.display="none";
-  document.getElementById("lbStatus").textContent="";
+  document.getElementById("lbStatus").textContent=meta.cheat?"CHEAT RUN — LEADERBOARD LOCKED":"";
   document.getElementById("lbTop").innerHTML="";
   document.getElementById("shareRow").classList.remove("on");
   document.getElementById("lbName").value=meta.player||"";
@@ -3184,6 +3351,7 @@ function buildMenu(){
   document.getElementById("muteBtn").textContent="M — SOUND "+(AU.muted?"OFF":"ON");
   document.getElementById("hCores").textContent=fmtN(meta.cores);
   document.getElementById("hangarBtn").classList.toggle("buyable",canAffordGear());
+  syncCheatBadge();
   applySchemeCSS();
 }
 buildMenu();
@@ -3366,7 +3534,7 @@ function render(now){
   ctx.globalCompositeOperation="lighter";
 
   // graze ring — the edge made visible
-  if(G.state==="playing"||G.state==="levelup"||G.state==="pilotcard"){
+  if(G.state==="playing"||G.state==="levelup"||G.state==="pilotcard"||G.state==="cheatprompt"){
     const pulse=1+0.04*Math.sin(now*0.006);
     ctx.strokeStyle=s.c2; ctx.globalAlpha=0.16+Math.min(0.3,G.combo*0.006);
     ctx.lineWidth=1.5;
@@ -3375,7 +3543,7 @@ function render(now){
   }
 
   // surge charge ring — fills clockwise around the ship, blazes when ready
-  if(G.state==="playing"||G.state==="levelup"||G.state==="pilotcard"){
+  if(G.state==="playing"||G.state==="levelup"||G.state==="pilotcard"||G.state==="cheatprompt"){
     const frac=G.surge/100;
     if(frac>0.02){
       const ready=frac>=1;
@@ -3562,7 +3730,7 @@ function render(now){
   }
 
   // ion flail — chain and wrecking orb
-  if(flail && (G.state==="playing"||G.state==="levelup"||G.state==="pilotcard")){
+  if(flail && (G.state==="playing"||G.state==="levelup"||G.state==="pilotcard"||G.state==="cheatprompt")){
     ctx.strokeStyle=s.c1; ctx.globalAlpha=0.35; ctx.lineWidth=1.5;
     ctx.beginPath(); ctx.moveTo(player.x,player.y); ctx.lineTo(flail.x,flail.y); ctx.stroke();
     ctx.globalAlpha=1;
@@ -3572,7 +3740,7 @@ function render(now){
   for(const b of ebul) drawGlow(b.x,b.y,b.r+1,b.meteor?"#ff9b3d":"#ff5d7e",1);
 
   // boss health bar — wide, top-center, under the score
-  if(G.state==="playing"||G.state==="levelup"||G.state==="pilotcard"){
+  if(G.state==="playing"||G.state==="levelup"||G.state==="pilotcard"||G.state==="cheatprompt"){
     const boss=enemies.find(e=>e.boss);
     if(boss){
       const bw=Math.min(420,W*0.5), bx=(W-bw)/2, by=78;
@@ -3617,7 +3785,7 @@ function render(now){
   }
 
   // orbitals
-  if(stats.orbitals>0 && (G.state==="playing"||G.state==="levelup"||G.state==="pilotcard")){
+  if(stats.orbitals>0 && (G.state==="playing"||G.state==="levelup"||G.state==="pilotcard"||G.state==="cheatprompt")){
     for(let k=0;k<stats.orbitals;k++){
       const a=orbAngle+k/stats.orbitals*TAU;
       drawGlow(player.x+Math.cos(a)*54,player.y+Math.sin(a)*54,6,"#ffd84e",0.95);
@@ -3625,7 +3793,7 @@ function render(now){
   }
 
   // player + trail
-  if(G.state==="playing"||G.state==="levelup"||G.state==="pilotcard"||(G.state==="dying"&&G.deathT<0.1)){
+  if(G.state==="playing"||G.state==="levelup"||G.state==="pilotcard"||G.state==="cheatprompt"||(G.state==="dying"&&G.deathT<0.1)){
     for(const t of player.trail){
       if(t.life>0) drawGlow(t.x,t.y,5*(t.life/0.35),s.c1,0.35*(t.life/0.35));
     }
@@ -3669,7 +3837,7 @@ function render(now){
   }
 
   // echo phantom — spectral twin mirrored across the arena
-  if(stats.echo>0 && (G.state==="playing"||G.state==="levelup"||G.state==="pilotcard")){
+  if(stats.echo>0 && (G.state==="playing"||G.state==="levelup"||G.state==="pilotcard"||G.state==="cheatprompt")){
     drawGlow(W-player.x,H-player.y,player.r,s.c2,0.5);
   }
 
@@ -3881,7 +4049,7 @@ function loop(now){
   }
 
   // soundtrack: calm on menus, drums+bass in play, hook after 1:00, ghost hats after 2:30
-  AU.musicTick((G.state==="playing"||G.state==="levelup"||G.state==="pilotcard") ? (1+(G.t>60?1:0)+(G.t>150?1:0)) : 0);
+  AU.musicTick((G.state==="playing"||G.state==="levelup"||G.state==="pilotcard"||G.state==="cheatprompt") ? (1+(G.t>60?1:0)+(G.t>150?1:0)) : 0);
 
   render(now);
 }
