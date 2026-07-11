@@ -1071,9 +1071,9 @@ function disableCheatMode(){
 const shopPrice = (it,lv)=>Math.round(it.base*Math.pow(2.2,lv));
 function conradiatorRate(heat,fireRate){
   const h=clamp(heat,0,1), knee=0.65;
-  const early=Math.pow(Math.min(h/knee,1),1.35);
-  const late=Math.pow(Math.max(0,(h-knee)/(1-knee)),2.2);
-  return (1.6+7.4*early+25*late)*(fireRate/2.6); // 1.6→9/s, then a hard late kick to 34/s
+  const early=Math.pow(Math.min(h/knee,1),1.2);
+  const late=Math.pow(Math.max(0,(h-knee)/(1-knee)),2);
+  return (2.5+6.5*early+25*late)*(fireRate/2.6); // 2.5→9/s, then a hard late kick to 34/s
 }
 // the weapon actually in hand: a mid-run refit overrides the hangar loadout
 function curWeapon(){
