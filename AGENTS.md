@@ -17,6 +17,7 @@ GRAZE is a neon survival arena ("danger pays") that lives at **https://playgraze
 1. **Every PR bumps `const VERSION` in index.html exactly once: PR #N = v1.N.0.** It renders in SETTINGS and the menu corner; the user tracks deploys by it. Set it when opening the PR; don't re-bump for follow-up commits to the same open PR. Patch slot (v1.N.1) is reserved for a rare hot-fix PR of the previous PR. This is part of definition-of-done.
 2. **One feature branch per PR; never commit to main.** The user merges PRs on GitHub and deletes the branch, then tells you. Your tidy-up: `git checkout main && git pull`, delete the local branch, `git fetch --prune`, then verify production serves the new version (`curl -s https://playgraze.com | grep -o 'VERSION="[0-9.]*"'`).
 3. **Verify in a real browser before opening/updating a PR.** See "How to verify" below. PR bodies follow the house style: *What changed* + *Verified in browser* with concrete measurements.
+   - **Never leave the PR in draft state.** Draft PRs show "Merging is blocked" to the user (this happened on PR #16). Open PRs as ready, or run `gh pr ready <N>` before handing over the link; check with `gh pr view <N> --json isDraft`.
 4. **Multiple features per PR is normal here.** The user tends to fire follow-up requests at an open PR; push them as separate commits and keep the PR body updated.
 5. **Never leave test data in the production leaderboard** (see Data hygiene).
 
