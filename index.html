@@ -242,6 +242,63 @@
   .card.pact .ico{color:#ff4d5a;}
   .card.pact:hover{border-color:#fff;}
   @keyframes pactglow{from{box-shadow:0 0 14px rgba(255,45,58,.35);}to{box-shadow:0 0 40px rgba(255,45,58,.8);}}
+  /* pilot rescue dossier — one big character card, with the arena held behind it */
+  #pilotReveal{z-index:7;overflow-y:auto;padding:5vh 0;justify-content:flex-start;}
+  #pilotRevealCard{--pilot-accent:#9ef7ff;width:min(440px,90vw);padding:24px 28px 26px;
+    flex-shrink:0;text-align:center;position:relative;overflow:hidden;border-radius:12px;
+    border:1px solid var(--pilot-accent);background:linear-gradient(155deg,rgba(17,24,50,.97),rgba(5,7,22,.98));
+    box-shadow:0 0 34px rgba(78,243,255,.28),inset 0 0 42px rgba(78,243,255,.05);}
+  #pilotRevealCard::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.22;
+    background:repeating-linear-gradient(0deg,transparent 0 5px,rgba(255,255,255,.035) 6px);}
+  #pilotReveal.on #pilotRevealCard{animation:pilotCardIn .55s cubic-bezier(.16,.84,.3,1) both;}
+  @keyframes pilotCardIn{from{opacity:0;transform:translateY(24px) scale(.88);filter:blur(9px);}
+    to{opacity:1;transform:none;filter:none;}}
+  #pilotKicker{font-size:9px;letter-spacing:6px;color:var(--pilot-accent);position:relative;}
+  #pilotPortrait{height:190px;margin:8px auto 2px;color:var(--pilot-accent);position:relative;}
+  #pilotPortrait svg{height:100%;width:100%;display:block;filter:drop-shadow(0 0 12px rgba(78,243,255,.45));}
+  #pilotName{font-family:"Helvetica Neue","Inter",-apple-system,"Segoe UI",Arial,sans-serif;
+    font-size:29px;font-weight:300;letter-spacing:7px;color:#ffffff;position:relative;
+    text-shadow:0 0 20px var(--pilot-accent);}
+  #pilotRole{margin-top:6px;font-size:9px;letter-spacing:4px;color:var(--pilot-accent);position:relative;}
+  #pilotQuote{margin:18px auto 0;font-size:12px;line-height:1.65;color:#dfe9ff;font-style:italic;
+    max-width:340px;position:relative;}
+  #pilotBio{margin:10px auto 0;font-size:10px;line-height:1.7;letter-spacing:.5px;color:#7d92b8;
+    max-width:350px;position:relative;}
+  #pilotStats{display:flex;justify-content:center;gap:10px;margin-top:18px;position:relative;}
+  .pilotStat{min-width:132px;padding:9px 12px;border:1px solid rgba(140,170,220,.28);
+    border-radius:4px;background:rgba(5,8,22,.62);}
+  .pilotStat b{display:block;font-size:14px;color:#ffffff;letter-spacing:2px;}
+  .pilotStat span{display:block;margin-top:4px;font-size:8px;color:#7d92b8;letter-spacing:2px;}
+  #pilotContinue{margin-top:20px;width:100%;padding:13px 0;font:inherit;font-size:11px;letter-spacing:5px;
+    color:#04040c;background:var(--pilot-accent);border:1px solid var(--pilot-accent);border-radius:3px;
+    cursor:pointer;position:relative;box-shadow:0 0 22px rgba(78,243,255,.24);}
+  #pilotHint{margin-top:10px;font-size:8px;letter-spacing:3px;color:#3d4a66;position:relative;}
+  /* secret override channel — hidden entry point, unmistakable state once active */
+  #cheatBadge{position:absolute;top:58px;right:18px;z-index:12;display:none;padding:7px 10px;
+    border:1px solid rgba(255,93,126,.65);border-radius:3px;background:rgba(35,4,16,.82);
+    color:#ff5d7e;font-size:9px;letter-spacing:3px;cursor:pointer;text-shadow:0 0 10px #ff2d5e;
+    box-shadow:0 0 16px rgba(255,45,94,.25);}
+  #cheatBadge.on{display:block;animation:cheatPulse 1.4s ease-in-out infinite alternate;}
+  @keyframes cheatPulse{from{opacity:.72;box-shadow:0 0 8px rgba(255,45,94,.18);}
+    to{opacity:1;box-shadow:0 0 22px rgba(255,45,94,.48);}}
+  #cheatEntry,#cheatDisable{z-index:13;}
+  .cheatPanel{width:min(390px,90vw);padding:30px 32px;text-align:center;border-radius:7px;
+    border:1px solid rgba(255,93,126,.5);background:linear-gradient(155deg,rgba(31,7,25,.98),rgba(5,6,18,.98));
+    box-shadow:0 0 48px rgba(255,45,94,.22);}
+  .cheatKicker{font-size:9px;letter-spacing:6px;color:#ff5d7e;text-shadow:0 0 10px #ff2d5e;}
+  .cheatTitle{margin-top:12px;font-size:20px;letter-spacing:7px;color:#ffffff;}
+  .cheatCopy{margin-top:14px;font-size:10px;line-height:1.8;letter-spacing:1.5px;color:#7d92b8;}
+  #cheatCode{display:block;width:100%;margin-top:22px;padding:12px 14px;text-align:center;font:inherit;
+    font-size:13px;letter-spacing:4px;color:#ffffff;background:rgba(4,4,14,.8);outline:none;
+    border:1px solid rgba(140,170,220,.3);border-radius:3px;}
+  #cheatCode:focus{border-color:#ff5d7e;box-shadow:0 0 16px rgba(255,45,94,.28);}
+  #cheatStatus{height:14px;margin-top:10px;font-size:9px;letter-spacing:3px;color:#ff5d7e;}
+  .cheatActions{display:flex;gap:9px;margin-top:16px;}
+  .cheatAction{flex:1;padding:11px 8px;font:inherit;font-size:9px;letter-spacing:3px;cursor:pointer;
+    border:1px solid rgba(140,170,220,.3);border-radius:3px;color:#9fb6d8;background:transparent;}
+  .cheatAction.primary{color:#04040c;background:#ff5d7e;border-color:#ff5d7e;font-weight:700;}
+  .cheatAction:hover{border-color:#ffffff;color:#ffffff;}
+  .cheatAction.primary:hover{color:#04040c;box-shadow:0 0 22px rgba(255,45,94,.45);}
   /* death screen — the score is the hero, everything else supports it */
   #deathTitle{font-size:26px;letter-spacing:12px;text-indent:12px;color:#ff5d7e;font-weight:300;
     font-family:"Helvetica Neue","Inter",-apple-system,"Segoe UI",Arial,sans-serif;
@@ -510,6 +567,17 @@
     .srow{flex-wrap:wrap;gap:8px 12px;padding:10px 12px;}
     .srow .sn{flex:1 1 100%;}
     .srow .sbuy{margin-left:auto;}
+    #pilotReveal{padding:20px 0;}
+    #pilotRevealCard{width:min(360px,92vw);padding:18px 18px 20px;}
+    #pilotPortrait{height:150px;margin-top:4px;}
+    #pilotName{font-size:23px;letter-spacing:5px;}
+    #pilotQuote{margin-top:12px;font-size:11px;}
+    #pilotBio{font-size:9px;}
+    #pilotStats{margin-top:13px;gap:7px;}
+    .pilotStat{min-width:0;flex:1;padding:8px 5px;}
+    #pilotContinue{margin-top:14px;}
+    #cheatBadge{top:50px;right:10px;font-size:8px;letter-spacing:2px;padding:6px 8px;}
+    .cheatPanel{padding:24px 20px;}
   }
 </style>
 </head>
@@ -543,6 +611,7 @@
   </div>
 
   <div id="banner"></div>
+  <div id="cheatBadge">CHEAT MODE</div>
 
   <div id="menu" class="overlay on">
     <div id="titleGroup">
@@ -559,6 +628,32 @@
     <div id="settingsBtn">⚙ SETTINGS</div>
     <a id="coffeeMenu" class="corner cornerR" href="https://buymeacoffee.com/adamcpowell"
        target="_blank" rel="noopener">☕ BUY ME A COFFEE</a>
+  </div>
+
+  <div id="cheatEntry" class="overlay">
+    <div class="cheatPanel">
+      <div class="cheatKicker">OVERRIDE CHANNEL</div>
+      <div class="cheatTitle">IDENTIFY</div>
+      <div class="cheatCopy">authorization string required</div>
+      <input id="cheatCode" type="password" maxlength="32" autocomplete="off" spellcheck="false" aria-label="Authorization string">
+      <div id="cheatStatus"></div>
+      <div class="cheatActions">
+        <button class="cheatAction" id="cheatCancel">CANCEL</button>
+        <button class="cheatAction primary" id="cheatSubmit">ENABLE</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="cheatDisable" class="overlay">
+    <div class="cheatPanel">
+      <div class="cheatKicker">CHEAT MODE ACTIVE</div>
+      <div class="cheatTitle">DISABLE?</div>
+      <div class="cheatCopy">do you want to disable this?<br>your original progress will be restored.</div>
+      <div class="cheatActions">
+        <button class="cheatAction" id="cheatKeep">KEEP IT</button>
+        <button class="cheatAction primary" id="cheatConfirmDisable">DISABLE</button>
+      </div>
+    </div>
   </div>
 
   <div id="tut" class="overlay">
@@ -581,7 +676,7 @@
     <div id="sCores"></div>
     <div id="sTabs">
       <span class="stab sel" data-tab="weapons">WEAPONS</span>
-      <span class="stab" data-tab="hulls">HULLS</span>
+      <span class="stab" data-tab="hulls">SHIPS</span>
       <span class="stab" data-tab="pilots">PILOTS</span>
       <span class="stab" data-tab="ship">SHIP SYSTEMS</span>
       <span class="stab" data-tab="paint">PAINTWORK</span>
@@ -622,6 +717,20 @@
   <div id="levelup" class="overlay">
     <div id="lvlTitle">CHOOSE BONUS</div>
     <div id="cards"></div>
+  </div>
+
+  <div id="pilotReveal" class="overlay">
+    <div id="pilotRevealCard">
+      <div id="pilotKicker">PILOT RESCUED</div>
+      <div id="pilotPortrait"></div>
+      <div id="pilotName"></div>
+      <div id="pilotRole"></div>
+      <div id="pilotQuote"></div>
+      <div id="pilotBio"></div>
+      <div id="pilotStats"></div>
+      <button id="pilotContinue">CONTINUE</button>
+      <div id="pilotHint">SPACE / ENTER</div>
+    </div>
   </div>
 
   <div id="death" class="overlay">
@@ -692,7 +801,8 @@ const lerp = (a,b,t)=> a+(b-a)*t;
 const d2 = (ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy;};
 const fmtT = s =>{s|=0;return ((s/60)|0)+":"+("0"+(s%60)).slice(-2);};
 const fmtN = n => (n|0).toLocaleString("en-US");
-const VERSION="1.14.0"; // bump the minor on every PR — shown in settings to track deploys
+const VERSION="1.15.0"; // bump the minor on every PR — shown in settings to track deploys
+const CHEAT_DIGEST="ec32b0485b795525c4e600167c76ecb6e7fcc17c3afa27649b705e25022a5c93";
 
 // ---------- persistence ----------
 const store = {
@@ -762,7 +872,7 @@ const WEAPONS = {
   rift:   {nm:"RIFT WAVE",    ds:"expanding crescents sweep the field",price:3500},
   mitosis:{nm:"MITOSIS ARRAY",ds:"shots divide in two, four times over",price:3800},
   flail:  {nm:"ION FLAIL",    ds:"a tethered wrecking orb — swing it",price:4500},
-  conradiator:{nm:"CONRADIATOR",ds:"spool-up hose — feeble shots, screaming fire rate, vents at full heat",price:4200},
+  conradiator:{nm:"CONRADIATOR",ds:"spool-up bullet hose — starts steady, ends ferocious, vents at full heat",price:4200},
   well:   {nm:"SINGULARITY SEED",ds:"every 6th shot plants a gravity well",price:5500},
 };
 // ship hulls — real tradeoffs, chosen before a run. size is honest: it scales
@@ -776,26 +886,85 @@ const HULLS = {
 // pilots — hands on the stick, each with their own habits.
 // acc scales spread & aim jitter (lower = steadier), rof scales fire rate
 const PILOTS={
-  rex:   {nm:"REX NEBULAR",    acc:1.0,  rof:1.0,
+  rex:   {nm:"REX NEBULAR",    acc:1.0,  rof:1.0, accent:"#4ef3ff", role:"DEEP-SPACE COURIER",
+    quote:"the route is optional. delivery isn't.",
     story:"flew mail through the shatterfield for a decade; aims like it owes him money."},
-  tiler: {nm:"MR TILER",       acc:0.8,  rof:1.12,
+  tiler: {nm:"MR TILER",       acc:0.8,  rof:1.12,accent:"#ffd84e", role:"CAFFEINE TACTICIAN",
+    quote:"coffee first. targets second. somehow both vanish.",
     story:"☕ runs on quadruple espresso and quiet menace — faster and sharper after every cup."},
-  granny:{nm:"GRANNY VOLTAGE", acc:0.65, rof:0.9,
+  granny:{nm:"GRANNY VOLTAGE", acc:0.65, rof:0.9, accent:"#cf7dff", role:"SECTOR CHAMPION",
+    quote:"winning is mostly refusing to stop.",
     story:"seventy-three, deaf in one ear, banned from four sectors for excessive winning."},
-  dizzy: {nm:"DIZZY OKTAV",    acc:1.4,  rof:1.25,
+  dizzy: {nm:"DIZZY OKTAV",    acc:1.4,  rof:1.25,accent:"#ff9b3d", role:"STUNT ACE",
+    quote:"precision is just rhythm with paperwork.",
     story:"ex-stunt pilot; fires like a drum solo and aims like one too."},
-  intern:{nm:"THE INTERN",     acc:1.1,  rof:1.05,
+  intern:{nm:"THE INTERN",     acc:1.1,  rof:1.05,accent:"#7fe8a8", role:"PROVISIONAL ASSET",
+    quote:"please confirm this counts as experience.",
     story:"unpaid, terrified, statistically adequate. please be kind."},
 };
+let queuedPilotCard=null;
+function pilotPortraitSVG(id){
+  const art={
+    rex:`<path d="M88 48 70 67v50l18 23h44l18-23V67l-18-19Z" fill="#091227"/><path d="M78 76h64l-8 27H86Z" fill="currentColor" opacity=".28"/><path d="M84 79h52"/><circle cx="101" cy="91" r="4" fill="#ffffff"/><circle cx="123" cy="91" r="4" fill="#ffffff"/><path d="M96 116h32M66 92 42 79l12 26-20 12 35 4M154 90l28-14-10 25 18 10-35 9"/><path d="M102 33h20l5 15H97Z" fill="currentColor" opacity=".55"/>`,
+    tiler:`<path d="M79 50h66l10 24-12 67H81L68 74Z" fill="#151105"/><path d="m78 77 69-10-7 31-64 9Z" fill="currentColor" opacity=".25"/><path d="m87 84 48-7"/><circle cx="101" cy="91" r="4" fill="#ffffff"/><circle cx="125" cy="87" r="4" fill="#ffffff"/><path d="M99 119h31M60 122h24v25H60Z"/><path d="M84 128h8a9 9 0 0 1 0 18h-8M65 116c-8-10 8-13 0-24M76 116c-8-10 8-13 0-24"/><path d="m101 49 9-18 8 17 15-15 2 18"/>`,
+    granny:`<circle cx="111" cy="49" r="24" fill="currentColor" opacity=".22"/><circle cx="90" cy="51" r="15" fill="currentColor" opacity=".35"/><path d="M76 72q35-37 70 0v47q-35 35-70 0Z" fill="#150d24"/><path d="M80 82q31-28 62 0"/><circle cx="97" cy="94" r="11"/><circle cx="124" cy="94" r="11"/><path d="M108 94h5M86 91l-13-5M135 91l13-5M98 120q13 9 26 0"/><path d="M67 76v38M155 76v38M61 84q0-18 15-18M161 84q0-18-15-18"/><path d="m159 36-13 21 15-2-12 25" fill="currentColor" opacity=".65"/>`,
+    dizzy:`<path d="m77 58-16-22 27 11 5-27 19 22 18-26 3 31 29-13-18 27 19 8-17 16v39l-28 22-35-18-11-42Z" fill="#1d1008"/><path d="M76 76q34-23 70 0"/><circle cx="96" cy="91" r="14" fill="currentColor" opacity=".24"/><circle cx="127" cy="91" r="14" fill="currentColor" opacity=".24"/><circle cx="96" cy="91" r="5" fill="#ffffff"/><circle cx="127" cy="91" r="5" fill="#ffffff"/><path d="M110 91h3M94 119q18 15 37-2M157 88v28M157 88l16-5v25M43 75v29M43 75l16-5v25"/>`,
+    intern:`<path d="M80 54h61l12 26-10 64H78L67 80Z" fill="#08170f"/><path d="M79 77h64"/><circle cx="97" cy="91" r="6" fill="#ffffff"/><circle cx="124" cy="91" r="6" fill="#ffffff"/><circle cx="99" cy="93" r="2" fill="currentColor"/><circle cx="122" cy="93" r="2" fill="currentColor"/><path d="M100 119q12-8 23 0M96 145l15 23 15-23-8-16h-14Z" fill="currentColor" opacity=".45"/><path d="M153 89h29v48h-29Z"/><path d="M160 99h15M160 108h15M160 117h10M99 50l7-18h12l8 18"/>`,
+  }[id]||"";
+  return `<svg viewBox="0 0 220 180" role="img" aria-label="${PILOTS[id].nm} portrait">
+    <defs><radialGradient id="pilotHalo"><stop offset="0" stop-color="currentColor" stop-opacity=".22"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></radialGradient></defs>
+    <circle cx="110" cy="90" r="86" fill="url(#pilotHalo)"/><g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">${art}</g>
+    <path d="M34 157h152" stroke="currentColor" stroke-width="1" opacity=".35"/><path d="M50 164h120" stroke="#ffffff" stroke-width="1" opacity=".18"/>
+  </svg>`;
+}
+function showPilotCard(id){
+  const p=PILOTS[id];
+  if(!p) return;
+  if(G.state==="levelup"||document.getElementById("levelup").classList.contains("on")){
+    queuedPilotCard=id;
+    return;
+  }
+  queuedPilotCard=null;
+  const aim=Math.round((1-p.acc)*100), rof=Math.round((p.rof-1)*100);
+  G.invuln=Math.max(G.invuln,0.8);
+  G.state="pilotcard";
+  const card=document.getElementById("pilotRevealCard");
+  card.style.setProperty("--pilot-accent",p.accent);
+  document.getElementById("pilotPortrait").innerHTML=pilotPortraitSVG(id);
+  document.getElementById("pilotName").textContent=p.nm;
+  document.getElementById("pilotRole").textContent=p.role;
+  document.getElementById("pilotQuote").textContent="“"+p.quote+"”";
+  document.getElementById("pilotBio").textContent=p.story;
+  document.getElementById("pilotStats").innerHTML=
+    `<div class="pilotStat"><b>${aim>=0?"+":""}${aim}%</b><span>AIM CONTROL</span></div>`+
+    `<div class="pilotStat"><b>${rof>=0?"+":""}${rof}%</b><span>FIRE RATE</span></div>`;
+  document.getElementById("pilotReveal").classList.add("on");
+}
+function dismissPilotCard(){
+  if(G.state!=="pilotcard") return;
+  document.getElementById("pilotReveal").classList.remove("on");
+  G.state="playing";
+  G.invuln=Math.max(G.invuln,0.8);
+  flashScreen(0.12); AU.ui();
+}
 function dropPilotPrisoner(x,y){
   shards.push({x:clamp(x,24,W-24),y:clamp(y,24,H-24),vx:rnd(-35,35),vy:rnd(-35,35),pilot:true,t:rnd(TAU)});
 }
 function unlockRandomPilot(x,y){
   const locked=Object.keys(PILOTS).filter(id=>!meta.pilots[id]);
   if(!locked.length){
+    if(meta.cheat){
+      const id=pick(Object.keys(PILOTS).filter(id=>id!=="rex"));
+      banner("PILOT RECOVERED — "+PILOTS[id].nm);
+      ftext(x,y-24,PILOTS[id].nm+" RECOVERED","#9ef7ff",17);
+      burst(x,y,"#9ef7ff",18,280,3.5,0.65);
+      AU.levelup(); flashScreen(0.18);
+      showPilotCard(id);
+      return true;
+    }
     ftext(x,y-24,"ALL PILOTS RESCUED","#9ef7ff",15);
     AU.coin();
-    return;
+    return false;
   }
   const id=pick(locked);
   meta.pilots[id]=true;
@@ -804,6 +973,8 @@ function unlockRandomPilot(x,y){
   ftext(x,y-24,PILOTS[id].nm+" UNLOCKED","#9ef7ff",17);
   burst(x,y,"#9ef7ff",18,280,3.5,0.65);
   AU.levelup(); flashScreen(0.18);
+  showPilotCard(id);
+  return true;
 }
 const SHOP = [
   {id:"gun",   nm:"GUN CALIBRATION", ds:"+8% damage per level",         max:10, base:40},
@@ -815,7 +986,95 @@ const SHOP = [
   {id:"surge", nm:"SURGE CAPACITOR", ds:"+12% surge gain per level",    max:6,  base:45},
   {id:"luck",  nm:"LUCKY LOGIC",     ds:"rarer bonuses per level",      max:6,  base:80},
 ];
+const cloneSave=v=>JSON.parse(JSON.stringify(v));
+function applyCheatEntitlements(){
+  meta.cores=999999;
+  for(const id of Object.keys(WEAPONS)){ meta.owned[id]=true; meta.seen[id]=true; }
+  for(const id of Object.keys(HULLS)) meta.hulls[id]=true;
+  for(const id of Object.keys(PILOTS)) meta.pilots[id]=true;
+  for(const it of SHOP) meta.shop[it.id]=it.max;
+}
+if(meta.cheat && meta.cheatBackup) applyCheatEntitlements();
+else { delete meta.cheat; delete meta.cheatBackup; }
+
+function syncCheatBadge(){
+  document.getElementById("cheatBadge").classList.toggle("on",!!meta.cheat);
+}
+function openCheatEntry(){
+  if(meta.cheat||G.state!=="menu") return;
+  const inp=document.getElementById("cheatCode");
+  inp.value="";
+  document.getElementById("cheatStatus").textContent="";
+  document.getElementById("cheatEntry").classList.add("on");
+  inp.focus();
+}
+function closeCheatEntry(){
+  document.getElementById("cheatEntry").classList.remove("on");
+  const inp=document.getElementById("cheatCode");
+  inp.blur(); inp.value="";
+  document.getElementById("cheatStatus").textContent="";
+}
+async function digestCheatCode(value){
+  const bytes=new TextEncoder().encode(value.trim());
+  const hash=await crypto.subtle.digest("SHA-256",bytes);
+  return Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,"0")).join("");
+}
+function enableCheatMode(){
+  if(meta.cheat) return;
+  const backup=cloneSave(meta);
+  delete backup.cheat; delete backup.cheatBackup;
+  meta.cheatBackup=backup;
+  meta.cheat=true;
+  applyCheatEntitlements();
+  store.save(meta);
+  closeCheatEntry();
+  syncCheatBadge();
+  buildMenu(); buildSettings();
+  flashScreen(0.35); AU.levelup();
+}
+async function submitCheatCode(){
+  const inp=document.getElementById("cheatCode"), status=document.getElementById("cheatStatus");
+  if(!inp.value) return;
+  status.textContent="CHECKING…";
+  try{
+    if(await digestCheatCode(inp.value)===CHEAT_DIGEST){ enableCheatMode(); return; }
+  }catch(e){}
+  inp.value=""; status.textContent="ACCESS DENIED"; AU.deny(); inp.focus();
+}
+let cheatReturnState="menu";
+function openCheatDisable(){
+  if(!meta.cheat) return;
+  cheatReturnState=G.state;
+  G.state="cheatprompt";
+  document.getElementById("cheatDisable").classList.add("on");
+  AU.warn();
+}
+function closeCheatDisable(){
+  document.getElementById("cheatDisable").classList.remove("on");
+  if(G.state==="cheatprompt") G.state=cheatReturnState;
+  AU.ui();
+}
+function disableCheatMode(){
+  const backup=meta.cheatBackup ? cloneSave(meta.cheatBackup) : null;
+  for(const k of Object.keys(meta)) delete meta[k];
+  if(backup) Object.assign(meta,backup);
+  else Object.assign(meta,{best:0,totalScore:0,runs:0,scheme:"pulse",streak:1,lastDay:"",muted:false,
+    cores:0,weapon:"pulse",owned:{pulse:true},shop:{gun:0,cycle:0,hull:0,thrust:0,magnet:0,graze:0,surge:0,luck:0},
+    player:"",seen:{},hull:"vector",hulls:{vector:true},pilot:"rex",pilots:{rex:true}});
+  store.save(meta);
+  AU.muted=!!meta.muted;
+  if(AU.master) AU.master.gain.value=AU.muted?0:0.5;
+  document.querySelectorAll(".overlay").forEach(el=>el.classList.remove("on"));
+  syncCheatBadge();
+  goMenu(); buildSettings();
+}
 const shopPrice = (it,lv)=>Math.round(it.base*Math.pow(2.2,lv));
+function conradiatorRate(heat,fireRate){
+  const h=clamp(heat,0,1), knee=0.65;
+  const early=Math.pow(Math.min(h/knee,1),0.7);
+  const late=Math.pow(Math.max(0,(h-knee)/(1-knee)),1.8);
+  return (2+13*early+19*late)*(fireRate/2.6); // 2→15/s, then a hard late kick to 34/s
+}
 // the weapon actually in hand: a mid-run refit overrides the hangar loadout
 function curWeapon(){
   return (G.runWeapon && WEAPONS[G.runWeapon]) ? G.runWeapon
@@ -1752,8 +2011,8 @@ function updatePlayer(dt){
   player.x = clamp(player.x+player.vx*dt, 14, W-14);
   player.y = clamp(player.y+player.vy*dt, 14, H-14);
   G.invuln = Math.max(0,G.invuln-dt);
-  // the conradiator cools only once the trigger's been off for half a second
-  if(player.heat>0 && G.t-(player.lastShot||0)>0.5)
+  // the slow opening shots hold their heat; cooling starts once the trigger is truly off
+  if(player.heat>0 && G.t-(player.lastShot||0)>1.1)
     player.heat=Math.max(0,player.heat-dt*0.35);
 
   // trail
@@ -1815,10 +2074,10 @@ function updatePlayer(dt){
           // heat builds while it stays on one target; switching costs most of the spool
           if(player.heatTarget!==best){ player.heatTarget=best; player.heat=(player.heat||0)*0.4; }
           const h=player.heat||0;
-          rate=(4+21*h)*(s.fireRate/2.6);   // 4/s spooling to a screaming 25/s
+          rate=conradiatorRate(h,s.fireRate);
           dmg*=0.22; rr=3;
           spread=0.05+0.10*h;               // sloppier as it screams
-          player.heat=Math.min(1,h+0.02);
+          player.heat=Math.min(1,h+0.025);
           player.lastShot=G.t;
         }
         player.fireT=1/rate;
@@ -1834,9 +2093,10 @@ function updatePlayer(dt){
             glaive:(wpn==="glaive")?1:0, mine:(wpn==="mine")?1:0, prism:(wpn==="prism")?1:0,
             splitN:(wpn==="mitosis")?4:0, splitT:0.22});
         }
-        // conradiator at full heat: vent — a scalding radial ring, then a warm restart
+        // conradiator at full heat: vent — a scalding radial ring, then a cold restart
         if(wpn==="conradiator" && player.heat>=1){
-          player.heat=0.25;
+          player.heat=0;
+          player.fireT=1/conradiatorRate(0,s.fireRate);
           for(let k=0;k<16;k++){
             const a=k/16*TAU;
             pbul.push({x:player.x,y:player.y,vx:Math.cos(a)*spd*0.7,vy:Math.sin(a)*spd*0.7,
@@ -2223,7 +2483,7 @@ function updateShards(dt){
     if(dd<16){
       shards.splice(i,1);
       if(s.pilot){
-        unlockRandomPilot(s.x,s.y);
+        if(unlockRandomPilot(s.x,s.y)) return;
         continue;
       }
       if(s.core){
@@ -2391,6 +2651,11 @@ function chooseCard(i){
   G.state="playing";
   G.invuln=Math.max(G.invuln,0.8);
   flashScreen(0.15);
+  if(queuedPilotCard){
+    const id=queuedPilotCard;
+    queuedPilotCard=null;
+    showPilotCard(id);
+  }
 }
 
 // ---------- death & meta (near-miss framing) ----------
@@ -2441,7 +2706,7 @@ function showDeathScreen(){
 
 // ---------- run lifecycle ----------
 function startRun(){
-  enemies=[];pbul=[];ebul=[];shards=[];parts=[];texts=[];zones=[];holes=[];bolts=[];waves=[];flail=null;flares=[];taken=[];
+  enemies=[];pbul=[];ebul=[];shards=[];parts=[];texts=[];zones=[];holes=[];bolts=[];waves=[];flail=null;flares=[];taken=[];queuedPilotCard=null;
   stats=baseStats();
   // daily streak bonus
   stats.damage *= 1 + 0.05*meta.streak;
@@ -2504,6 +2769,7 @@ function startRun(){
   document.getElementById("best").textContent="BEST "+fmtN(meta.best);
   document.getElementById("menu").classList.remove("on");
   document.getElementById("death").classList.remove("on");
+  document.getElementById("pilotReveal").classList.remove("on");
   document.getElementById("hud").classList.add("on");
   document.getElementById("wrap").classList.remove("cine"); // letterbox opens as the ship streaks in
   applySchemeCSS();
@@ -2519,6 +2785,18 @@ function drawHearts(){
 
 // ---------- input routing ----------
 function handleKey(code){
+  if(document.getElementById("cheatEntry").classList.contains("on")){
+    if(code==="Escape") closeCheatEntry();
+    return;
+  }
+  if(document.getElementById("cheatDisable").classList.contains("on")){
+    if(code==="Escape") closeCheatDisable();
+    return;
+  }
+  if(document.getElementById("pilotReveal").classList.contains("on")){
+    if(code==="Escape"||code==="Enter"||code==="Space") dismissPilotCard();
+    return;
+  }
   if(document.getElementById("shareCard").classList.contains("on")){
     if(code==="Escape"||code==="Enter"||code==="Space")
       document.getElementById("shareCard").classList.remove("on");
@@ -2564,6 +2842,25 @@ function tryStart(){
 document.getElementById("startBtn").addEventListener("pointerdown",e=>{
   e.stopPropagation(); tryStart();
 });
+const secretZ=document.querySelector("#wordmark span:nth-child(4)");
+secretZ.addEventListener("pointerdown",e=>{
+  const r=secretZ.getBoundingClientRect(), hit=Math.min(28,r.width*0.38,r.height*0.3);
+  if(e.clientX<=r.left+hit && e.clientY<=r.top+hit){ e.stopPropagation(); openCheatEntry(); }
+});
+{
+  const inp=document.getElementById("cheatCode");
+  inp.addEventListener("pointerdown",e=>e.stopPropagation());
+  inp.addEventListener("keydown",e=>{
+    e.stopPropagation();
+    if(e.key==="Enter") submitCheatCode();
+    else if(e.key==="Escape") closeCheatEntry();
+  });
+}
+document.getElementById("cheatCancel").addEventListener("pointerdown",e=>{ e.stopPropagation(); closeCheatEntry(); AU.ui(); });
+document.getElementById("cheatSubmit").addEventListener("pointerdown",e=>{ e.stopPropagation(); submitCheatCode(); });
+document.getElementById("cheatBadge").addEventListener("pointerdown",e=>{ e.stopPropagation(); openCheatDisable(); });
+document.getElementById("cheatKeep").addEventListener("pointerdown",e=>{ e.stopPropagation(); closeCheatDisable(); });
+document.getElementById("cheatConfirmDisable").addEventListener("pointerdown",e=>{ e.stopPropagation(); disableCheatMode(); });
 
 // ---------- tutorial (protocol) ----------
 const TUT=[
@@ -2576,7 +2873,7 @@ const TUT=[
  {t:"BONUSES", v:'<div class="tCards"><i></i><i class="mid"></i><i></i></div>',
   b:"Fallen enemies drop <b>shards</b>. Shards fill the <b>bonus bar</b> along the bottom of the screen — when it fills, time pauses and you choose from <b>three bonuses</b>, common through <b>legendary</b>.<br><br>Builds compound: split shots ricochet, frost slows, death blooms chain. No two runs play alike."},
  {t:"THE HANGAR SHOP", v:'<div class="tCore">⬢</div>',
-  b:"Enemies drop <b>⬢ cores</b>, and your score converts to more when you fall — every run leaves you richer, win or lose.<br><br>Spend them in the <b>HANGAR SHOP</b> — the gold button on the menu and the death screen — on <b>permanent</b> upgrades that make every future run stronger: ship systems, thirteen weapons, whole new hulls, pilots. When the hangar button glows, you can afford something new. Check it after every death."},
+  b:"Enemies drop <b>⬢ cores</b>, and your score converts to more when you fall — every run leaves you richer, win or lose.<br><br>Spend them in the <b>HANGAR SHOP</b> — the gold button on the menu and the death screen — on <b>permanent</b> upgrades that make every future run stronger: ship systems, thirteen weapons, whole new ships, pilots. When the hangar button glows, you can afford something new. Check it after every death."},
 ];
 let tutPage=0;
 function renderTut(){
@@ -2624,9 +2921,11 @@ function coachMsg(m){
 // ---------- back to menu from death ----------
 function goMenu(){
   G.state="menu";
+  queuedPilotCard=null;
   hideBanner();
   enemies=[];pbul=[];ebul=[];shards=[];zones=[];holes=[];bolts=[];parts=[];texts=[];flares=[];
   document.getElementById("death").classList.remove("on");
+  document.getElementById("pilotReveal").classList.remove("on");
   document.getElementById("hud").classList.remove("on");
   document.getElementById("menu").classList.add("on");
   document.getElementById("wrap").classList.add("cine");
@@ -2664,7 +2963,9 @@ function bindReset(el){
       meta.seen={};
       meta.hull="vector"; meta.hulls={vector:true}; meta.pilot="rex"; meta.pilots={rex:true};
       meta.shop={gun:0,cycle:0,hull:0,thrust:0,magnet:0,graze:0,surge:0,luck:0};
+      delete meta.cheat; delete meta.cheatBackup;
       store.save(meta);
+      syncCheatBadge();
       document.querySelectorAll("#setReset").forEach(b=>{
         b.classList.remove("armed");
         b.textContent="PROGRESS ERASED";
@@ -2861,7 +3162,7 @@ function rankText(rank,total){
   return "TOP "+Math.max(1,Math.ceil(rank/Math.max(total,1)*100))+"% OF PILOTS";
 }
 function sendScore(){
-  if(lbSent||!meta.player||G.score<1||G.t<5) return;
+  if(meta.cheat||lbSent||!meta.player||G.score<1||G.t<5) return;
   lbSent=true;
   const st=document.getElementById("lbStatus");
   st.textContent="TRANSMITTING…";
@@ -2935,10 +3236,10 @@ function joinBoard(){
 }
 function initDeathBoard(){
   lbSent=false; lbResult=null;
-  const eligible=G.score>0 && G.t>=5;
+  const eligible=!meta.cheat && G.score>0 && G.t>=5;
   document.getElementById("lbAddBtn").style.display=eligible?"block":"none";
   document.getElementById("lbJoin").style.display="none";
-  document.getElementById("lbStatus").textContent="";
+  document.getElementById("lbStatus").textContent=meta.cheat?"CHEAT RUN — LEADERBOARD LOCKED":"";
   document.getElementById("lbTop").innerHTML="";
   document.getElementById("shareRow").classList.remove("on");
   document.getElementById("lbName").value=meta.player||"";
@@ -3044,6 +3345,9 @@ function setStoreTab(t){
 document.querySelectorAll("#sTabs .stab").forEach(b=>{
   b.addEventListener("pointerdown",e=>{ e.stopPropagation(); setStoreTab(b.dataset.tab); AU.ui(); });
 });
+document.getElementById("pilotContinue").addEventListener("pointerdown",e=>{
+  e.stopPropagation(); dismissPilotCard();
+});
 setStoreTab("weapons");
 
 // ---------- menu build ----------
@@ -3075,6 +3379,7 @@ function buildMenu(){
   document.getElementById("muteBtn").textContent="M — SOUND "+(AU.muted?"OFF":"ON");
   document.getElementById("hCores").textContent=fmtN(meta.cores);
   document.getElementById("hangarBtn").classList.toggle("buyable",canAffordGear());
+  syncCheatBadge();
   applySchemeCSS();
 }
 buildMenu();
@@ -3257,7 +3562,7 @@ function render(now){
   ctx.globalCompositeOperation="lighter";
 
   // graze ring — the edge made visible
-  if(G.state==="playing"||G.state==="levelup"){
+  if(G.state==="playing"||G.state==="levelup"||G.state==="pilotcard"||G.state==="cheatprompt"){
     const pulse=1+0.04*Math.sin(now*0.006);
     ctx.strokeStyle=s.c2; ctx.globalAlpha=0.16+Math.min(0.3,G.combo*0.006);
     ctx.lineWidth=1.5;
@@ -3266,7 +3571,7 @@ function render(now){
   }
 
   // surge charge ring — fills clockwise around the ship, blazes when ready
-  if(G.state==="playing"||G.state==="levelup"){
+  if(G.state==="playing"||G.state==="levelup"||G.state==="pilotcard"||G.state==="cheatprompt"){
     const frac=G.surge/100;
     if(frac>0.02){
       const ready=frac>=1;
@@ -3453,7 +3758,7 @@ function render(now){
   }
 
   // ion flail — chain and wrecking orb
-  if(flail && (G.state==="playing"||G.state==="levelup")){
+  if(flail && (G.state==="playing"||G.state==="levelup"||G.state==="pilotcard"||G.state==="cheatprompt")){
     ctx.strokeStyle=s.c1; ctx.globalAlpha=0.35; ctx.lineWidth=1.5;
     ctx.beginPath(); ctx.moveTo(player.x,player.y); ctx.lineTo(flail.x,flail.y); ctx.stroke();
     ctx.globalAlpha=1;
@@ -3463,7 +3768,7 @@ function render(now){
   for(const b of ebul) drawGlow(b.x,b.y,b.r+1,b.meteor?"#ff9b3d":"#ff5d7e",1);
 
   // boss health bar — wide, top-center, under the score
-  if(G.state==="playing"||G.state==="levelup"){
+  if(G.state==="playing"||G.state==="levelup"||G.state==="pilotcard"||G.state==="cheatprompt"){
     const boss=enemies.find(e=>e.boss);
     if(boss){
       const bw=Math.min(420,W*0.5), bx=(W-bw)/2, by=78;
@@ -3508,7 +3813,7 @@ function render(now){
   }
 
   // orbitals
-  if(stats.orbitals>0 && (G.state==="playing"||G.state==="levelup")){
+  if(stats.orbitals>0 && (G.state==="playing"||G.state==="levelup"||G.state==="pilotcard"||G.state==="cheatprompt")){
     for(let k=0;k<stats.orbitals;k++){
       const a=orbAngle+k/stats.orbitals*TAU;
       drawGlow(player.x+Math.cos(a)*54,player.y+Math.sin(a)*54,6,"#ffd84e",0.95);
@@ -3516,7 +3821,7 @@ function render(now){
   }
 
   // player + trail
-  if(G.state==="playing"||G.state==="levelup"||(G.state==="dying"&&G.deathT<0.1)){
+  if(G.state==="playing"||G.state==="levelup"||G.state==="pilotcard"||G.state==="cheatprompt"||(G.state==="dying"&&G.deathT<0.1)){
     for(const t of player.trail){
       if(t.life>0) drawGlow(t.x,t.y,5*(t.life/0.35),s.c1,0.35*(t.life/0.35));
     }
@@ -3560,7 +3865,7 @@ function render(now){
   }
 
   // echo phantom — spectral twin mirrored across the arena
-  if(stats.echo>0 && (G.state==="playing"||G.state==="levelup")){
+  if(stats.echo>0 && (G.state==="playing"||G.state==="levelup"||G.state==="pilotcard"||G.state==="cheatprompt")){
     drawGlow(W-player.x,H-player.y,player.r,s.c2,0.5);
   }
 
@@ -3772,7 +4077,7 @@ function loop(now){
   }
 
   // soundtrack: calm on menus, drums+bass in play, hook after 1:00, ghost hats after 2:30
-  AU.musicTick((G.state==="playing"||G.state==="levelup") ? (1+(G.t>60?1:0)+(G.t>150?1:0)) : 0);
+  AU.musicTick((G.state==="playing"||G.state==="levelup"||G.state==="pilotcard"||G.state==="cheatprompt") ? (1+(G.t>60?1:0)+(G.t>150?1:0)) : 0);
 
   render(now);
 }
