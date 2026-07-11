@@ -84,7 +84,9 @@ export default async req => {
   await store.setJSON("scores", data);
 
   const best = improved ? score : prevAll.score;
+  // bestAt lets the client say WHEN the standing best was set — "your Jun 13 best stands"
+  const bestAt = improved ? entry.at : prevAll.at;
   const rank = 1 + Object.values(data.all).filter(e => e.score > best).length;
-  return Response.json({ best, rank, improved, total: Object.keys(data.all).length },
+  return Response.json({ best, bestAt, rank, improved, total: Object.keys(data.all).length },
     { headers: noStore });
 };
