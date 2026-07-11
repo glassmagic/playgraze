@@ -801,7 +801,7 @@ const lerp = (a,b,t)=> a+(b-a)*t;
 const d2 = (ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy;};
 const fmtT = s =>{s|=0;return ((s/60)|0)+":"+("0"+(s%60)).slice(-2);};
 const fmtN = n => (n|0).toLocaleString("en-US");
-const VERSION="1.16.0"; // bump the minor on every PR — shown in settings to track deploys
+const VERSION="1.17.0"; // bump the minor on every PR — shown in settings to track deploys
 const CHEAT_DIGEST="ec32b0485b795525c4e600167c76ecb6e7fcc17c3afa27649b705e25022a5c93";
 
 // ---------- persistence ----------
@@ -1581,7 +1581,15 @@ function director(dt){
       if(nm){ banner(nm); AU.tone(180,0.5,"sawtooth",0.15,60); }
     }
   }
-  G.spawnAcc += dt*it;
+  // the tide: spawns thin out approaching a boss, go silent just before it lands,
+  // and surge back double-strength for a beat after one falls
+  const nextBossAt = !G.miniDone ? 90 : 180 + G.bossN*120;
+  const toBoss = nextBossAt - G.t;
+  let tide = 1;
+  if(toBoss <= 5) tide = 0;
+  else if(toBoss <= 30) tide = 0.5;
+  if(G.rushT>0){ G.rushT-=dt; tide = 2; }
+  G.spawnAcc += dt*it*tide;
   const interval = 1.65/(MUT.spawn||1);
   while(G.spawnAcc > interval){
     G.spawnAcc -= interval;
@@ -1593,7 +1601,7 @@ function director(dt){
     while(r>weights[idx]){ r-=weights[idx]; idx++; }
     spawnEnemy(pool[idx]);
   }
-  if(G.t>120){
+  if(G.t>120 && tide>0){
     G.eliteAcc += dt;
     if(G.eliteAcc > 42){
       G.eliteAcc = 0;
@@ -1607,11 +1615,11 @@ function director(dt){
     G.arenaAcc=(G.arenaAcc||0)+dt;
     if(G.arenaAcc>50){ G.arenaAcc=0; startArenaEvent(); }
   }
-  // bosses — an easier herald at 1:30, then something with a real name every three minutes
+  // bosses — an easier herald at 1:30, the first name at 3:00, then a new name every two minutes
   if(!G.miniDone && G.t>=90 && !enemies.some(e=>e.boss)){ G.miniDone=true; spawnBoss(true); }
-  if(G.t >= (G.bossN+1)*180 && !enemies.some(e=>e.boss)) spawnBoss();
+  if(G.t >= 180 + G.bossN*120 && !enemies.some(e=>e.boss)) spawnBoss();
   // golden couriers — rare, rich, and running for the exit
-  if(G.t>40){
+  if(G.t>40 && tide>0){
     G.courierAcc=(G.courierAcc||0)+dt;
     if(G.courierAcc>70){
       G.courierAcc=0;
@@ -1640,29 +1648,114 @@ function director(dt){
 }
 
 // ---------- bosses ----------
-const BOSS_NAMES=["VOIDMAW","THE WARDEN","HEXAGON PRIME","NULL TYRANT","OMEGA SHARD"];
+// four signature kits, cycling; scaling (hp × bossN × time) carries difficulty on repeat visits
+const BOSS_KITS=[
+  {nm:"VOIDMAW",       kit:"voidmaw",  c:"#9d5dff"}, // gravity — drops wells, vacuum charges
+  {nm:"HEXAGON PRIME", kit:"hex",      c:"#3dd6ff"}, // turret — anchors center, rotating spiral arms
+  {nm:"NULL TYRANT",   kit:"tyrant",   c:"#ff4d4d"}, // duelist — telegraphed triple dashes, bullet wake
+  {nm:"THE CANNIBAL",  kit:"cannibal", c:"#ff9d3d"}, // eats nearby enemies, spits them back as shots
+];
 function spawnBoss(mini=false){
   if(!mini) G.bossN++;
-  const name=mini ? "THE HERALD" : BOSS_NAMES[(G.bossN-1)%BOSS_NAMES.length];
+  // per-run shuffle of the four kits; the cycle repeats in that run's order
+  if(!G.bossOrder){
+    G.bossOrder=BOSS_KITS.map((_,i)=>i);
+    for(let i=G.bossOrder.length-1;i>0;i--){
+      const j=(Math.random()*(i+1))|0;
+      [G.bossOrder[i],G.bossOrder[j]]=[G.bossOrder[j],G.bossOrder[i]];
+    }
+  }
+  const def=mini ? {nm:"THE HERALD",kit:"herald",c:"#ff3df0"} : BOSS_KITS[G.bossOrder[(G.bossN-1)%BOSS_KITS.length]];
+  const name=def.nm;
   const side=(Math.random()*4)|0, m=80; let x,y;
   if(side===0){x=rnd(W);y=-m;} else if(side===1){x=W+m;y=rnd(H);}
   else if(side===2){x=rnd(W);y=H+m;} else {x=-m;y=rnd(H);}
-  const hp=(mini?520:1500*G.bossN)*(1+G.t/300)*(MUT.ehp||1);
+  const hp=(mini?520:4500*G.bossN)*(1+G.t/300)*(MUT.ehp||1);
   enemies.push({
-    type:"boss", boss:true, mini, name, x, y, vx:0, vy:0, r:mini?30:42,
-    hp, maxhp:hp, sc:mini?250:600*G.bossN, c:"#ff3df0", elite:false, affix:null,
+    type:"boss", boss:true, mini, name, kit:def.kit, x, y, vx:0, vy:0, r:mini?30:42,
+    hp, maxhp:hp, sc:mini?250:600*G.bossN, c:def.c, elite:false, affix:null,
     grazed:0, shootT:2, phase:rnd(TAU), hitT:0, mode:"approach", mt:mini?3:2.4, alpha:1, dashAng:0,
   });
   banner("⚠ "+name+" APPROACHES ⚠");
   AU.tone(70,1.2,"sawtooth",0.22,30); AU.noise(0.5,0.2,500);
   shake(10); flashScreen(0.15);
   // intro: bars close, time crawls, the camera leans toward the arrival
-  G.cine={t:1.6,max:1.6,x:clamp(x,120,W-120),y:clamp(y,120,H-120),zoom:0.12,bars:true};
+  G.cine={t:2.4,max:2.4,x:clamp(x,120,W-120),y:clamp(y,120,H-120),zoom:0.12,bars:true};
   document.getElementById("wrap").classList.add("cine");
 }
 function bossAttack(e,px,py){
   const dx=px-e.x, dy=py-e.y, dd=Math.hypot(dx,dy)||1;
-  const atk=pick(["ring","burst","charge","summon"]);
+  if(e.kit==="voidmaw"){
+    const atk=pick(["ring","burst","vcharge","hole"]);
+    if(atk==="hole"){
+      // drops a soft well on your position — fight the terrain
+      holes.push({x:px,y:py,t:5,soft:true});
+      burst(px,py,"#9d5dff",12,220,3,0.5);
+      AU.tone(80,0.5,"sine",0.14,120);
+      return;
+    }
+    if(atk==="vcharge"){
+      const sp=430;
+      e.vx=dx/dd*sp; e.vy=dy/dd*sp;
+      e.vacT=1.2; // hoovers loose shards toward itself while it flies
+      AU.dash(); burst(e.x,e.y,e.c,10,260,3.5,0.4);
+      return;
+    }
+    // ring / burst fall through to the shared patterns below
+    return sharedBossAttack(e,atk,dx,dy,dd);
+  }
+  if(e.kit==="hex"){
+    // turret — rapid rotating spiral arms from the arena's center, nothing aimed
+    e.spiral=(e.spiral||rnd(TAU))+0.42;
+    e.volley=(e.volley||0)+1;
+    if(e.volley%7===0){
+      const n=18;
+      for(let k=0;k<n;k++){
+        const a=k/n*TAU+e.spiral;
+        ebul.push({x:e.x,y:e.y,vx:Math.cos(a)*150,vy:Math.sin(a)*150,r:5,grazed:0,life:6});
+      }
+      AU.tone(210,0.25,"square",0.1,-90);
+    } else {
+      for(let arm=0;arm<6;arm++){
+        const a=e.spiral+arm/6*TAU;
+        ebul.push({x:e.x,y:e.y,vx:Math.cos(a)*175,vy:Math.sin(a)*175,r:5,grazed:0,life:6});
+      }
+      if(e.volley%3===0) AU.tone(320,0.08,"square",0.05,-60);
+    }
+    return;
+  }
+  if(e.kit==="tyrant"){
+    const atk=pick(["dashes","dashes","burst"]);
+    if(atk==="dashes"){
+      // telegraphed triple dash, leaving a wake of static bullets
+      e.dashN=3; e.dashMode="warn"; e.dashT=0.45;
+      AU.tone(120,0.3,"sawtooth",0.12,-40);
+      return;
+    }
+    return sharedBossAttack(e,atk,dx,dy,dd);
+  }
+  if(e.kit==="cannibal"){
+    if((e.ammo||0)>0){
+      // spits everything it swallowed back at you at gun velocity
+      const n=Math.min(e.ammo,10); e.ammo=0;
+      const base=Math.atan2(dy,dx);
+      for(let k=0;k<n;k++){
+        const a=base+rnd(-0.09,0.09), sp=560+rnd(-40,40);
+        ebul.push({x:e.x,y:e.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,r:8,grazed:0,life:5});
+      }
+      burst(e.x,e.y,e.c,10,280,3.5,0.4);
+      AU.tone(110,0.3,"sawtooth",0.16,-60); AU.noise(0.2,0.14,900);
+      return;
+    }
+    e.devourT=1.6; // starts inhaling — nearby enemies get dragged in and swallowed
+    burst(e.x,e.y,e.c,14,200,3,0.6);
+    AU.tone(60,1.0,"sawtooth",0.14,90);
+    return;
+  }
+  // the herald's generic sampler
+  return sharedBossAttack(e,pick(["ring","burst","charge","summon"]),dx,dy,dd);
+}
+function sharedBossAttack(e,atk,dx,dy,dd){
   if(atk==="ring"){
     // the herald throws one sparse ring; real bosses throw a double
     for(let ring=0;ring<(e.mini?1:2);ring++){
@@ -1732,6 +1825,8 @@ function updateEnemies(dt){
   const px=player.x, py=player.y;
   for(let i=enemies.length-1;i>=0;i--){
     const e=enemies[i];
+    // swallowed by the cannibal — gone without score, shards, or death effects
+    if(e.eaten){ enemies.splice(i,1); continue; }
     e.hitT=Math.max(0,e.hitT-dt);
     const dx=px-e.x, dy=py-e.y, dd=Math.sqrt(dx*dx+dy*dy)||1;
     const sMul = (e.elite?0.8:1)*(MUT.espd||1)*(G.pactEspd||1);
@@ -1857,11 +1952,73 @@ function updateEnemies(dt){
         }
         break; }
       case "boss":{
-        const sp=44*sMul;
-        e.vx=lerp(e.vx,dx/dd*sp,dt*1.2); e.vy=lerp(e.vy,dy/dd*sp,dt*1.2);
+        if(e.kit==="hex"){
+          // anchors dead center and holds — the fight orbits it
+          const cx=W/2, cy=H/2, ax=cx-e.x, ay=cy-e.y, ad=Math.hypot(ax,ay)||1;
+          const sp=ad>30?70:0;
+          e.vx=lerp(e.vx,ax/ad*sp,dt*1.5); e.vy=lerp(e.vy,ay/ad*sp,dt*1.5);
+        } else if(e.kit==="tyrant" && e.dashN>0){
+          // dash state machine: warn (brake + sparks) then go (bullet wake)
+          e.dashT-=dt;
+          if(e.dashMode==="warn"){
+            e.vx*=Math.pow(0.05,dt); e.vy*=Math.pow(0.05,dt);
+            if(Math.random()<0.5){
+              const a=Math.atan2(dy,dx);
+              parts.push({x:e.x+Math.cos(a)*rnd(20,70),y:e.y+Math.sin(a)*rnd(20,70),
+                vx:rnd(-20,20),vy:rnd(-20,20),life:0.25,max:0.25,r:2,c:e.c,drag:0.94});
+            }
+            if(e.dashT<=0){
+              e.dashMode="go"; e.dashT=0.34;
+              const a=Math.atan2(dy,dx);
+              e.vx=Math.cos(a)*540; e.vy=Math.sin(a)*540;
+              AU.dash(); burst(e.x,e.y,e.c,8,240,3,0.35);
+            }
+          } else {
+            if(Math.random()<0.8) ebul.push({x:e.x,y:e.y,vx:0,vy:0,r:4,grazed:0,life:2.2});
+            if(e.dashT<=0){
+              e.dashN--;
+              if(e.dashN>0){ e.dashMode="warn"; e.dashT=0.45; }
+              else { e.vx*=0.3; e.vy*=0.3; }
+            }
+          }
+        } else {
+          const sp=44*sMul;
+          e.vx=lerp(e.vx,dx/dd*sp,dt*1.2); e.vy=lerp(e.vy,dy/dd*sp,dt*1.2);
+        }
+        // voidmaw's vacuum charge drags loose shards along in its wake
+        if(e.vacT>0){
+          e.vacT-=dt;
+          for(const s of shards){
+            const sx=e.x-s.x, sy=e.y-s.y, sd=Math.hypot(sx,sy)||1;
+            if(sd<300){ s.vx+=sx/sd*1400*dt; s.vy+=sy/sd*1400*dt; }
+          }
+        }
+        // the cannibal's inhale — non-boss enemies in range get dragged in and swallowed
+        if(e.devourT>0){
+          e.devourT-=dt;
+          for(const o of enemies){
+            if(o===e||o.boss||o.eaten) continue;
+            const ox=e.x-o.x, oy=e.y-o.y, od=Math.hypot(ox,oy)||1;
+            if(od<340){
+              o.vx+=ox/od*1900*dt; o.vy+=oy/od*1900*dt;
+              if(od<e.r+14 && (e.ammo||0)<10){
+                o.eaten=true; e.ammo=(e.ammo||0)+1;
+                burst(o.x,o.y,e.c,6,160,2.4,0.3);
+                AU.tone(440+e.ammo*40,0.08,"square",0.06,-200);
+              }
+            }
+          }
+          if(Math.random()<0.6)
+            parts.push({x:e.x+rnd(-70,70),y:e.y+rnd(-70,70),vx:0,vy:0,life:0.3,max:0.3,r:2,c:e.c,drag:0.9});
+        }
         e.phase+=dt*0.7;
-        e.mt-=dt;
-        if(e.mt<=0){ e.mt=e.mini?rnd(3.0,3.8):rnd(2.2,3.0); bossAttack(e,px,py); }
+        if(!(e.kit==="tyrant"&&e.dashN>0)){
+          e.mt-=dt;
+          if(e.mt<=0){
+            e.mt=e.mini?rnd(3.0,3.8) : e.kit==="hex"?0.55 : rnd(2.2,3.0);
+            bossAttack(e,px,py);
+          }
+        }
         break; }
     }
     // burst elites periodically ring the field with bullets
@@ -1931,11 +2088,12 @@ function killEnemy(i){
   // bosses go down like a second sun (the herald a touch dimmer)
   if(e.boss){
     banner("☠ "+e.name+" DESTROYED ☠");
+    G.rushT=10; // the arena answers the kill with a double-strength surge
     dropPilotPrisoner(e.x,e.y);
     // a slain boss opens the devil's table
     if(!G.pactsOpen){ G.pactsOpen=true; G.pactDue=true; }
     // kill-cam: a beat of slow-mo on the wreck while explosions chain through it
-    G.cine={t:0.8,max:0.8,x:clamp(e.x,120,W-120),y:clamp(e.y,120,H-120),zoom:0.18,boom:true};
+    G.cine={t:1.4,max:1.4,x:clamp(e.x,120,W-120),y:clamp(e.y,120,H-120),zoom:0.18,boom:true};
     for(let k=0;k<(e.mini?1:3);k++) shards.push({x:e.x+rnd(-30,30),y:e.y+rnd(-30,30),vx:rnd(-70,70),vy:rnd(-70,70),core:5,t:rnd(TAU)});
     for(let k=0;k<(e.mini?6:12);k++) shards.push({x:e.x+rnd(-40,40),y:e.y+rnd(-40,40),vx:rnd(-90,90),vy:rnd(-90,90),v:5,t:rnd(TAU)});
     if(G.hp<G.maxHp){ G.hp++; drawHearts(); ftext(e.x,e.y-44,"+ HULL","#7fe8a8",16); }
@@ -2739,7 +2897,7 @@ function startRun(){
     surge:0,level:1,xp:0,xpNext:8,maxHp:hull.hp,
     invuln:1.2,shake:0,hitstop:0,timeScale:1,flash:0,
     spawnAcc:0,eliteAcc:0,introduced:{},scoredThisRun:0,musicAcc:0,arena:null,arenaAcc:0,bossN:0,
-    cine:null,launch:1.3,miniDone:false,
+    cine:null,launch:1.3,miniDone:false,rushT:0,bossOrder:null,
   });
   G.introAt=rollIntroPlan();
   G.pactScore=1; G.pactGraze=1; G.pactEspd=1; G.pactEbul=1;
@@ -3490,7 +3648,9 @@ function render(now){
   // cinematic moments: ease toward the subject, ease back out at the end
   if(G.state==="playing" && G.cine){
     const p=1-G.cine.t/G.cine.max;
-    const k=Math.max(0,Math.min(p/0.25,1,(1-p)/0.2));
+    // smoothstepped envelope: glide in over 20%, hold on the subject, glide out over the last 25%
+    const k0=Math.max(0,Math.min(p/0.2,1,(1-p)/0.25));
+    const k=k0*k0*(3-2*k0);
     const z=1+G.cine.zoom*k;
     ctx.translate(G.cine.x,G.cine.y); ctx.scale(z,z);
     ctx.translate(-G.cine.x,-G.cine.y);
