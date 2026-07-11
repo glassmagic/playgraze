@@ -692,7 +692,7 @@ const lerp = (a,b,t)=> a+(b-a)*t;
 const d2 = (ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy;};
 const fmtT = s =>{s|=0;return ((s/60)|0)+":"+("0"+(s%60)).slice(-2);};
 const fmtN = n => (n|0).toLocaleString("en-US");
-const VERSION="1.13.0"; // bump the minor on every PR — shown in settings to track deploys
+const VERSION="1.14.0"; // bump the minor on every PR — shown in settings to track deploys
 
 // ---------- persistence ----------
 const store = {

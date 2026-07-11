@@ -20,6 +20,15 @@ GRAZE is a neon survival arena ("danger pays") that lives at **https://playgraze
 4. **Multiple features per PR is normal here.** The user tends to fire follow-up requests at an open PR; push them as separate commits and keep the PR body updated.
 5. **Never leave test data in the production leaderboard** (see Data hygiene).
 
+### Fast path for tiny changes
+
+For copy tweaks, constant changes, or similarly low-risk edits, keep the workflow lean:
+
+1. Read this file, check `git status` and the current PR state, then search for every occurrence of the text or value being changed.
+2. Patch all occurrences, bump `VERSION` only if this will be a new PR, and inspect the diff. If a PR is already open, add a commit to it and do not bump again.
+3. Run `git diff --check`. Run `node --check` on the extracted inline script only when JavaScript changed. Verify the affected UI once in the local browser; add one narrow-screen check only if the copy is longer or layout could move.
+4. Commit, push, open or update the PR, and give the user the PR link immediately. Do not add unrelated refactors, spin up reviewers, invent a test suite, or wait for the deploy preview unless the change is risky or the user asks. There is no build step.
+
 ## Deployment (Netlify)
 
 - Site: team **Spire**, project **quiet-platypus-b61f92**, site id `3ccf41ab-61ba-4011-b467-be345b9cd711`. Production = `main` → **playgraze.com** (~30s after merge). Every PR gets a preview at `https://deploy-preview-<PR#>--quiet-platypus-b61f92.netlify.app`.
@@ -84,7 +93,7 @@ Real players exist (Peter T., Conrad-Peter T., Shaunak, AdamP, DanDan…). Their
 
 ## Key decisions & their reasons (not visible in code)
 
-- **"Bonuses", not "evolutions"** — user renamed for clarity; the bottom bar is labeled the **bonus bar**.
+- **"Bonuses", not "evolutions"** — user renamed for clarity; the bonus bar's visible HUD label is **NEXT BONUS · LV N**.
 - **Milestones/lifetime-unlocks were removed on purpose** (v1.5). Don't reintroduce score-gated unlocks; progression is cores + discovery only. All paint schemes are free.
 - **Restarting is deliberate**: ONE MORE RUN button, SPACE, or R — a stray click must never launch a run (it used to; players hated it).
 - **Score submission is an explicit button**, never automatic — and boards keep *best per callsign*, which confuses players ("my run vanished"); that's why the not-improved message names the date of the standing best.
