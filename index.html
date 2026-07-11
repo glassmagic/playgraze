@@ -242,6 +242,37 @@
   .card.pact .ico{color:#ff4d5a;}
   .card.pact:hover{border-color:#fff;}
   @keyframes pactglow{from{box-shadow:0 0 14px rgba(255,45,58,.35);}to{box-shadow:0 0 40px rgba(255,45,58,.8);}}
+  /* pilot rescue dossier — one big character card, with the arena held behind it */
+  #pilotReveal{z-index:7;overflow-y:auto;padding:5vh 0;justify-content:flex-start;}
+  #pilotRevealCard{--pilot-accent:#9ef7ff;width:min(440px,90vw);padding:24px 28px 26px;
+    flex-shrink:0;text-align:center;position:relative;overflow:hidden;border-radius:12px;
+    border:1px solid var(--pilot-accent);background:linear-gradient(155deg,rgba(17,24,50,.97),rgba(5,7,22,.98));
+    box-shadow:0 0 34px rgba(78,243,255,.28),inset 0 0 42px rgba(78,243,255,.05);}
+  #pilotRevealCard::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.22;
+    background:repeating-linear-gradient(0deg,transparent 0 5px,rgba(255,255,255,.035) 6px);}
+  #pilotReveal.on #pilotRevealCard{animation:pilotCardIn .55s cubic-bezier(.16,.84,.3,1) both;}
+  @keyframes pilotCardIn{from{opacity:0;transform:translateY(24px) scale(.88);filter:blur(9px);}
+    to{opacity:1;transform:none;filter:none;}}
+  #pilotKicker{font-size:9px;letter-spacing:6px;color:var(--pilot-accent);position:relative;}
+  #pilotPortrait{height:190px;margin:8px auto 2px;color:var(--pilot-accent);position:relative;}
+  #pilotPortrait svg{height:100%;width:100%;display:block;filter:drop-shadow(0 0 12px rgba(78,243,255,.45));}
+  #pilotName{font-family:"Helvetica Neue","Inter",-apple-system,"Segoe UI",Arial,sans-serif;
+    font-size:29px;font-weight:300;letter-spacing:7px;color:#ffffff;position:relative;
+    text-shadow:0 0 20px var(--pilot-accent);}
+  #pilotRole{margin-top:6px;font-size:9px;letter-spacing:4px;color:var(--pilot-accent);position:relative;}
+  #pilotQuote{margin:18px auto 0;font-size:12px;line-height:1.65;color:#dfe9ff;font-style:italic;
+    max-width:340px;position:relative;}
+  #pilotBio{margin:10px auto 0;font-size:10px;line-height:1.7;letter-spacing:.5px;color:#7d92b8;
+    max-width:350px;position:relative;}
+  #pilotStats{display:flex;justify-content:center;gap:10px;margin-top:18px;position:relative;}
+  .pilotStat{min-width:132px;padding:9px 12px;border:1px solid rgba(140,170,220,.28);
+    border-radius:4px;background:rgba(5,8,22,.62);}
+  .pilotStat b{display:block;font-size:14px;color:#ffffff;letter-spacing:2px;}
+  .pilotStat span{display:block;margin-top:4px;font-size:8px;color:#7d92b8;letter-spacing:2px;}
+  #pilotContinue{margin-top:20px;width:100%;padding:13px 0;font:inherit;font-size:11px;letter-spacing:5px;
+    color:#04040c;background:var(--pilot-accent);border:1px solid var(--pilot-accent);border-radius:3px;
+    cursor:pointer;position:relative;box-shadow:0 0 22px rgba(78,243,255,.24);}
+  #pilotHint{margin-top:10px;font-size:8px;letter-spacing:3px;color:#3d4a66;position:relative;}
   /* death screen — the score is the hero, everything else supports it */
   #deathTitle{font-size:26px;letter-spacing:12px;text-indent:12px;color:#ff5d7e;font-weight:300;
     font-family:"Helvetica Neue","Inter",-apple-system,"Segoe UI",Arial,sans-serif;
@@ -510,6 +541,15 @@
     .srow{flex-wrap:wrap;gap:8px 12px;padding:10px 12px;}
     .srow .sn{flex:1 1 100%;}
     .srow .sbuy{margin-left:auto;}
+    #pilotReveal{padding:20px 0;}
+    #pilotRevealCard{width:min(360px,92vw);padding:18px 18px 20px;}
+    #pilotPortrait{height:150px;margin-top:4px;}
+    #pilotName{font-size:23px;letter-spacing:5px;}
+    #pilotQuote{margin-top:12px;font-size:11px;}
+    #pilotBio{font-size:9px;}
+    #pilotStats{margin-top:13px;gap:7px;}
+    .pilotStat{min-width:0;flex:1;padding:8px 5px;}
+    #pilotContinue{margin-top:14px;}
   }
 </style>
 </head>
@@ -581,7 +621,7 @@
     <div id="sCores"></div>
     <div id="sTabs">
       <span class="stab sel" data-tab="weapons">WEAPONS</span>
-      <span class="stab" data-tab="hulls">HULLS</span>
+      <span class="stab" data-tab="hulls">SHIPS</span>
       <span class="stab" data-tab="pilots">PILOTS</span>
       <span class="stab" data-tab="ship">SHIP SYSTEMS</span>
       <span class="stab" data-tab="paint">PAINTWORK</span>
@@ -622,6 +662,20 @@
   <div id="levelup" class="overlay">
     <div id="lvlTitle">CHOOSE BONUS</div>
     <div id="cards"></div>
+  </div>
+
+  <div id="pilotReveal" class="overlay">
+    <div id="pilotRevealCard">
+      <div id="pilotKicker">PILOT RESCUED</div>
+      <div id="pilotPortrait"></div>
+      <div id="pilotName"></div>
+      <div id="pilotRole"></div>
+      <div id="pilotQuote"></div>
+      <div id="pilotBio"></div>
+      <div id="pilotStats"></div>
+      <button id="pilotContinue">CONTINUE</button>
+      <div id="pilotHint">SPACE / ENTER</div>
+    </div>
   </div>
 
   <div id="death" class="overlay">
@@ -776,17 +830,61 @@ const HULLS = {
 // pilots — hands on the stick, each with their own habits.
 // acc scales spread & aim jitter (lower = steadier), rof scales fire rate
 const PILOTS={
-  rex:   {nm:"REX NEBULAR",    acc:1.0,  rof:1.0,
+  rex:   {nm:"REX NEBULAR",    acc:1.0,  rof:1.0, accent:"#4ef3ff", role:"DEEP-SPACE COURIER",
+    quote:"the route is optional. delivery isn't.",
     story:"flew mail through the shatterfield for a decade; aims like it owes him money."},
-  tiler: {nm:"MR TILER",       acc:0.8,  rof:1.12,
+  tiler: {nm:"MR TILER",       acc:0.8,  rof:1.12,accent:"#ffd84e", role:"CAFFEINE TACTICIAN",
+    quote:"coffee first. targets second. somehow both vanish.",
     story:"☕ runs on quadruple espresso and quiet menace — faster and sharper after every cup."},
-  granny:{nm:"GRANNY VOLTAGE", acc:0.65, rof:0.9,
+  granny:{nm:"GRANNY VOLTAGE", acc:0.65, rof:0.9, accent:"#cf7dff", role:"SECTOR CHAMPION",
+    quote:"winning is mostly refusing to stop.",
     story:"seventy-three, deaf in one ear, banned from four sectors for excessive winning."},
-  dizzy: {nm:"DIZZY OKTAV",    acc:1.4,  rof:1.25,
+  dizzy: {nm:"DIZZY OKTAV",    acc:1.4,  rof:1.25,accent:"#ff9b3d", role:"STUNT ACE",
+    quote:"precision is just rhythm with paperwork.",
     story:"ex-stunt pilot; fires like a drum solo and aims like one too."},
-  intern:{nm:"THE INTERN",     acc:1.1,  rof:1.05,
+  intern:{nm:"THE INTERN",     acc:1.1,  rof:1.05,accent:"#7fe8a8", role:"PROVISIONAL ASSET",
+    quote:"please confirm this counts as experience.",
     story:"unpaid, terrified, statistically adequate. please be kind."},
 };
+function pilotPortraitSVG(id){
+  const art={
+    rex:`<path d="M88 48 70 67v50l18 23h44l18-23V67l-18-19Z" fill="#091227"/><path d="M78 76h64l-8 27H86Z" fill="currentColor" opacity=".28"/><path d="M84 79h52"/><circle cx="101" cy="91" r="4" fill="#ffffff"/><circle cx="123" cy="91" r="4" fill="#ffffff"/><path d="M96 116h32M66 92 42 79l12 26-20 12 35 4M154 90l28-14-10 25 18 10-35 9"/><path d="M102 33h20l5 15H97Z" fill="currentColor" opacity=".55"/>`,
+    tiler:`<path d="M79 50h66l10 24-12 67H81L68 74Z" fill="#151105"/><path d="m78 77 69-10-7 31-64 9Z" fill="currentColor" opacity=".25"/><path d="m87 84 48-7"/><circle cx="101" cy="91" r="4" fill="#ffffff"/><circle cx="125" cy="87" r="4" fill="#ffffff"/><path d="M99 119h31M60 122h24v25H60Z"/><path d="M84 128h8a9 9 0 0 1 0 18h-8M65 116c-8-10 8-13 0-24M76 116c-8-10 8-13 0-24"/><path d="m101 49 9-18 8 17 15-15 2 18"/>`,
+    granny:`<circle cx="111" cy="49" r="24" fill="currentColor" opacity=".22"/><circle cx="90" cy="51" r="15" fill="currentColor" opacity=".35"/><path d="M76 72q35-37 70 0v47q-35 35-70 0Z" fill="#150d24"/><path d="M80 82q31-28 62 0"/><circle cx="97" cy="94" r="11"/><circle cx="124" cy="94" r="11"/><path d="M108 94h5M86 91l-13-5M135 91l13-5M98 120q13 9 26 0"/><path d="M67 76v38M155 76v38M61 84q0-18 15-18M161 84q0-18-15-18"/><path d="m159 36-13 21 15-2-12 25" fill="currentColor" opacity=".65"/>`,
+    dizzy:`<path d="m77 58-16-22 27 11 5-27 19 22 18-26 3 31 29-13-18 27 19 8-17 16v39l-28 22-35-18-11-42Z" fill="#1d1008"/><path d="M76 76q34-23 70 0"/><circle cx="96" cy="91" r="14" fill="currentColor" opacity=".24"/><circle cx="127" cy="91" r="14" fill="currentColor" opacity=".24"/><circle cx="96" cy="91" r="5" fill="#ffffff"/><circle cx="127" cy="91" r="5" fill="#ffffff"/><path d="M110 91h3M94 119q18 15 37-2M157 88v28M157 88l16-5v25M43 75v29M43 75l16-5v25"/>`,
+    intern:`<path d="M80 54h61l12 26-10 64H78L67 80Z" fill="#08170f"/><path d="M79 77h64"/><circle cx="97" cy="91" r="6" fill="#ffffff"/><circle cx="124" cy="91" r="6" fill="#ffffff"/><circle cx="99" cy="93" r="2" fill="currentColor"/><circle cx="122" cy="93" r="2" fill="currentColor"/><path d="M100 119q12-8 23 0M96 145l15 23 15-23-8-16h-14Z" fill="currentColor" opacity=".45"/><path d="M153 89h29v48h-29Z"/><path d="M160 99h15M160 108h15M160 117h10M99 50l7-18h12l8 18"/>`,
+  }[id]||"";
+  return `<svg viewBox="0 0 220 180" role="img" aria-label="${PILOTS[id].nm} portrait">
+    <defs><radialGradient id="pilotHalo"><stop offset="0" stop-color="currentColor" stop-opacity=".22"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></radialGradient></defs>
+    <circle cx="110" cy="90" r="86" fill="url(#pilotHalo)"/><g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">${art}</g>
+    <path d="M34 157h152" stroke="currentColor" stroke-width="1" opacity=".35"/><path d="M50 164h120" stroke="#ffffff" stroke-width="1" opacity=".18"/>
+  </svg>`;
+}
+function showPilotCard(id){
+  const p=PILOTS[id];
+  if(!p) return;
+  const aim=Math.round((1-p.acc)*100), rof=Math.round((p.rof-1)*100);
+  G.invuln=Math.max(G.invuln,0.8);
+  G.state="pilotcard";
+  const card=document.getElementById("pilotRevealCard");
+  card.style.setProperty("--pilot-accent",p.accent);
+  document.getElementById("pilotPortrait").innerHTML=pilotPortraitSVG(id);
+  document.getElementById("pilotName").textContent=p.nm;
+  document.getElementById("pilotRole").textContent=p.role;
+  document.getElementById("pilotQuote").textContent="“"+p.quote+"”";
+  document.getElementById("pilotBio").textContent=p.story;
+  document.getElementById("pilotStats").innerHTML=
+    `<div class="pilotStat"><b>${aim>=0?"+":""}${aim}%</b><span>AIM CONTROL</span></div>`+
+    `<div class="pilotStat"><b>${rof>=0?"+":""}${rof}%</b><span>FIRE RATE</span></div>`;
+  document.getElementById("pilotReveal").classList.add("on");
+}
+function dismissPilotCard(){
+  if(G.state!=="pilotcard") return;
+  document.getElementById("pilotReveal").classList.remove("on");
+  G.state="playing";
+  G.invuln=Math.max(G.invuln,0.8);
+  flashScreen(0.12); AU.ui();
+}
 function dropPilotPrisoner(x,y){
   shards.push({x:clamp(x,24,W-24),y:clamp(y,24,H-24),vx:rnd(-35,35),vy:rnd(-35,35),pilot:true,t:rnd(TAU)});
 }
@@ -795,7 +893,7 @@ function unlockRandomPilot(x,y){
   if(!locked.length){
     ftext(x,y-24,"ALL PILOTS RESCUED","#9ef7ff",15);
     AU.coin();
-    return;
+    return false;
   }
   const id=pick(locked);
   meta.pilots[id]=true;
@@ -804,6 +902,8 @@ function unlockRandomPilot(x,y){
   ftext(x,y-24,PILOTS[id].nm+" UNLOCKED","#9ef7ff",17);
   burst(x,y,"#9ef7ff",18,280,3.5,0.65);
   AU.levelup(); flashScreen(0.18);
+  showPilotCard(id);
+  return true;
 }
 const SHOP = [
   {id:"gun",   nm:"GUN CALIBRATION", ds:"+8% damage per level",         max:10, base:40},
@@ -2223,7 +2323,7 @@ function updateShards(dt){
     if(dd<16){
       shards.splice(i,1);
       if(s.pilot){
-        unlockRandomPilot(s.x,s.y);
+        if(unlockRandomPilot(s.x,s.y)) return;
         continue;
       }
       if(s.core){
@@ -2504,6 +2604,7 @@ function startRun(){
   document.getElementById("best").textContent="BEST "+fmtN(meta.best);
   document.getElementById("menu").classList.remove("on");
   document.getElementById("death").classList.remove("on");
+  document.getElementById("pilotReveal").classList.remove("on");
   document.getElementById("hud").classList.add("on");
   document.getElementById("wrap").classList.remove("cine"); // letterbox opens as the ship streaks in
   applySchemeCSS();
@@ -2519,6 +2620,10 @@ function drawHearts(){
 
 // ---------- input routing ----------
 function handleKey(code){
+  if(document.getElementById("pilotReveal").classList.contains("on")){
+    if(code==="Escape"||code==="Enter"||code==="Space") dismissPilotCard();
+    return;
+  }
   if(document.getElementById("shareCard").classList.contains("on")){
     if(code==="Escape"||code==="Enter"||code==="Space")
       document.getElementById("shareCard").classList.remove("on");
@@ -2576,7 +2681,7 @@ const TUT=[
  {t:"BONUSES", v:'<div class="tCards"><i></i><i class="mid"></i><i></i></div>',
   b:"Fallen enemies drop <b>shards</b>. Shards fill the <b>bonus bar</b> along the bottom of the screen — when it fills, time pauses and you choose from <b>three bonuses</b>, common through <b>legendary</b>.<br><br>Builds compound: split shots ricochet, frost slows, death blooms chain. No two runs play alike."},
  {t:"THE HANGAR SHOP", v:'<div class="tCore">⬢</div>',
-  b:"Enemies drop <b>⬢ cores</b>, and your score converts to more when you fall — every run leaves you richer, win or lose.<br><br>Spend them in the <b>HANGAR SHOP</b> — the gold button on the menu and the death screen — on <b>permanent</b> upgrades that make every future run stronger: ship systems, thirteen weapons, whole new hulls, pilots. When the hangar button glows, you can afford something new. Check it after every death."},
+  b:"Enemies drop <b>⬢ cores</b>, and your score converts to more when you fall — every run leaves you richer, win or lose.<br><br>Spend them in the <b>HANGAR SHOP</b> — the gold button on the menu and the death screen — on <b>permanent</b> upgrades that make every future run stronger: ship systems, thirteen weapons, whole new ships, pilots. When the hangar button glows, you can afford something new. Check it after every death."},
 ];
 let tutPage=0;
 function renderTut(){
@@ -2627,6 +2732,7 @@ function goMenu(){
   hideBanner();
   enemies=[];pbul=[];ebul=[];shards=[];zones=[];holes=[];bolts=[];parts=[];texts=[];flares=[];
   document.getElementById("death").classList.remove("on");
+  document.getElementById("pilotReveal").classList.remove("on");
   document.getElementById("hud").classList.remove("on");
   document.getElementById("menu").classList.add("on");
   document.getElementById("wrap").classList.add("cine");
@@ -3044,6 +3150,9 @@ function setStoreTab(t){
 document.querySelectorAll("#sTabs .stab").forEach(b=>{
   b.addEventListener("pointerdown",e=>{ e.stopPropagation(); setStoreTab(b.dataset.tab); AU.ui(); });
 });
+document.getElementById("pilotContinue").addEventListener("pointerdown",e=>{
+  e.stopPropagation(); dismissPilotCard();
+});
 setStoreTab("weapons");
 
 // ---------- menu build ----------
@@ -3257,7 +3366,7 @@ function render(now){
   ctx.globalCompositeOperation="lighter";
 
   // graze ring — the edge made visible
-  if(G.state==="playing"||G.state==="levelup"){
+  if(G.state==="playing"||G.state==="levelup"||G.state==="pilotcard"){
     const pulse=1+0.04*Math.sin(now*0.006);
     ctx.strokeStyle=s.c2; ctx.globalAlpha=0.16+Math.min(0.3,G.combo*0.006);
     ctx.lineWidth=1.5;
@@ -3266,7 +3375,7 @@ function render(now){
   }
 
   // surge charge ring — fills clockwise around the ship, blazes when ready
-  if(G.state==="playing"||G.state==="levelup"){
+  if(G.state==="playing"||G.state==="levelup"||G.state==="pilotcard"){
     const frac=G.surge/100;
     if(frac>0.02){
       const ready=frac>=1;
@@ -3453,7 +3562,7 @@ function render(now){
   }
 
   // ion flail — chain and wrecking orb
-  if(flail && (G.state==="playing"||G.state==="levelup")){
+  if(flail && (G.state==="playing"||G.state==="levelup"||G.state==="pilotcard")){
     ctx.strokeStyle=s.c1; ctx.globalAlpha=0.35; ctx.lineWidth=1.5;
     ctx.beginPath(); ctx.moveTo(player.x,player.y); ctx.lineTo(flail.x,flail.y); ctx.stroke();
     ctx.globalAlpha=1;
@@ -3463,7 +3572,7 @@ function render(now){
   for(const b of ebul) drawGlow(b.x,b.y,b.r+1,b.meteor?"#ff9b3d":"#ff5d7e",1);
 
   // boss health bar — wide, top-center, under the score
-  if(G.state==="playing"||G.state==="levelup"){
+  if(G.state==="playing"||G.state==="levelup"||G.state==="pilotcard"){
     const boss=enemies.find(e=>e.boss);
     if(boss){
       const bw=Math.min(420,W*0.5), bx=(W-bw)/2, by=78;
@@ -3508,7 +3617,7 @@ function render(now){
   }
 
   // orbitals
-  if(stats.orbitals>0 && (G.state==="playing"||G.state==="levelup")){
+  if(stats.orbitals>0 && (G.state==="playing"||G.state==="levelup"||G.state==="pilotcard")){
     for(let k=0;k<stats.orbitals;k++){
       const a=orbAngle+k/stats.orbitals*TAU;
       drawGlow(player.x+Math.cos(a)*54,player.y+Math.sin(a)*54,6,"#ffd84e",0.95);
@@ -3516,7 +3625,7 @@ function render(now){
   }
 
   // player + trail
-  if(G.state==="playing"||G.state==="levelup"||(G.state==="dying"&&G.deathT<0.1)){
+  if(G.state==="playing"||G.state==="levelup"||G.state==="pilotcard"||(G.state==="dying"&&G.deathT<0.1)){
     for(const t of player.trail){
       if(t.life>0) drawGlow(t.x,t.y,5*(t.life/0.35),s.c1,0.35*(t.life/0.35));
     }
@@ -3560,7 +3669,7 @@ function render(now){
   }
 
   // echo phantom — spectral twin mirrored across the arena
-  if(stats.echo>0 && (G.state==="playing"||G.state==="levelup")){
+  if(stats.echo>0 && (G.state==="playing"||G.state==="levelup"||G.state==="pilotcard")){
     drawGlow(W-player.x,H-player.y,player.r,s.c2,0.5);
   }
 
@@ -3772,7 +3881,7 @@ function loop(now){
   }
 
   // soundtrack: calm on menus, drums+bass in play, hook after 1:00, ghost hats after 2:30
-  AU.musicTick((G.state==="playing"||G.state==="levelup") ? (1+(G.t>60?1:0)+(G.t>150?1:0)) : 0);
+  AU.musicTick((G.state==="playing"||G.state==="levelup"||G.state==="pilotcard") ? (1+(G.t>60?1:0)+(G.t>150?1:0)) : 0);
 
   render(now);
 }
