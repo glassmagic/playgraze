@@ -192,6 +192,19 @@
   #cornerL .dim{opacity:.6;}
   .cornerR{right:26px;text-align:right;line-height:1.4;cursor:pointer;transition:color .2s,text-shadow .2s;}
   .cornerR:hover{color:#ffd84e;text-shadow:0 0 12px rgba(255,216,78,.5);}
+  /* the hangar earns a real button — and it glows when your cores can buy something */
+  #hangarBtn{position:absolute;bottom:20px;right:26px;font-size:10.5px;letter-spacing:2.5px;
+    color:#ffd84e;cursor:pointer;text-align:right;padding:11px 16px;border-radius:3px;
+    border:1px solid rgba(255,216,78,.4);background:rgba(24,18,4,.55);
+    transition:box-shadow .2s, border-color .2s;animation:fadeUp 1.8s 2.3s both;}
+  #hangarBtn:hover{border-color:#ffd84e;box-shadow:0 0 18px rgba(255,216,78,.4);}
+  #hGear{display:none;margin-top:5px;font-size:9px;letter-spacing:2px;color:#fff;
+    text-shadow:0 0 10px rgba(255,216,78,.8);}
+  #hangarBtn.buyable #hGear{display:block;}
+  #hangarBtn.buyable,#deathHangar.buyable{border-color:#ffd84e;
+    animation:buyPulse 1.1s ease-in-out infinite alternate;}
+  @keyframes buyPulse{from{box-shadow:0 0 8px rgba(255,216,78,.25);}
+    to{box-shadow:0 0 28px rgba(255,216,78,.75);}}
   /* schemes */
   #schemes{display:flex;gap:14px;padding:14px 0;}
   .sw{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;
@@ -330,7 +343,7 @@
   .sbuy:hover:not(:disabled){background:#ffd84e;color:#04040c;}
   .sbuy:disabled{opacity:.35;cursor:default;border-color:rgba(140,170,220,.3);color:#7d92b8;}
   .cta.small{margin-top:30px;padding:11px 44px;font-size:11px;animation:none;}
-  #coffeeMenu{bottom:128px;text-decoration:none;}
+  #coffeeMenu{bottom:154px;text-decoration:none;}
   /* death-screen action row — one quiet line for every exit */
   #dActions{display:flex;gap:30px;margin-top:18px;align-items:baseline;}
   .dact{font-size:9.5px;letter-spacing:3px;color:#5a6e92;cursor:pointer;
@@ -356,7 +369,7 @@
     margin-bottom:14px;}
   #scRank:empty{display:none;}
   /* ---------- settings ---------- */
-  #settingsBtn{position:absolute;bottom:92px;right:26px;text-align:right;font-size:9.5px;
+  #settingsBtn{position:absolute;bottom:118px;right:26px;text-align:right;font-size:9.5px;
     letter-spacing:2.5px;color:#5a6e92;cursor:pointer;padding:4px 0;transition:color .2s, text-shadow .2s;
     animation:fadeUp 1.8s 2.5s both;}
   #settingsBtn:hover{color:#fff;text-shadow:0 0 10px var(--c1);}
@@ -469,7 +482,7 @@
     letter-spacing:3px;color:#9fb6d8;opacity:0;transition:opacity .5s;pointer-events:none;
     text-shadow:0 1px 8px rgba(0,0,0,.9);}
   #coach.on{opacity:1;}
-  #muteBtn{position:absolute;bottom:56px;right:26px;font-size:9px;color:#5a6e92;letter-spacing:2px;
+  #muteBtn{position:absolute;bottom:82px;right:26px;font-size:9px;color:#5a6e92;letter-spacing:2px;
     cursor:pointer;pointer-events:auto;z-index:6;opacity:.7;transition:opacity .2s;}
   /* the scrolling overlays have their own room — get the floating toggle out of the way */
   #tut.on~#muteBtn,#store.on~#muteBtn,#board.on~#muteBtn,#settings.on~#muteBtn,#shareCard.on~#muteBtn,
@@ -540,7 +553,7 @@
     <div id="tutBtn">HOW TO PLAY</div>
     <div id="lbBtn">LEADERBOARD</div>
     <div id="cornerL" class="corner"></div>
-    <div id="hangarBtn" class="corner cornerR">HANGAR · ⬢ <span id="hCores">0</span></div>
+    <div id="hangarBtn" class="cornerR">⬣ HANGAR · ⬢ <span id="hCores">0</span><span id="hGear">✦ GEAR AVAILABLE</span></div>
     <div id="settingsBtn">⚙ SETTINGS</div>
     <a id="coffeeMenu" class="corner cornerR" href="https://buymeacoffee.com/adamcpowell"
        target="_blank" rel="noopener">☕ BUY ME A COFFEE</a>
@@ -2503,8 +2516,8 @@ const TUT=[
   b:"Grazes and kills build your <b>combo</b> — the ×multiplier on all score. Play it too safe and it decays.<br><br>Grazes also charge the golden <b>surge</b> ring. Full surge boosts your damage — or press <b>SPACE</b> (on touch: <b>two-finger tap</b>, or tap the surge bar) to detonate a nova scaled by your multiplier. Hoard it or spend it: greed is a strategy."},
  {t:"BONUSES", v:'<div class="tCards"><i></i><i class="mid"></i><i></i></div>',
   b:"Fallen enemies drop <b>shards</b>. Shards fill the bar below — each level pauses time and offers <b>three bonuses</b>, common through <b>legendary</b>.<br><br>Builds compound: split shots ricochet, frost slows, death blooms chain. No two runs play alike."},
- {t:"CORES & HANGAR", v:'<div class="tCore">⬢</div>',
-  b:"Elites and heavies drop <b>⬢ cores</b>, and your score banks more when you fall.<br><br>Spend them in the <b>HANGAR</b> on permanent ship systems and entirely new weapons — railguns, mines, lightning, lasers. Every death funds the next run."},
+ {t:"THE HANGAR", v:'<div class="tCore">⬢</div>',
+  b:"Enemies drop <b>⬢ cores</b>, and your score converts to more when you fall — every run leaves you richer, win or lose.<br><br>Spend them in the <b>HANGAR</b> — the gold button on the menu and the death screen — on <b>permanent</b> upgrades that make every future run stronger: ship systems, thirteen weapons, whole new hulls. When the hangar button glows, you can afford something new. Check it after every death."},
 ];
 let tutPage=0;
 function renderTut(){
@@ -2563,9 +2576,18 @@ function goMenu(){
 }
 
 // ---------- hangar (store) ----------
+// true when the wallet covers the cheapest thing still worth buying
+function canAffordGear(){
+  let m=Infinity;
+  for(const id in WEAPONS){ if(!meta.owned[id] && meta.seen[id]) m=Math.min(m,WEAPONS[id].price); }
+  for(const id in HULLS){ if(!meta.hulls[id]) m=Math.min(m,HULLS[id].price); }
+  for(const it of SHOP){ const lv=meta.shop[it.id]||0; if(lv<it.max) m=Math.min(m,shopPrice(it,lv)); }
+  return meta.cores>=m;
+}
 function updateDeathCores(){
   document.getElementById("dCores").textContent="+"+fmtN(G.lastEarned||0)+" ⬢ BANKED";
   document.getElementById("dhCores").textContent=fmtN(meta.cores);
+  document.getElementById("deathHangar").classList.toggle("buyable",canAffordGear());
 }
 function openStore(){ AU.init(); buildStore(); document.getElementById("store").classList.add("on"); AU.ui(); }
 function closeStore(){ document.getElementById("store").classList.remove("on"); AU.ui(); buildMenu(); }
@@ -2970,6 +2992,7 @@ function buildMenu(){
   document.getElementById("mutLine").innerHTML="THIS WEEK — "+MUT.nm+"<i>"+MUT.ds+"</i>";
   document.getElementById("muteBtn").textContent="M — SOUND "+(AU.muted?"OFF":"ON");
   document.getElementById("hCores").textContent=fmtN(meta.cores);
+  document.getElementById("hangarBtn").classList.toggle("buyable",canAffordGear());
   applySchemeCSS();
 }
 buildMenu();
