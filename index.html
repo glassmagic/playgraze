@@ -692,7 +692,7 @@ const lerp = (a,b,t)=> a+(b-a)*t;
 const d2 = (ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy;};
 const fmtT = s =>{s|=0;return ((s/60)|0)+":"+("0"+(s%60)).slice(-2);};
 const fmtN = n => (n|0).toLocaleString("en-US");
-const VERSION="1.14.0"; // bump the minor on every PR — shown in settings to track deploys
+const VERSION="1.15.0"; // bump the minor on every PR — shown in settings to track deploys
 
 // ---------- persistence ----------
 const store = {
@@ -762,7 +762,7 @@ const WEAPONS = {
   rift:   {nm:"RIFT WAVE",    ds:"expanding crescents sweep the field",price:3500},
   mitosis:{nm:"MITOSIS ARRAY",ds:"shots divide in two, four times over",price:3800},
   flail:  {nm:"ION FLAIL",    ds:"a tethered wrecking orb — swing it",price:4500},
-  conradiator:{nm:"CONRADIATOR",ds:"spool-up hose — feeble shots, screaming fire rate, vents at full heat",price:4200},
+  conradiator:{nm:"CONRADIATOR",ds:"spool-up bullet hose — starts steady, ends ferocious, vents at full heat",price:4200},
   well:   {nm:"SINGULARITY SEED",ds:"every 6th shot plants a gravity well",price:5500},
 };
 // ship hulls — real tradeoffs, chosen before a run. size is honest: it scales
