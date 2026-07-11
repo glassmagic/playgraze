@@ -801,7 +801,7 @@ const lerp = (a,b,t)=> a+(b-a)*t;
 const d2 = (ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy;};
 const fmtT = s =>{s|=0;return ((s/60)|0)+":"+("0"+(s%60)).slice(-2);};
 const fmtN = n => (n|0).toLocaleString("en-US");
-const VERSION="1.16.0"; // bump the minor on every PR — shown in settings to track deploys
+const VERSION="1.17.0"; // bump the minor on every PR — shown in settings to track deploys
 const CHEAT_DIGEST="ec32b0485b795525c4e600167c76ecb6e7fcc17c3afa27649b705e25022a5c93";
 
 // ---------- persistence ----------
@@ -1640,17 +1640,24 @@ function director(dt){
 }
 
 // ---------- bosses ----------
-const BOSS_NAMES=["VOIDMAW","THE WARDEN","HEXAGON PRIME","NULL TYRANT","OMEGA SHARD"];
+// four signature kits, cycling; scaling (hp × bossN × time) carries difficulty on repeat visits
+const BOSS_KITS=[
+  {nm:"VOIDMAW",       kit:"voidmaw",  c:"#9d5dff"}, // gravity — drops wells, vacuum charges
+  {nm:"HEXAGON PRIME", kit:"hex",      c:"#3dd6ff"}, // turret — anchors center, rotating spiral arms
+  {nm:"NULL TYRANT",   kit:"tyrant",   c:"#ff4d4d"}, // duelist — telegraphed triple dashes, bullet wake
+  {nm:"THE CANNIBAL",  kit:"cannibal", c:"#ff9d3d"}, // eats nearby enemies, spits them back as shots
+];
 function spawnBoss(mini=false){
   if(!mini) G.bossN++;
-  const name=mini ? "THE HERALD" : BOSS_NAMES[(G.bossN-1)%BOSS_NAMES.length];
+  const def=mini ? {nm:"THE HERALD",kit:"herald",c:"#ff3df0"} : BOSS_KITS[(G.bossN-1)%BOSS_KITS.length];
+  const name=def.nm;
   const side=(Math.random()*4)|0, m=80; let x,y;
   if(side===0){x=rnd(W);y=-m;} else if(side===1){x=W+m;y=rnd(H);}
   else if(side===2){x=rnd(W);y=H+m;} else {x=-m;y=rnd(H);}
   const hp=(mini?520:1500*G.bossN)*(1+G.t/300)*(MUT.ehp||1);
   enemies.push({
-    type:"boss", boss:true, mini, name, x, y, vx:0, vy:0, r:mini?30:42,
-    hp, maxhp:hp, sc:mini?250:600*G.bossN, c:"#ff3df0", elite:false, affix:null,
+    type:"boss", boss:true, mini, name, kit:def.kit, x, y, vx:0, vy:0, r:mini?30:42,
+    hp, maxhp:hp, sc:mini?250:600*G.bossN, c:def.c, elite:false, affix:null,
     grazed:0, shootT:2, phase:rnd(TAU), hitT:0, mode:"approach", mt:mini?3:2.4, alpha:1, dashAng:0,
   });
   banner("⚠ "+name+" APPROACHES ⚠");
@@ -1662,7 +1669,77 @@ function spawnBoss(mini=false){
 }
 function bossAttack(e,px,py){
   const dx=px-e.x, dy=py-e.y, dd=Math.hypot(dx,dy)||1;
-  const atk=pick(["ring","burst","charge","summon"]);
+  if(e.kit==="voidmaw"){
+    const atk=pick(["ring","burst","vcharge","hole"]);
+    if(atk==="hole"){
+      // drops a soft well on your position — fight the terrain
+      holes.push({x:px,y:py,t:5,soft:true});
+      burst(px,py,"#9d5dff",12,220,3,0.5);
+      AU.tone(80,0.5,"sine",0.14,120);
+      return;
+    }
+    if(atk==="vcharge"){
+      const sp=430;
+      e.vx=dx/dd*sp; e.vy=dy/dd*sp;
+      e.vacT=1.2; // hoovers loose shards toward itself while it flies
+      AU.dash(); burst(e.x,e.y,e.c,10,260,3.5,0.4);
+      return;
+    }
+    // ring / burst fall through to the shared patterns below
+    return sharedBossAttack(e,atk,dx,dy,dd);
+  }
+  if(e.kit==="hex"){
+    // turret — rapid rotating spiral arms from the arena's center, nothing aimed
+    e.spiral=(e.spiral||rnd(TAU))+0.42;
+    e.volley=(e.volley||0)+1;
+    if(e.volley%7===0){
+      const n=18;
+      for(let k=0;k<n;k++){
+        const a=k/n*TAU+e.spiral;
+        ebul.push({x:e.x,y:e.y,vx:Math.cos(a)*150,vy:Math.sin(a)*150,r:5,grazed:0,life:6});
+      }
+      AU.tone(210,0.25,"square",0.1,-90);
+    } else {
+      for(let arm=0;arm<6;arm++){
+        const a=e.spiral+arm/6*TAU;
+        ebul.push({x:e.x,y:e.y,vx:Math.cos(a)*175,vy:Math.sin(a)*175,r:5,grazed:0,life:6});
+      }
+      if(e.volley%3===0) AU.tone(320,0.08,"square",0.05,-60);
+    }
+    return;
+  }
+  if(e.kit==="tyrant"){
+    const atk=pick(["dashes","dashes","burst"]);
+    if(atk==="dashes"){
+      // telegraphed triple dash, leaving a wake of static bullets
+      e.dashN=3; e.dashMode="warn"; e.dashT=0.45;
+      AU.tone(120,0.3,"sawtooth",0.12,-40);
+      return;
+    }
+    return sharedBossAttack(e,atk,dx,dy,dd);
+  }
+  if(e.kit==="cannibal"){
+    if((e.ammo||0)>0){
+      // spits everything it swallowed back at you at gun velocity
+      const n=Math.min(e.ammo,10); e.ammo=0;
+      const base=Math.atan2(dy,dx);
+      for(let k=0;k<n;k++){
+        const a=base+rnd(-0.09,0.09), sp=560+rnd(-40,40);
+        ebul.push({x:e.x,y:e.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,r:8,grazed:0,life:5});
+      }
+      burst(e.x,e.y,e.c,10,280,3.5,0.4);
+      AU.tone(110,0.3,"sawtooth",0.16,-60); AU.noise(0.2,0.14,900);
+      return;
+    }
+    e.devourT=1.6; // starts inhaling — nearby enemies get dragged in and swallowed
+    burst(e.x,e.y,e.c,14,200,3,0.6);
+    AU.tone(60,1.0,"sawtooth",0.14,90);
+    return;
+  }
+  // the herald's generic sampler
+  return sharedBossAttack(e,pick(["ring","burst","charge","summon"]),dx,dy,dd);
+}
+function sharedBossAttack(e,atk,dx,dy,dd){
   if(atk==="ring"){
     // the herald throws one sparse ring; real bosses throw a double
     for(let ring=0;ring<(e.mini?1:2);ring++){
@@ -1732,6 +1809,8 @@ function updateEnemies(dt){
   const px=player.x, py=player.y;
   for(let i=enemies.length-1;i>=0;i--){
     const e=enemies[i];
+    // swallowed by the cannibal — gone without score, shards, or death effects
+    if(e.eaten){ enemies.splice(i,1); continue; }
     e.hitT=Math.max(0,e.hitT-dt);
     const dx=px-e.x, dy=py-e.y, dd=Math.sqrt(dx*dx+dy*dy)||1;
     const sMul = (e.elite?0.8:1)*(MUT.espd||1)*(G.pactEspd||1);
@@ -1857,11 +1936,73 @@ function updateEnemies(dt){
         }
         break; }
       case "boss":{
-        const sp=44*sMul;
-        e.vx=lerp(e.vx,dx/dd*sp,dt*1.2); e.vy=lerp(e.vy,dy/dd*sp,dt*1.2);
+        if(e.kit==="hex"){
+          // anchors dead center and holds — the fight orbits it
+          const cx=W/2, cy=H/2, ax=cx-e.x, ay=cy-e.y, ad=Math.hypot(ax,ay)||1;
+          const sp=ad>30?70:0;
+          e.vx=lerp(e.vx,ax/ad*sp,dt*1.5); e.vy=lerp(e.vy,ay/ad*sp,dt*1.5);
+        } else if(e.kit==="tyrant" && e.dashN>0){
+          // dash state machine: warn (brake + sparks) then go (bullet wake)
+          e.dashT-=dt;
+          if(e.dashMode==="warn"){
+            e.vx*=Math.pow(0.05,dt); e.vy*=Math.pow(0.05,dt);
+            if(Math.random()<0.5){
+              const a=Math.atan2(dy,dx);
+              parts.push({x:e.x+Math.cos(a)*rnd(20,70),y:e.y+Math.sin(a)*rnd(20,70),
+                vx:rnd(-20,20),vy:rnd(-20,20),life:0.25,max:0.25,r:2,c:e.c,drag:0.94});
+            }
+            if(e.dashT<=0){
+              e.dashMode="go"; e.dashT=0.34;
+              const a=Math.atan2(dy,dx);
+              e.vx=Math.cos(a)*540; e.vy=Math.sin(a)*540;
+              AU.dash(); burst(e.x,e.y,e.c,8,240,3,0.35);
+            }
+          } else {
+            if(Math.random()<0.8) ebul.push({x:e.x,y:e.y,vx:0,vy:0,r:4,grazed:0,life:2.2});
+            if(e.dashT<=0){
+              e.dashN--;
+              if(e.dashN>0){ e.dashMode="warn"; e.dashT=0.45; }
+              else { e.vx*=0.3; e.vy*=0.3; }
+            }
+          }
+        } else {
+          const sp=44*sMul;
+          e.vx=lerp(e.vx,dx/dd*sp,dt*1.2); e.vy=lerp(e.vy,dy/dd*sp,dt*1.2);
+        }
+        // voidmaw's vacuum charge drags loose shards along in its wake
+        if(e.vacT>0){
+          e.vacT-=dt;
+          for(const s of shards){
+            const sx=e.x-s.x, sy=e.y-s.y, sd=Math.hypot(sx,sy)||1;
+            if(sd<300){ s.vx+=sx/sd*1400*dt; s.vy+=sy/sd*1400*dt; }
+          }
+        }
+        // the cannibal's inhale — non-boss enemies in range get dragged in and swallowed
+        if(e.devourT>0){
+          e.devourT-=dt;
+          for(const o of enemies){
+            if(o===e||o.boss||o.eaten) continue;
+            const ox=e.x-o.x, oy=e.y-o.y, od=Math.hypot(ox,oy)||1;
+            if(od<340){
+              o.vx+=ox/od*1900*dt; o.vy+=oy/od*1900*dt;
+              if(od<e.r+14 && (e.ammo||0)<10){
+                o.eaten=true; e.ammo=(e.ammo||0)+1;
+                burst(o.x,o.y,e.c,6,160,2.4,0.3);
+                AU.tone(440+e.ammo*40,0.08,"square",0.06,-200);
+              }
+            }
+          }
+          if(Math.random()<0.6)
+            parts.push({x:e.x+rnd(-70,70),y:e.y+rnd(-70,70),vx:0,vy:0,life:0.3,max:0.3,r:2,c:e.c,drag:0.9});
+        }
         e.phase+=dt*0.7;
-        e.mt-=dt;
-        if(e.mt<=0){ e.mt=e.mini?rnd(3.0,3.8):rnd(2.2,3.0); bossAttack(e,px,py); }
+        if(!(e.kit==="tyrant"&&e.dashN>0)){
+          e.mt-=dt;
+          if(e.mt<=0){
+            e.mt=e.mini?rnd(3.0,3.8) : e.kit==="hex"?0.55 : rnd(2.2,3.0);
+            bossAttack(e,px,py);
+          }
+        }
         break; }
     }
     // burst elites periodically ring the field with bullets
