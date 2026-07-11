@@ -692,7 +692,7 @@ const lerp = (a,b,t)=> a+(b-a)*t;
 const d2 = (ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy;};
 const fmtT = s =>{s|=0;return ((s/60)|0)+":"+("0"+(s%60)).slice(-2);};
 const fmtN = n => (n|0).toLocaleString("en-US");
-const VERSION="1.13.0"; // bump the minor on every PR — shown in settings to track deploys
+const VERSION="1.14.0"; // bump the minor on every PR — shown in settings to track deploys
 
 // ---------- persistence ----------
 const store = {
@@ -709,6 +709,7 @@ meta.shop  = Object.assign({gun:0,cycle:0,hull:0,thrust:0,magnet:0,graze:0,surge
 meta.seen  = Object.assign({}, meta.seen||{}); // weapons used mid-run — only these surface in the hangar
 meta.hull  = meta.hull||"vector";
 meta.pilot = meta.pilot||"rex";
+meta.pilots = Object.assign({rex:true}, meta.pilots||{});
 meta.hulls = Object.assign({vector:true}, meta.hulls||{});
 
 // daily streak (a reason to come back tomorrow)
@@ -786,6 +787,24 @@ const PILOTS={
   intern:{nm:"THE INTERN",     acc:1.1,  rof:1.05,
     story:"unpaid, terrified, statistically adequate. please be kind."},
 };
+function dropPilotPrisoner(x,y){
+  shards.push({x:clamp(x,24,W-24),y:clamp(y,24,H-24),vx:rnd(-35,35),vy:rnd(-35,35),pilot:true,t:rnd(TAU)});
+}
+function unlockRandomPilot(x,y){
+  const locked=Object.keys(PILOTS).filter(id=>!meta.pilots[id]);
+  if(!locked.length){
+    ftext(x,y-24,"ALL PILOTS RESCUED","#9ef7ff",15);
+    AU.coin();
+    return;
+  }
+  const id=pick(locked);
+  meta.pilots[id]=true;
+  store.save(meta);
+  banner("PILOT RESCUED — "+PILOTS[id].nm);
+  ftext(x,y-24,PILOTS[id].nm+" UNLOCKED","#9ef7ff",17);
+  burst(x,y,"#9ef7ff",18,280,3.5,0.65);
+  AU.levelup(); flashScreen(0.18);
+}
 const SHOP = [
   {id:"gun",   nm:"GUN CALIBRATION", ds:"+8% damage per level",         max:10, base:40},
   {id:"cycle", nm:"CYCLE MODULE",    ds:"+6% fire rate per level",      max:8,  base:50},
@@ -1653,6 +1672,7 @@ function killEnemy(i){
   // bosses go down like a second sun (the herald a touch dimmer)
   if(e.boss){
     banner("☠ "+e.name+" DESTROYED ☠");
+    dropPilotPrisoner(e.x,e.y);
     // a slain boss opens the devil's table
     if(!G.pactsOpen){ G.pactsOpen=true; G.pactDue=true; }
     // kill-cam: a beat of slow-mo on the wreck while explosions chain through it
@@ -2202,6 +2222,10 @@ function updateShards(dt){
     s.x+=s.vx*dt; s.y+=s.vy*dt;
     if(dd<16){
       shards.splice(i,1);
+      if(s.pilot){
+        unlockRandomPilot(s.x,s.y);
+        continue;
+      }
       if(s.core){
         G.coresRun+=s.core;
         AU.coin();
@@ -2216,7 +2240,13 @@ function updateShards(dt){
       if(G.xp>=G.xpNext) levelUp();
     }
   }
-  if(shards.length>400) shards.splice(0,shards.length-400);
+  if(shards.length>400){
+    let excess=shards.length-400;
+    for(let i=0;i<shards.length&&excess>0;){
+      if(shards[i].pilot) i++;
+      else { shards.splice(i,1); excess--; }
+    }
+  }
 }
 
 // ---------- mortar target zones ----------
@@ -2430,7 +2460,7 @@ function startRun(){
   stats.speed  *= hull.speed;
   player.r = 9*hull.size; // the hitbox is honest about the silhouette
   // pilot habits
-  if(!PILOTS[meta.pilot]) meta.pilot="rex";
+  if(!PILOTS[meta.pilot]||!meta.pilots[meta.pilot]) meta.pilot="rex";
   stats.fireRate *= PILOTS[meta.pilot].rof;
   stats.grazeR *= hull.graze;
   // this week's mutator
@@ -2632,7 +2662,7 @@ function bindReset(el){
         lastDay:new Date().toISOString().slice(0,10),cores:0,weapon:"pulse",player:""});
       meta.owned={pulse:true};
       meta.seen={};
-      meta.hull="vector"; meta.hulls={vector:true}; meta.pilot="rex";
+      meta.hull="vector"; meta.hulls={vector:true}; meta.pilot="rex"; meta.pilots={rex:true};
       meta.shop={gun:0,cycle:0,hull:0,thrust:0,magnet:0,graze:0,surge:0,luck:0};
       store.save(meta);
       document.querySelectorAll("#setReset").forEach(b=>{
@@ -2961,10 +2991,16 @@ function buildStore(){
     });
     hEl.appendChild(d);
   }
-  // pilots — free to choose, impossible to please
+  // pilots — rescued from slain bosses, then free to choose
   const pEl=document.getElementById("sPilots"); pEl.innerHTML="";
   for(const id in PILOTS){
-    const p=PILOTS[id], sel=meta.pilot===id;
+    const p=PILOTS[id], owned=!!meta.pilots[id], sel=meta.pilot===id&&owned;
+    if(!owned){
+      const u=document.createElement("div");
+      u.className="wcard undisc";
+      u.innerHTML="<div class='wn'>UNDISCOVERED</div><div class='wd'>collect a pilot prisoner to unlock</div><div class='wp'>?</div>";
+      pEl.appendChild(u); continue;
+    }
     const aim=Math.round((1-p.acc)*100), rof=Math.round((p.rof-1)*100);
     const stat=(aim>=0?"+":"")+aim+"% AIM · "+(rof>=0?"+":"")+rof+"% FIRE RATE";
     const d=document.createElement("div");
@@ -3289,6 +3325,17 @@ function render(now){
 
   // shards — sharp spinning slivers (hexes for cores, to match the ⬢), not fuzzy dots
   for(const sh of shards){
+    if(sh.pilot){
+      const bob=Math.sin(sh.t*4)*2;
+      drawGlow(sh.x,sh.y,13,"#9ef7ff",0.45);
+      ctx.save(); ctx.translate(sh.x,sh.y+bob);
+      ctx.strokeStyle="#ffffff"; ctx.fillStyle="#9ef7ff"; ctx.lineWidth=2; ctx.lineCap="round";
+      ctx.beginPath(); ctx.arc(0,-7,3.5,0,TAU); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(0,-3); ctx.lineTo(0,6); ctx.moveTo(-6,1); ctx.lineTo(6,1);
+      ctx.moveTo(0,6); ctx.lineTo(-5,12); ctx.moveTo(0,6); ctx.lineTo(5,12); ctx.stroke();
+      ctx.restore();
+      continue;
+    }
     const big=sh.v>=5;
     const r=(sh.core?8:big?6.5:4.5)+Math.sin(sh.t*6)*0.6;
     const col=sh.core?"#ffe44e":big?"#ffd84e":s.c1;

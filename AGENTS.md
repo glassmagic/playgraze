@@ -20,6 +20,15 @@ GRAZE is a neon survival arena ("danger pays") that lives at **https://playgraze
 4. **Multiple features per PR is normal here.** The user tends to fire follow-up requests at an open PR; push them as separate commits and keep the PR body updated.
 5. **Never leave test data in the production leaderboard** (see Data hygiene).
 
+### Fast path for tiny changes
+
+For copy tweaks, constant changes, or similarly low-risk edits, keep the workflow lean:
+
+1. Read this file, check `git status` and the current PR state, then search for every occurrence of the text or value being changed.
+2. Patch all occurrences, bump `VERSION` only if this will be a new PR, and inspect the diff. If a PR is already open, add a commit to it and do not bump again.
+3. Run `git diff --check`. Run `node --check` on the extracted inline script only when JavaScript changed. Verify the affected UI once in the local browser; add one narrow-screen check only if the copy is longer or layout could move.
+4. Commit, push, open or update the PR, and give the user the PR link immediately. Do not add unrelated refactors, spin up reviewers, invent a test suite, or wait for the deploy preview unless the change is risky or the user asks. There is no build step.
+
 ## Deployment (Netlify)
 
 - Site: team **Spire**, project **quiet-platypus-b61f92**, site id `3ccf41ab-61ba-4011-b467-be345b9cd711`. Production = `main` → **playgraze.com** (~30s after merge). Every PR gets a preview at `https://deploy-preview-<PR#>--quiet-platypus-b61f92.netlify.app`.
@@ -68,14 +77,14 @@ Real players exist (Peter T., Conrad-Peter T., Shaunak, AdamP, DanDan…). Their
 
 ## Game architecture (all inside index.html's single script)
 
-- **Persistence**: `meta` object ↔ `localStorage["graze_save"]` (best, cores, owned weapons/hulls, `seen` weapon discovery, pilot, scheme, callsign `player`, shop levels, daily streak).
+- **Persistence**: `meta` object ↔ `localStorage["graze_save"]` (best, cores, owned weapons/hulls/pilots, `seen` weapon discovery, pilot, scheme, callsign `player`, shop levels, daily streak).
 - **Audio** (`AU`): SFX + a composed soundtrack on **Am–F–C–G (i–♭VI–♭III–♭VII) at 126bpm** — 8-bar hook, bass, snare, chiptune arps, layered by intensity (1 base / 2 at 1:00 / 3 at 2:30); every 4th phrase breaks down; **menus play the same hook at half speed** (music box). `pluck()` follows the same progression.
 - **Enemies**: `ETYPES` + `WSPAWN`; per-run shuffled introductions (`rollIntroPlan`: chaser/drifter/weaver fixed at 0/25/55s, rest randomized on 30s slots from 85s). Elites (after 2:00) carry affixes: shield / split / spray. Special: `courier` (fleeing treasure, excluded from rotation), `warden` (directional bullet-blocking shield — heavy weapons bypass), `bomber` (mines via `zones`), `leech` (drains surge through a tether).
-- **Bosses**: THE HERALD (easier, once, at 1:30) then named bosses every 180s, rotating attacks (ring/burst/charge/summon), letterbox intro + kill-cam via the generic `G.cine` slow-mo/zoom system.
+- **Bosses**: THE HERALD (easier, once, at 1:30) then named bosses every 180s, rotating attacks (ring/burst/charge/summon), letterbox intro + kill-cam via the generic `G.cine` slow-mo/zoom system. Every slain boss leaves a pilot prisoner; collecting them unlocks one random undiscovered pilot.
 - **Arena events** (after 90s, ~50s cadence): meteor shower (grazeable `ebul`), laser sweep (hurts everyone), gravity storm (wandering soft hole that pulls the player).
 - **Black holes** (`holes`): hard (Event Horizon bonus, damages) vs `soft` (Singularity Seed / storms — holds without harming). Bosses are immune to wells.
 - **Weapons**: all fire logic branches in `updatePlayer`'s auto-fire; waves/flail/holes have their own update fns. Heavy weapons (arc/beam/rift/flail) scale with `heavyBoost` (pierce/ricochet/homing each +12%). The CONRADIATOR uses `player.heat` (spool 4→25/s, vent ring at full, 60% loss on retarget).
-- **Progression**: bonus draft (3 cards; rarity legendary 5%/epic 19%/rare 32%; a weapon-refit seat is force-rolled 40% of shut-out drafts; **devil's pacts** unlock after the first boss kill — guaranteed 4th card next draft, 22% after). Weapon **discovery**: hangar only sells weapons taken as a refit mid-run (`meta.seen`).
+- **Progression**: bonus draft (3 cards; rarity legendary 5%/epic 19%/rare 32%; a weapon-refit seat is force-rolled 40% of shut-out drafts; **devil's pacts** unlock after the first boss kill — guaranteed 4th card next draft, 22% after). Weapon **discovery**: hangar only sells weapons taken as a refit mid-run (`meta.seen`). Pilot **rescue**: only REX NEBULAR starts unlocked; boss prisoners unlock the other pilots in random order.
 - **Hangar Shop tabs**: WEAPONS / HULLS / PILOTS / SHIP SYSTEMS / PAINTWORK. Hull `size` scales drawn ship, heart ring, heat gauge **and hitbox** (`player.r`). Pilots (free) set aim (spread × acc + per-shot jitter, floor at acc 0.65) and fire-rate multiplier.
 - **Weekly mutator** (`MUT`): ISO-week-derived, same for every player, hooks score/graze/surge/spawn/enemy-hp/speeds/cores/hearts. Shown on the menu.
 - **Live meta-game**: rival ladder (silent until your run beats the current #10; then place countdown to the crown), bounty marks (~45s, +3 cores), photo-less share row (X/WhatsApp/FB/Telegram/Reddit/native/copy) with rank-bearing links.
@@ -84,7 +93,7 @@ Real players exist (Peter T., Conrad-Peter T., Shaunak, AdamP, DanDan…). Their
 
 ## Key decisions & their reasons (not visible in code)
 
-- **"Bonuses", not "evolutions"** — user renamed for clarity; the bottom bar is labeled the **bonus bar**.
+- **"Bonuses", not "evolutions"** — user renamed for clarity; the bonus bar's visible HUD label is **NEXT BONUS · LV N**.
 - **Milestones/lifetime-unlocks were removed on purpose** (v1.5). Don't reintroduce score-gated unlocks; progression is cores + discovery only. All paint schemes are free.
 - **Restarting is deliberate**: ONE MORE RUN button, SPACE, or R — a stray click must never launch a run (it used to; players hated it).
 - **Score submission is an explicit button**, never automatic — and boards keep *best per callsign*, which confuses players ("my run vanished"); that's why the not-improved message names the date of the standing best.
