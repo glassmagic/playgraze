@@ -902,6 +902,7 @@ const PILOTS={
     quote:"please confirm this counts as experience.",
     story:"unpaid, terrified, statistically adequate. please be kind."},
 };
+let queuedPilotCard=null;
 function pilotPortraitSVG(id){
   const art={
     rex:`<path d="M88 48 70 67v50l18 23h44l18-23V67l-18-19Z" fill="#091227"/><path d="M78 76h64l-8 27H86Z" fill="currentColor" opacity=".28"/><path d="M84 79h52"/><circle cx="101" cy="91" r="4" fill="#ffffff"/><circle cx="123" cy="91" r="4" fill="#ffffff"/><path d="M96 116h32M66 92 42 79l12 26-20 12 35 4M154 90l28-14-10 25 18 10-35 9"/><path d="M102 33h20l5 15H97Z" fill="currentColor" opacity=".55"/>`,
@@ -919,6 +920,11 @@ function pilotPortraitSVG(id){
 function showPilotCard(id){
   const p=PILOTS[id];
   if(!p) return;
+  if(G.state==="levelup"||document.getElementById("levelup").classList.contains("on")){
+    queuedPilotCard=id;
+    return;
+  }
+  queuedPilotCard=null;
   const aim=Math.round((1-p.acc)*100), rof=Math.round((p.rof-1)*100);
   G.invuln=Math.max(G.invuln,0.8);
   G.state="pilotcard";
@@ -947,6 +953,15 @@ function dropPilotPrisoner(x,y){
 function unlockRandomPilot(x,y){
   const locked=Object.keys(PILOTS).filter(id=>!meta.pilots[id]);
   if(!locked.length){
+    if(meta.cheat){
+      const id=pick(Object.keys(PILOTS).filter(id=>id!=="rex"));
+      banner("PILOT RECOVERED — "+PILOTS[id].nm);
+      ftext(x,y-24,PILOTS[id].nm+" RECOVERED","#9ef7ff",17);
+      burst(x,y,"#9ef7ff",18,280,3.5,0.65);
+      AU.levelup(); flashScreen(0.18);
+      showPilotCard(id);
+      return true;
+    }
     ftext(x,y-24,"ALL PILOTS RESCUED","#9ef7ff",15);
     AU.coin();
     return false;
@@ -2635,6 +2650,11 @@ function chooseCard(i){
   G.state="playing";
   G.invuln=Math.max(G.invuln,0.8);
   flashScreen(0.15);
+  if(queuedPilotCard){
+    const id=queuedPilotCard;
+    queuedPilotCard=null;
+    showPilotCard(id);
+  }
 }
 
 // ---------- death & meta (near-miss framing) ----------
@@ -2685,7 +2705,7 @@ function showDeathScreen(){
 
 // ---------- run lifecycle ----------
 function startRun(){
-  enemies=[];pbul=[];ebul=[];shards=[];parts=[];texts=[];zones=[];holes=[];bolts=[];waves=[];flail=null;flares=[];taken=[];
+  enemies=[];pbul=[];ebul=[];shards=[];parts=[];texts=[];zones=[];holes=[];bolts=[];waves=[];flail=null;flares=[];taken=[];queuedPilotCard=null;
   stats=baseStats();
   // daily streak bonus
   stats.damage *= 1 + 0.05*meta.streak;
@@ -2900,6 +2920,7 @@ function coachMsg(m){
 // ---------- back to menu from death ----------
 function goMenu(){
   G.state="menu";
+  queuedPilotCard=null;
   hideBanner();
   enemies=[];pbul=[];ebul=[];shards=[];zones=[];holes=[];bolts=[];parts=[];texts=[];flares=[];
   document.getElementById("death").classList.remove("on");
