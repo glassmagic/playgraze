@@ -2075,9 +2075,9 @@ function updatePlayer(dt){
           if(player.heatTarget!==best){ player.heatTarget=best; player.heat=(player.heat||0)*0.4; }
           const h=player.heat||0;
           rate=conradiatorRate(h,s.fireRate);
-          dmg*=0.11; rr=3;
+          dmg*=0.22; rr=3;
           spread=0.05+0.10*h;               // sloppier as it screams
-          player.heat=Math.min(1,h+0.0215);
+          player.heat=Math.min(1,h+0.02825);
           player.lastShot=G.t;
         }
         player.fireT=1/rate;
