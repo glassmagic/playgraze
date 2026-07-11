@@ -1054,6 +1054,12 @@ function disableCheatMode(){
   goMenu(); buildSettings();
 }
 const shopPrice = (it,lv)=>Math.round(it.base*Math.pow(2.2,lv));
+function conradiatorRate(heat,fireRate){
+  const h=clamp(heat,0,1), knee=0.65;
+  const early=Math.pow(Math.min(h/knee,1),1.35);
+  const late=Math.pow(Math.max(0,(h-knee)/(1-knee)),2.2);
+  return (1.35+7.65*early+25*late)*(fireRate/2.6); // 1.35→9/s, then a hard late kick to 34/s
+}
 // the weapon actually in hand: a mid-run refit overrides the hangar loadout
 function curWeapon(){
   return (G.runWeapon && WEAPONS[G.runWeapon]) ? G.runWeapon
@@ -1990,8 +1996,8 @@ function updatePlayer(dt){
   player.x = clamp(player.x+player.vx*dt, 14, W-14);
   player.y = clamp(player.y+player.vy*dt, 14, H-14);
   G.invuln = Math.max(0,G.invuln-dt);
-  // the conradiator cools only once the trigger's been off for half a second
-  if(player.heat>0 && G.t-(player.lastShot||0)>0.5)
+  // the slow opening shots hold their heat; cooling starts once the trigger is truly off
+  if(player.heat>0 && G.t-(player.lastShot||0)>1.1)
     player.heat=Math.max(0,player.heat-dt*0.35);
 
   // trail
@@ -2053,8 +2059,8 @@ function updatePlayer(dt){
           // heat builds while it stays on one target; switching costs most of the spool
           if(player.heatTarget!==best){ player.heatTarget=best; player.heat=(player.heat||0)*0.4; }
           const h=player.heat||0;
-          rate=(4+21*h)*(s.fireRate/2.6);   // 4/s spooling to a screaming 25/s
-          dmg*=0.22; rr=3;
+          rate=conradiatorRate(h,s.fireRate);
+          dmg*=0.11; rr=3;
           spread=0.05+0.10*h;               // sloppier as it screams
           player.heat=Math.min(1,h+0.02);
           player.lastShot=G.t;
