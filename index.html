@@ -531,7 +531,7 @@
     </div>
     <div id="hearts">♥ ♥ ♥</div>
     <div id="timeBox"><span id="time">0:00</span><div id="best">BEST 0</div></div>
-    <div id="lvl">LV 1</div>
+    <div id="lvl">BONUS LV 1</div>
     <div id="xpwrap"><div id="xpbar"></div></div>
     <div id="surgewrap">
       <div id="surgelabel">SURGE — SPACE</div>
@@ -2283,7 +2283,7 @@ function levelUp(){
   G.xpNext=Math.floor(8*Math.pow(1.33,G.level-1));
   G.state="levelup";
   AU.levelup(); flashScreen(0.25);
-  document.getElementById("lvl").textContent="LV "+G.level;
+  document.getElementById("lvl").textContent="BONUS LV "+G.level;
   // roll 3 cards with rarity weighting — legendaries are an event, not a routine
   const pool=[...UPGRADES, ...weaponOffers()];
   offered=[];
@@ -2441,7 +2441,7 @@ function startRun(){
   G.runWeapon=null;
   player.x=W/2; player.y=H+90; player.vx=player.vy=0; player.trail=[]; // launch from below the frame
   drawHearts();
-  document.getElementById("lvl").textContent="LV 1";
+  document.getElementById("lvl").textContent="BONUS LV 1";
   document.getElementById("best").textContent="BEST "+fmtN(meta.best);
   document.getElementById("menu").classList.remove("on");
   document.getElementById("death").classList.remove("on");
@@ -2515,7 +2515,7 @@ const TUT=[
  {t:"COMBO & SURGE", v:'<div class="tSurge"></div><div class="tKey">SPACE</div>',
   b:"Grazes and kills build your <b>combo</b> — the ×multiplier on all score. Play it too safe and it decays.<br><br>Grazes also charge the golden <b>surge</b> ring. Full surge boosts your damage — or press <b>SPACE</b> (on touch: <b>two-finger tap</b>, or tap the surge bar) to detonate a nova scaled by your multiplier. Hoard it or spend it: greed is a strategy."},
  {t:"BONUSES", v:'<div class="tCards"><i></i><i class="mid"></i><i></i></div>',
-  b:"Fallen enemies drop <b>shards</b>. Shards fill the bar below — each level pauses time and offers <b>three bonuses</b>, common through <b>legendary</b>.<br><br>Builds compound: split shots ricochet, frost slows, death blooms chain. No two runs play alike."},
+  b:"Fallen enemies drop <b>shards</b>. Shards fill the <b>bonus bar</b> along the bottom of the screen — when it fills, time pauses and you choose from <b>three bonuses</b>, common through <b>legendary</b>.<br><br>Builds compound: split shots ricochet, frost slows, death blooms chain. No two runs play alike."},
  {t:"THE HANGAR", v:'<div class="tCore">⬢</div>',
   b:"Enemies drop <b>⬢ cores</b>, and your score converts to more when you fall — every run leaves you richer, win or lose.<br><br>Spend them in the <b>HANGAR</b> — the gold button on the menu and the death screen — on <b>permanent</b> upgrades that make every future run stronger: ship systems, thirteen weapons, whole new hulls. When the hangar button glows, you can afford something new. Check it after every death."},
 ];
