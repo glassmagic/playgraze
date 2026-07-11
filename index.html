@@ -493,6 +493,7 @@
   #death{justify-content:flex-start;padding:6vh 0 40px;overflow-y:auto;}
   #death > *{flex-shrink:0;}
   @media (max-width:760px){
+    #lvl{font-size:10px;letter-spacing:1.5px;}
     #cards{flex-direction:column;gap:12px;} .card{width:260px;padding:14px;}
     #score{font-size:26px;} #dScore{font-size:56px;}
     #dActions{gap:16px;flex-wrap:wrap;justify-content:center;}
@@ -532,7 +533,7 @@
     </div>
     <div id="hearts">♥ ♥ ♥</div>
     <div id="timeBox"><span id="time">0:00</span><div id="best">BEST 0</div></div>
-    <div id="lvl">BONUS LV 1</div>
+    <div id="lvl">NEXT BONUS · LV 1</div>
     <div id="xpwrap"><div id="xpbar"></div></div>
     <div id="surgewrap">
       <div id="surgelabel">SURGE — SPACE</div>
@@ -691,7 +692,7 @@ const lerp = (a,b,t)=> a+(b-a)*t;
 const d2 = (ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy;};
 const fmtT = s =>{s|=0;return ((s/60)|0)+":"+("0"+(s%60)).slice(-2);};
 const fmtN = n => (n|0).toLocaleString("en-US");
-const VERSION="1.12.0"; // bump the minor on every PR — shown in settings to track deploys
+const VERSION="1.13.0"; // bump the minor on every PR — shown in settings to track deploys
 
 // ---------- persistence ----------
 const store = {
@@ -2307,7 +2308,7 @@ function levelUp(){
   G.xpNext=Math.floor(8*Math.pow(1.33,G.level-1));
   G.state="levelup";
   AU.levelup(); flashScreen(0.25);
-  document.getElementById("lvl").textContent="BONUS LV "+G.level;
+  document.getElementById("lvl").textContent="NEXT BONUS · LV "+G.level;
   // roll 3 cards with rarity weighting — legendaries are an event, not a routine
   const pool=[...UPGRADES, ...weaponOffers()];
   offered=[];
@@ -2469,7 +2470,7 @@ function startRun(){
   G.runWeapon=null;
   player.x=W/2; player.y=H+90; player.vx=player.vy=0; player.trail=[]; // launch from below the frame
   drawHearts();
-  document.getElementById("lvl").textContent="BONUS LV 1";
+  document.getElementById("lvl").textContent="NEXT BONUS · LV 1";
   document.getElementById("best").textContent="BEST "+fmtN(meta.best);
   document.getElementById("menu").classList.remove("on");
   document.getElementById("death").classList.remove("on");
