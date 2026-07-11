@@ -980,7 +980,7 @@ const SHOP = [
   {id:"gun",   nm:"GUN CALIBRATION", ds:"+8% damage per level",         max:13, base:40},
   {id:"cycle", nm:"CYCLE MODULE",    ds:"+6% fire rate per level",      max:10, base:50},
   {id:"hull",  nm:"HULL PLATING",    ds:"+1 max hull per level",        max:5,  base:150},
-  {id:"thrust",nm:"THRUSTER TUNE",   ds:"+20% move speed per level",    max:9,  base:35},
+  {id:"thrust",nm:"THRUSTER TUNE",   ds:"+25% move speed per level",    max:9,  base:35},
   {id:"magnet",nm:"MAGNET ARRAY",    ds:"+20% pickup radius per level", max:8,  base:30},
   {id:"graze", nm:"GRAZE ANTENNA",   ds:"+10% graze radius per level",  max:8,  base:60},
   {id:"surge", nm:"SURGE CAPACITOR", ds:"+12% surge gain per level",    max:8,  base:45},
@@ -2716,7 +2716,7 @@ function startRun(){
   const sh=meta.shop;
   stats.damage   *= 1 + 0.08*sh.gun;
   stats.fireRate *= 1 + 0.06*sh.cycle;
-  stats.speed    *= 1 + 0.20*sh.thrust;
+  stats.speed    *= 1 + 0.25*sh.thrust;
   stats.magnet   *= 1 + 0.20*sh.magnet;
   stats.grazeR   *= 1 + 0.10*sh.graze;
   stats.surgeGain*= 1 + 0.12*sh.surge;
