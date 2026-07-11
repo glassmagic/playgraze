@@ -2077,7 +2077,7 @@ function updatePlayer(dt){
           rate=conradiatorRate(h,s.fireRate);
           dmg*=0.11; rr=3;
           spread=0.05+0.10*h;               // sloppier as it screams
-          player.heat=Math.min(1,h+0.04);
+          player.heat=Math.min(1,h+0.0125);
           player.lastShot=G.t;
         }
         player.fireT=1/rate;
@@ -2093,9 +2093,10 @@ function updatePlayer(dt){
             glaive:(wpn==="glaive")?1:0, mine:(wpn==="mine")?1:0, prism:(wpn==="prism")?1:0,
             splitN:(wpn==="mitosis")?4:0, splitT:0.22});
         }
-        // conradiator at full heat: vent — a scalding radial ring, then a warm restart
+        // conradiator at full heat: vent — a scalding radial ring, then a cold restart
         if(wpn==="conradiator" && player.heat>=1){
-          player.heat=0.25;
+          player.heat=0;
+          player.fireT=1/conradiatorRate(0,s.fireRate);
           for(let k=0;k<16;k++){
             const a=k/16*TAU;
             pbul.push({x:player.x,y:player.y,vx:Math.cos(a)*spd*0.7,vy:Math.sin(a)*spd*0.7,
