@@ -554,7 +554,7 @@
     <div id="tutBtn">HOW TO PLAY</div>
     <div id="lbBtn">LEADERBOARD</div>
     <div id="cornerL" class="corner"></div>
-    <div id="hangarBtn" class="cornerR">⬣ HANGAR · ⬢ <span id="hCores">0</span><span id="hGear">✦ GEAR AVAILABLE</span></div>
+    <div id="hangarBtn" class="cornerR">⬣ HANGAR SHOP · ⬢ <span id="hCores">0</span><span id="hGear">✦ GEAR AVAILABLE</span></div>
     <div id="settingsBtn">⚙ SETTINGS</div>
     <a id="coffeeMenu" class="corner cornerR" href="https://buymeacoffee.com/adamcpowell"
        target="_blank" rel="noopener">☕ BUY ME A COFFEE</a>
@@ -576,7 +576,7 @@
   </div>
 
   <div id="store" class="overlay">
-    <div id="sTitle">HANGAR</div>
+    <div id="sTitle">HANGAR SHOP</div>
     <div id="sCores"></div>
     <div id="sTabs">
       <span class="stab sel" data-tab="weapons">WEAPONS</span>
@@ -649,7 +649,7 @@
         <span class="sbtn" data-net="copy">⧉ COPY LINK</span>
       </div>
     </div>
-    <button class="deathCta" id="deathHangar">⬣ &nbsp;HANGAR · ⬢ <span id="dhCores">0</span></button>
+    <button class="deathCta" id="deathHangar">⬣ &nbsp;HANGAR SHOP · ⬢ <span id="dhCores">0</span></button>
     <div id="dHint">or press SPACE to fly again</div>
     <div id="dActions">
       <span class="dact" id="dBoardBtn">⬡ LEADERBOARD</span>
@@ -2544,8 +2544,8 @@ const TUT=[
   b:"Grazes and kills build your <b>combo</b> — the ×multiplier on all score. Play it too safe and it decays.<br><br>Grazes also charge the golden <b>surge</b> ring. Full surge boosts your damage — or press <b>SPACE</b> (on touch: <b>two-finger tap</b>, or tap the surge bar) to detonate a nova scaled by your multiplier. Hoard it or spend it: greed is a strategy."},
  {t:"BONUSES", v:'<div class="tCards"><i></i><i class="mid"></i><i></i></div>',
   b:"Fallen enemies drop <b>shards</b>. Shards fill the <b>bonus bar</b> along the bottom of the screen — when it fills, time pauses and you choose from <b>three bonuses</b>, common through <b>legendary</b>.<br><br>Builds compound: split shots ricochet, frost slows, death blooms chain. No two runs play alike."},
- {t:"THE HANGAR", v:'<div class="tCore">⬢</div>',
-  b:"Enemies drop <b>⬢ cores</b>, and your score converts to more when you fall — every run leaves you richer, win or lose.<br><br>Spend them in the <b>HANGAR</b> — the gold button on the menu and the death screen — on <b>permanent</b> upgrades that make every future run stronger: ship systems, thirteen weapons, whole new hulls. When the hangar button glows, you can afford something new. Check it after every death."},
+ {t:"THE HANGAR SHOP", v:'<div class="tCore">⬢</div>',
+  b:"Enemies drop <b>⬢ cores</b>, and your score converts to more when you fall — every run leaves you richer, win or lose.<br><br>Spend them in the <b>HANGAR SHOP</b> — the gold button on the menu and the death screen — on <b>permanent</b> upgrades that make every future run stronger: ship systems, thirteen weapons, whole new hulls, pilots. When the hangar button glows, you can afford something new. Check it after every death."},
 ];
 let tutPage=0;
 function renderTut(){
