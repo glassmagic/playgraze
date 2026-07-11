@@ -1586,7 +1586,7 @@ function director(dt){
   const nextBossAt = !G.miniDone ? 90 : 180 + G.bossN*120;
   const toBoss = nextBossAt - G.t;
   let tide = 1;
-  if(toBoss <= 10) tide = 0;
+  if(toBoss <= 5) tide = 0;
   else if(toBoss <= 30) tide = 0.5;
   if(G.rushT>0){ G.rushT-=dt; tide = 2; }
   G.spawnAcc += dt*it*tide;
@@ -1680,7 +1680,7 @@ function spawnBoss(mini=false){
   AU.tone(70,1.2,"sawtooth",0.22,30); AU.noise(0.5,0.2,500);
   shake(10); flashScreen(0.15);
   // intro: bars close, time crawls, the camera leans toward the arrival
-  G.cine={t:1.6,max:1.6,x:clamp(x,120,W-120),y:clamp(y,120,H-120),zoom:0.12,bars:true};
+  G.cine={t:2.4,max:2.4,x:clamp(x,120,W-120),y:clamp(y,120,H-120),zoom:0.12,bars:true};
   document.getElementById("wrap").classList.add("cine");
 }
 function bossAttack(e,px,py){
@@ -2093,7 +2093,7 @@ function killEnemy(i){
     // a slain boss opens the devil's table
     if(!G.pactsOpen){ G.pactsOpen=true; G.pactDue=true; }
     // kill-cam: a beat of slow-mo on the wreck while explosions chain through it
-    G.cine={t:0.8,max:0.8,x:clamp(e.x,120,W-120),y:clamp(e.y,120,H-120),zoom:0.18,boom:true};
+    G.cine={t:1.4,max:1.4,x:clamp(e.x,120,W-120),y:clamp(e.y,120,H-120),zoom:0.18,boom:true};
     for(let k=0;k<(e.mini?1:3);k++) shards.push({x:e.x+rnd(-30,30),y:e.y+rnd(-30,30),vx:rnd(-70,70),vy:rnd(-70,70),core:5,t:rnd(TAU)});
     for(let k=0;k<(e.mini?6:12);k++) shards.push({x:e.x+rnd(-40,40),y:e.y+rnd(-40,40),vx:rnd(-90,90),vy:rnd(-90,90),v:5,t:rnd(TAU)});
     if(G.hp<G.maxHp){ G.hp++; drawHearts(); ftext(e.x,e.y-44,"+ HULL","#7fe8a8",16); }
@@ -3648,7 +3648,9 @@ function render(now){
   // cinematic moments: ease toward the subject, ease back out at the end
   if(G.state==="playing" && G.cine){
     const p=1-G.cine.t/G.cine.max;
-    const k=Math.max(0,Math.min(p/0.25,1,(1-p)/0.2));
+    // smoothstepped envelope: glide in over 20%, hold on the subject, glide out over the last 25%
+    const k0=Math.max(0,Math.min(p/0.2,1,(1-p)/0.25));
+    const k=k0*k0*(3-2*k0);
     const z=1+G.cine.zoom*k;
     ctx.translate(G.cine.x,G.cine.y); ctx.scale(z,z);
     ctx.translate(-G.cine.x,-G.cine.y);
