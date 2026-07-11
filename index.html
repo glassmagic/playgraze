@@ -801,7 +801,7 @@ const lerp = (a,b,t)=> a+(b-a)*t;
 const d2 = (ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy;};
 const fmtT = s =>{s|=0;return ((s/60)|0)+":"+("0"+(s%60)).slice(-2);};
 const fmtN = n => (n|0).toLocaleString("en-US");
-const VERSION="1.15.0"; // bump the minor on every PR — shown in settings to track deploys
+const VERSION="1.16.0"; // bump the minor on every PR — shown in settings to track deploys
 const CHEAT_DIGEST="ec32b0485b795525c4e600167c76ecb6e7fcc17c3afa27649b705e25022a5c93";
 
 // ---------- persistence ----------
@@ -1424,8 +1424,8 @@ function addFlare(x,y,w,c,life=0.45){ flares.push({x,y,w,c,life,max:life}); }
 
 const baseStats = ()=>({
   damage:10, fireRate:2.6, projectiles:1, bulletSpeed:540, pierce:0,
-  // 155 base speed: slow enough that thruster tunes and afterburners actually register
-  crit:0.05, speed:155, magnet:90, grazeR:78, surgeGain:1,
+  // 46.5 base speed: upgrades and faster hulls carry much more of the movement curve
+  crit:0.05, speed:46.5, magnet:90, grazeR:78, surgeGain:1,
   shardMult:1, orbitals:0, ricochet:0, homing:0, novaMult:1,
   bloom:0, chrono:0, echo:0, horizon:0,
   bulletLife:1, chill:0, staticN:0, retaliate:0, nanites:0,
@@ -2062,7 +2062,8 @@ function updatePlayer(dt){
         // projectile weapons — each reshapes the volley
         let rate=s.fireRate, cnt=n, dmg=s.damage*dmgBoost, spd=s.bulletSpeed,
             life=1.4*s.bulletLife, pr=s.pierce, spread=0.14, rr=4.5, home=0;
-        if(wpn==="scatter"){ rate*=0.85; cnt=3+n; dmg*=0.45; spd*=0.95; life=0.5*s.bulletLife; spread=0.16; }
+        if(wpn==="pulse"){ dmg*=0.7; }
+        else if(wpn==="scatter"){ rate*=0.85; cnt=3+n; dmg*=0.45; spd*=0.95; life=0.5*s.bulletLife; spread=0.16; }
         else if(wpn==="lance"){ rate*=0.45; dmg*=3.2; spd*=1.5; life=1.6*s.bulletLife; pr+=3; rr=6; }
         else if(wpn==="swarm"){ rate*=0.9; cnt=n+1; dmg*=0.8; spd*=0.55; life=2.4*s.bulletLife; home=1.4; spread=0.5; }
         else if(wpn==="glaive"){ rate*=0.55; dmg*=1.6; spd*=0.85; life=3; pr=999; rr=6; }
