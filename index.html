@@ -317,7 +317,8 @@
     transition:all .15s;}
   .stab:hover{color:#fff;border-color:var(--c1);}
   .stab.sel{color:#04040c;background:var(--c1);border-color:var(--c1);font-weight:700;}
-  #sWeapons,#sHulls{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:740px;}
+  #sWeapons,#sHulls,#sPilots{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:740px;}
+  #sPilots .wcard{min-width:200px;max-width:220px;}
   .wcard{padding:12px 16px;border:1px solid rgba(140,170,220,.25);border-radius:4px;cursor:pointer;
     text-align:center;min-width:128px;transition:all .15s;background:rgba(10,14,30,.6);}
   .wcard .wn{font-size:12px;letter-spacing:2px;color:#dfe9ff;}
@@ -502,7 +503,7 @@
     #store{padding:34px 0 30px;}
     #sTitle{font-size:20px;letter-spacing:10px;}
     #sTabs{margin:18px 0 16px;} .stab{padding:8px 12px;letter-spacing:2px;}
-    #sWeapons,#sHulls{gap:8px;width:94vw;}
+    #sWeapons,#sHulls,#sPilots{gap:8px;width:94vw;}
     .wcard{min-width:0;flex:1 1 calc(50% - 8px);padding:10px 8px;}
     #sShip{width:94vw;gap:6px;}
     .srow{flex-wrap:wrap;gap:8px 12px;padding:10px 12px;}
@@ -580,11 +581,13 @@
     <div id="sTabs">
       <span class="stab sel" data-tab="weapons">WEAPONS</span>
       <span class="stab" data-tab="hulls">HULLS</span>
+      <span class="stab" data-tab="pilots">PILOTS</span>
       <span class="stab" data-tab="ship">SHIP SYSTEMS</span>
       <span class="stab" data-tab="paint">PAINTWORK</span>
     </div>
     <div id="sWeapons"></div>
     <div id="sHulls"></div>
+    <div id="sPilots"></div>
     <div id="sShip"></div>
     <div id="schemes"></div>
     <button class="cta small" id="storeBack">BACK</button>
@@ -688,7 +691,7 @@ const lerp = (a,b,t)=> a+(b-a)*t;
 const d2 = (ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy;};
 const fmtT = s =>{s|=0;return ((s/60)|0)+":"+("0"+(s%60)).slice(-2);};
 const fmtN = n => (n|0).toLocaleString("en-US");
-const VERSION="1.11.0"; // bump the minor on every PR — shown in settings to track deploys
+const VERSION="1.12.0"; // bump the minor on every PR — shown in settings to track deploys
 
 // ---------- persistence ----------
 const store = {
@@ -704,6 +707,7 @@ meta.owned = Object.assign({pulse:true}, meta.owned||{});
 meta.shop  = Object.assign({gun:0,cycle:0,hull:0,thrust:0,magnet:0,graze:0,surge:0,luck:0}, meta.shop||{});
 meta.seen  = Object.assign({}, meta.seen||{}); // weapons used mid-run — only these surface in the hangar
 meta.hull  = meta.hull||"vector";
+meta.pilot = meta.pilot||"rex";
 meta.hulls = Object.assign({vector:true}, meta.hulls||{});
 
 // daily streak (a reason to come back tomorrow)
@@ -759,21 +763,37 @@ const WEAPONS = {
   conradiator:{nm:"CONRADIATOR",ds:"spool-up hose — feeble shots, screaming fire rate, vents at full heat",price:4200},
   well:   {nm:"SINGULARITY SEED",ds:"every 6th shot plants a gravity well",price:5500},
 };
-// ship hulls — real tradeoffs, chosen before a run
+// ship hulls — real tradeoffs, chosen before a run. size is honest: it scales
+// the drawn ship AND the hitbox
 const HULLS = {
-  vector:{nm:"VECTOR", ds:"the baseline — balanced in all things",      price:0,    speed:1,   graze:1,    hp:3, shape:[1,1]},
-  dart:  {nm:"DART",   ds:"+30% speed, +25% graze ring — two hearts",   price:2000, speed:1.3, graze:1.25, hp:2, shape:[1.25,0.72]},
-  aegis: {nm:"AEGIS",  ds:"four hearts of plate — slow, narrow ring",   price:3000, speed:0.8, graze:0.85, hp:4, shape:[0.9,1.35]},
+  vector:{nm:"VECTOR", ds:"the baseline — balanced in all things",      price:0,    speed:1,   graze:1,    hp:3, size:1,    shape:[1,1]},
+  dart:  {nm:"DART",   ds:"+30% speed, +25% graze ring — two hearts, barely there", price:2000, speed:1.3, graze:1.25, hp:2, size:0.78, shape:[1.25,0.72]},
+  aegis: {nm:"AEGIS",  ds:"four hearts of plate — slow, narrow ring, big silhouette", price:3000, speed:0.8, graze:0.85, hp:4, size:1.25, shape:[0.9,1.35]},
+  brick: {nm:"BRICK",  ds:"five hearts. handles like a fridge. beloved.", price:5000, speed:0.65, graze:0.75, hp:5, size:1.5, shape:[0.85,1.6]},
+};
+// pilots — hands on the stick, each with their own habits.
+// acc scales spread & aim jitter (lower = steadier), rof scales fire rate
+const PILOTS={
+  rex:   {nm:"REX NEBULAR",    acc:1.0,  rof:1.0,
+    story:"flew mail through the shatterfield for a decade; aims like it owes him money."},
+  tiler: {nm:"MR TILER",       acc:0.8,  rof:1.12,
+    story:"☕ runs on quadruple espresso and quiet menace — faster and sharper after every cup."},
+  granny:{nm:"GRANNY VOLTAGE", acc:0.65, rof:0.9,
+    story:"seventy-three, deaf in one ear, banned from four sectors for excessive winning."},
+  dizzy: {nm:"DIZZY OKTAV",    acc:1.4,  rof:1.25,
+    story:"ex-stunt pilot; fires like a drum solo and aims like one too."},
+  intern:{nm:"THE INTERN",     acc:1.1,  rof:1.05,
+    story:"unpaid, terrified, statistically adequate. please be kind."},
 };
 const SHOP = [
-  {id:"gun",   nm:"GUN CALIBRATION", ds:"+8% damage per level",         max:5, base:40},
-  {id:"cycle", nm:"CYCLE MODULE",    ds:"+6% fire rate per level",      max:4, base:50},
-  {id:"hull",  nm:"HULL PLATING",    ds:"+1 max hull per level",        max:2, base:150},
-  {id:"thrust",nm:"THRUSTER TUNE",   ds:"+6% move speed per level",     max:3, base:35},
-  {id:"magnet",nm:"MAGNET ARRAY",    ds:"+20% pickup radius per level", max:3, base:30},
-  {id:"graze", nm:"GRAZE ANTENNA",   ds:"+10% graze radius per level",  max:3, base:60},
-  {id:"surge", nm:"SURGE CAPACITOR", ds:"+12% surge gain per level",    max:3, base:45},
-  {id:"luck",  nm:"LUCKY LOGIC",     ds:"rarer bonuses per level",      max:3, base:80},
+  {id:"gun",   nm:"GUN CALIBRATION", ds:"+8% damage per level",         max:10, base:40},
+  {id:"cycle", nm:"CYCLE MODULE",    ds:"+6% fire rate per level",      max:8,  base:50},
+  {id:"hull",  nm:"HULL PLATING",    ds:"+1 max hull per level",        max:4,  base:150},
+  {id:"thrust",nm:"THRUSTER TUNE",   ds:"+6% move speed per level",     max:6,  base:35},
+  {id:"magnet",nm:"MAGNET ARRAY",    ds:"+20% pickup radius per level", max:6,  base:30},
+  {id:"graze", nm:"GRAZE ANTENNA",   ds:"+10% graze radius per level",  max:6,  base:60},
+  {id:"surge", nm:"SURGE CAPACITOR", ds:"+12% surge gain per level",    max:6,  base:45},
+  {id:"luck",  nm:"LUCKY LOGIC",     ds:"rarer bonuses per level",      max:6,  base:80},
 ];
 const shopPrice = (it,lv)=>Math.round(it.base*Math.pow(2.2,lv));
 // the weapon actually in hand: a mid-run refit overrides the hangar loadout
@@ -1781,8 +1801,12 @@ function updatePlayer(dt){
           player.lastShot=G.t;
         }
         player.fireT=1/rate;
+        // pilot hands: volleys tighten or bloom, and unsteady pilots jitter every shot
+        const pil=PILOTS[meta.pilot]||PILOTS.rex;
+        spread*=pil.acc;
+        const jit=Math.max(0,pil.acc-0.65)*0.05;
         for(let i=0;i<cnt;i++){
-          const a=base+(i-(cnt-1)/2)*spread+(wpn==="scatter"?rnd(-0.06,0.06):0);
+          const a=base+rnd(-jit,jit)+(i-(cnt-1)/2)*spread+(wpn==="scatter"?rnd(-0.06,0.06):0);
           const jv=wpn==="scatter"?rnd(0.85,1.15):1;
           pbul.push({x:player.x,y:player.y,vx:Math.cos(a)*spd*jv,vy:Math.sin(a)*spd*jv,
             r:rr,dmg,pierce:pr,bounces:s.ricochet,life,home,
@@ -2403,6 +2427,10 @@ function startRun(){
   if(!meta.hulls[meta.hull]) meta.hull="vector";
   const hull=HULLS[meta.hull]||HULLS.vector;
   stats.speed  *= hull.speed;
+  player.r = 9*hull.size; // the hitbox is honest about the silhouette
+  // pilot habits
+  if(!PILOTS[meta.pilot]) meta.pilot="rex";
+  stats.fireRate *= PILOTS[meta.pilot].rof;
   stats.grazeR *= hull.graze;
   // this week's mutator
   stats.damage   *= MUT.dmg||1;
@@ -2603,7 +2631,7 @@ function bindReset(el){
         lastDay:new Date().toISOString().slice(0,10),cores:0,weapon:"pulse",player:""});
       meta.owned={pulse:true};
       meta.seen={};
-      meta.hull="vector"; meta.hulls={vector:true};
+      meta.hull="vector"; meta.hulls={vector:true}; meta.pilot="rex";
       meta.shop={gun:0,cycle:0,hull:0,thrust:0,magnet:0,graze:0,surge:0,luck:0};
       store.save(meta);
       document.querySelectorAll("#setReset").forEach(b=>{
@@ -2932,6 +2960,22 @@ function buildStore(){
     });
     hEl.appendChild(d);
   }
+  // pilots — free to choose, impossible to please
+  const pEl=document.getElementById("sPilots"); pEl.innerHTML="";
+  for(const id in PILOTS){
+    const p=PILOTS[id], sel=meta.pilot===id;
+    const aim=Math.round((1-p.acc)*100), rof=Math.round((p.rof-1)*100);
+    const stat=(aim>=0?"+":"")+aim+"% AIM · "+(rof>=0?"+":"")+rof+"% FIRE RATE";
+    const d=document.createElement("div");
+    d.className="wcard"+(sel?" sel":"");
+    d.innerHTML="<div class='wn'>"+p.nm+"</div><div class='wd'>"+p.story+"</div>"+
+      "<div class='wp'>"+(sel?"◈ FLYING — ":"")+stat+"</div>";
+    d.addEventListener("pointerenter",()=>AU.hover());
+    d.addEventListener("pointerdown",e=>{
+      e.stopPropagation(); meta.pilot=id; store.save(meta); AU.ui(); buildStore();
+    });
+    pEl.appendChild(d);
+  }
   const sEl=document.getElementById("sShip"); sEl.innerHTML="";
   for(const it of SHOP){
     const lv=meta.shop[it.id]||0, maxed=lv>=it.max, price=shopPrice(it,lv);
@@ -2956,6 +3000,7 @@ function setStoreTab(t){
   document.querySelectorAll("#sTabs .stab").forEach(b=>b.classList.toggle("sel",b.dataset.tab===t));
   document.getElementById("sWeapons").style.display = t==="weapons"?"":"none";
   document.getElementById("sHulls").style.display   = t==="hulls"?"":"none";
+  document.getElementById("sPilots").style.display  = t==="pilots"?"":"none";
   document.getElementById("sShip").style.display    = t==="ship"?"":"none";
   document.getElementById("schemes").style.display  = t==="paint"?"":"none";
 }
@@ -3439,7 +3484,7 @@ function render(now){
         ctx.strokeStyle= on ? s.c1 : "#ff2d5e";
         ctx.globalAlpha= (on ? (G.hp===1 ? 0.5+0.4*Math.sin(now*0.012) : 0.6) : 0.12)*shipA;
         ctx.lineWidth=2;
-        ctx.beginPath(); ctx.arc(player.x,player.y,16,a0,a1); ctx.stroke();
+        ctx.beginPath(); ctx.arc(player.x,player.y,16*(HULLS[meta.hull]||HULLS.vector).size,a0,a1); ctx.stroke();
       }
       ctx.globalAlpha=1;
       // ship core triangle
@@ -3451,12 +3496,13 @@ function render(now){
         ctx.globalCompositeOperation="lighter";
         ctx.strokeStyle=h>0.8?"#ff5d5d":(h>0.5?"#ffd84e":"#9ef7ff");
         ctx.globalAlpha=(0.35+0.45*h)*shipA; ctx.lineWidth=2.5;
-        ctx.beginPath(); ctx.arc(player.x,player.y,22,-Math.PI/2,-Math.PI/2+TAU*h); ctx.stroke();
+        ctx.beginPath(); ctx.arc(player.x,player.y,22*(HULLS[meta.hull]||HULLS.vector).size,-Math.PI/2,-Math.PI/2+TAU*h); ctx.stroke();
         ctx.globalAlpha=1;
         ctx.globalCompositeOperation="source-over";
       }
       const hs=(HULLS[meta.hull]||HULLS.vector).shape;
-      ctx.scale(hs[0],hs[1]); // dart runs long and lean, aegis broad
+      const hz=(HULLS[meta.hull]||HULLS.vector).size;
+      ctx.scale(hs[0]*hz,hs[1]*hz); // dart runs small and lean, brick fills the sky
       ctx.globalAlpha=shipA; ctx.fillStyle="#fff";
       ctx.beginPath(); ctx.moveTo(8,0); ctx.lineTo(-5,-5); ctx.lineTo(-5,5); ctx.closePath(); ctx.fill();
       ctx.globalAlpha=1;
