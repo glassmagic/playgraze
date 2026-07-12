@@ -1145,13 +1145,36 @@ const AU = {
     g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
     s.connect(f); f.connect(g); g.connect(this.master); s.start(t); s.stop(t+dur+0.03);
   },
+  growl(dur=1.58,vol=0.095){
+    if(!this.ctx||this.muted) return;
+    const t=this.ctx.currentTime, a=this.ctx.createOscillator(), b=this.ctx.createOscillator(),
+      sh=this.ctx.createWaveShaper(), f=this.ctx.createBiquadFilter(), g=this.ctx.createGain(),
+      lfo=this.ctx.createOscillator(), depth=this.ctx.createGain();
+    a.type="sawtooth"; b.type="sawtooth";
+    a.frequency.setValueAtTime(34,t); a.frequency.exponentialRampToValueAtTime(74,t+dur);
+    b.frequency.setValueAtTime(37,t); b.frequency.exponentialRampToValueAtTime(81,t+dur);
+    const curve=new Float32Array(256);
+    for(let i=0;i<curve.length;i++){ const x=i*2/(curve.length-1)-1; curve[i]=Math.tanh(x*2.8); }
+    sh.curve=curve; sh.oversample="2x";
+    f.type="lowpass"; f.Q.value=3.8;
+    f.frequency.setValueAtTime(180,t); f.frequency.exponentialRampToValueAtTime(460,t+dur);
+    lfo.type="triangle"; lfo.frequency.value=17; depth.gain.value=105;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(vol,t+dur*0.72);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    a.connect(sh); b.connect(sh); sh.connect(f); f.connect(g); g.connect(this.master);
+    lfo.connect(depth); depth.connect(f.frequency);
+    a.start(t); b.start(t); lfo.start(t);
+    a.stop(t+dur+0.03); b.stop(t+dur+0.03); lfo.stop(t+dur+0.03);
+  },
   warpCharge(){
-    // a long, bass-heavy drive spool that rolls through the first beat of the countdown
-    this.rumble(1.55,0.085);
-    this.sweep(36,88,1.52,"sine",0.17,0.75);
-    this.sweep(56,260,1.42,"triangle",0.09,0.78,0.02);
-    this.sweep(120,720,1.2,"triangle",0.04,0.82,0.08);
-    this.sweep(360,1380,0.8,"sine",0.018,0.88,0.32);
+    // a distorted, formant-like engine growl rolling through the first countdown beat
+    this.growl(1.58,0.095);
+    this.rumble(1.55,0.06);
+    this.sweep(36,82,1.55,"sine",0.15,0.74);
+    this.sweep(64,230,1.42,"triangle",0.055,0.78,0.02);
+    this.sweep(130,620,1.18,"triangle",0.028,0.82,0.08);
+    this.sweep(360,1280,0.76,"sine",0.012,0.88,0.34);
   },
   warpOpen(){
     // phase-lock chirps instead of a noise impact when the countdown takes the frame
