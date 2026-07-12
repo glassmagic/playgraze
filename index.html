@@ -102,7 +102,10 @@
   .overlay.on{opacity:1;pointer-events:auto;}
   /* ---------- menu — restrained, cinematic ---------- */
   /* no backdrop-filter here: blurring the live canvas every frame tanks menu framerate */
-  #menu{background:rgba(3,3,14,.42);backdrop-filter:none;-webkit-backdrop-filter:none;}
+  #menu{background:rgba(3,3,14,.42);backdrop-filter:none;-webkit-backdrop-filter:none;
+    transition:opacity 1.1s ease-in,transform 1.1s ease-in,filter 1.1s ease-in;}
+  /* pressing ENGAGE: the camera dives in and the menu blurs away into the warp */
+  #menu.engage{opacity:0;transform:scale(1.6);filter:blur(16px);pointer-events:none;}
   /* slow ken-burns drift + anamorphic flare wash behind the title */
   #titleGroup{display:flex;flex-direction:column;align-items:center;position:relative;
     will-change:transform;animation:kenburns 26s ease-in-out infinite alternate;}
@@ -801,7 +804,7 @@ const lerp = (a,b,t)=> a+(b-a)*t;
 const d2 = (ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy;};
 const fmtT = s =>{s|=0;return ((s/60)|0)+":"+("0"+(s%60)).slice(-2);};
 const fmtN = n => (n|0).toLocaleString("en-US");
-const VERSION="1.17.0"; // bump the minor on every PR — shown in settings to track deploys
+const VERSION="1.18.0"; // bump the minor on every PR — shown in settings to track deploys
 const CHEAT_DIGEST="ec32b0485b795525c4e600167c76ecb6e7fcc17c3afa27649b705e25022a5c93";
 
 // ---------- persistence ----------
@@ -878,10 +881,10 @@ const WEAPONS = {
 // ship hulls — real tradeoffs, chosen before a run. size is honest: it scales
 // the drawn ship AND the hitbox
 const HULLS = {
-  vector:{nm:"VECTOR", ds:"the baseline — balanced in all things",      price:0,    speed:1,   graze:1,    hp:3, size:1,    shape:[1,1]},
-  dart:  {nm:"DART",   ds:"+30% speed, +25% graze ring — two hearts, barely there", price:2000, speed:1.3, graze:1.25, hp:2, size:0.78, shape:[1.25,0.72]},
-  aegis: {nm:"AEGIS",  ds:"four hearts of plate — slow, narrow ring, big silhouette", price:3000, speed:0.8, graze:0.85, hp:4, size:1.25, shape:[0.9,1.35]},
-  brick: {nm:"BRICK",  ds:"five hearts. handles like a fridge. beloved.", price:5000, speed:0.65, graze:0.75, hp:5, size:1.5, shape:[0.85,1.6]},
+  vector:{nm:"VECTOR", ds:"the baseline — balanced in all things",      price:0,    speed:1,   graze:1,    hp:3, size:1,    shape:[1,1],       enginePitch:1.18},
+  dart:  {nm:"DART",   ds:"+30% speed, +25% graze ring — two hearts, barely there", price:2000, speed:1.3, graze:1.25, hp:2, size:0.78, shape:[1.25,0.72], enginePitch:1.75},
+  aegis: {nm:"AEGIS",  ds:"four hearts of plate — slow, narrow ring, big silhouette", price:3000, speed:0.8, graze:0.85, hp:4, size:1.25, shape:[0.9,1.35], enginePitch:1},
+  brick: {nm:"BRICK",  ds:"five hearts. handles like a fridge. beloved.", price:5000, speed:0.65, graze:0.75, hp:5, size:1.5, shape:[0.85,1.6], enginePitch:0.82},
 };
 // pilots — hands on the stick, each with their own habits.
 // acc scales spread & aim jitter (lower = steadier), rof scales fire rate
@@ -1114,6 +1117,145 @@ const AU = {
     if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(20,f+slide),t+dur);
     g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
     o.connect(g); g.connect(this.master); o.start(t); o.stop(t+dur+0.02);
+  },
+  sweep(f0,f1,dur,type="sine",vol=0.1,peak=0.75,delay=0){
+    if(!this.ctx||this.muted) return;
+    const t=this.ctx.currentTime+delay, o=this.ctx.createOscillator(), g=this.ctx.createGain();
+    o.type=type; o.frequency.setValueAtTime(Math.max(20,f0),t);
+    o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(vol,t+dur*peak);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(this.master); o.start(t); o.stop(t+dur+0.03);
+  },
+  rumble(dur=1.55,vol=0.085){
+    if(!this.ctx||this.muted) return;
+    const t=this.ctx.currentTime, n=this.ctx.sampleRate*dur,
+      buf=this.ctx.createBuffer(1,n,this.ctx.sampleRate), d=buf.getChannelData(0);
+    let brown=0;
+    for(let i=0;i<n;i++){
+      brown=(brown+(Math.random()*2-1)*0.025)/1.025;
+      d[i]=brown*3.5;
+    }
+    const s=this.ctx.createBufferSource(), f=this.ctx.createBiquadFilter(), g=this.ctx.createGain();
+    s.buffer=buf; f.type="lowpass"; f.Q.value=1.4;
+    f.frequency.setValueAtTime(140,t); f.frequency.exponentialRampToValueAtTime(380,t+dur);
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(vol,t+dur*0.74);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    s.connect(f); f.connect(g); g.connect(this.master); s.start(t); s.stop(t+dur+0.03);
+  },
+  growl(dur=1.58,vol=0.095){
+    if(!this.ctx||this.muted) return;
+    const t=this.ctx.currentTime, a=this.ctx.createOscillator(), b=this.ctx.createOscillator(),
+      sh=this.ctx.createWaveShaper(), f=this.ctx.createBiquadFilter(), g=this.ctx.createGain(),
+      lfo=this.ctx.createOscillator(), depth=this.ctx.createGain();
+    a.type="sawtooth"; b.type="sawtooth";
+    a.frequency.setValueAtTime(34,t); a.frequency.exponentialRampToValueAtTime(74,t+dur);
+    b.frequency.setValueAtTime(37,t); b.frequency.exponentialRampToValueAtTime(81,t+dur);
+    const curve=new Float32Array(256);
+    for(let i=0;i<curve.length;i++){ const x=i*2/(curve.length-1)-1; curve[i]=Math.tanh(x*2.8); }
+    sh.curve=curve; sh.oversample="2x";
+    f.type="lowpass"; f.Q.value=3.8;
+    f.frequency.setValueAtTime(180,t); f.frequency.exponentialRampToValueAtTime(460,t+dur);
+    lfo.type="triangle"; lfo.frequency.value=17; depth.gain.value=105;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(vol,t+dur*0.72);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    a.connect(sh); b.connect(sh); sh.connect(f); f.connect(g); g.connect(this.master);
+    lfo.connect(depth); depth.connect(f.frequency);
+    a.start(t); b.start(t); lfo.start(t);
+    a.stop(t+dur+0.03); b.stop(t+dur+0.03); lfo.stop(t+dur+0.03);
+  },
+  engineStart(){
+    if(!this.ctx||this.engine) return;
+    const t=this.ctx.currentTime, a=this.ctx.createOscillator(), b=this.ctx.createOscillator(),
+      sub=this.ctx.createOscillator(), sh=this.ctx.createWaveShaper(),
+      f=this.ctx.createBiquadFilter(), g=this.ctx.createGain(), sg=this.ctx.createGain(),
+      lfo=this.ctx.createOscillator(), depth=this.ctx.createGain();
+    a.type="sawtooth"; b.type="sawtooth"; sub.type="sine"; lfo.type="triangle";
+    a.frequency.value=24; b.frequency.value=27; sub.frequency.value=29; lfo.frequency.value=7;
+    const curve=new Float32Array(256);
+    for(let i=0;i<curve.length;i++){ const x=i*2/(curve.length-1)-1; curve[i]=Math.tanh(x*2.6); }
+    sh.curve=curve; sh.oversample="2x";
+    f.type="lowpass"; f.Q.value=3.4; f.frequency.value=120;
+    depth.gain.value=35; sg.gain.value=0.5; g.gain.value=0.0001;
+    a.connect(sh); b.connect(sh); sh.connect(f); f.connect(g);
+    sub.connect(sg); sg.connect(g); g.connect(this.master);
+    lfo.connect(depth); depth.connect(f.frequency);
+    a.start(t); b.start(t); sub.start(t); lfo.start(t);
+    this.engine={a,b,sub,lfo,filter:f,gain:g,depth,last:-1,lastAt:-1};
+    this.engineSet(0,true);
+  },
+  engineSet(effort,force=false){
+    const e=this.engine; if(!e||!this.ctx) return;
+    const t=this.ctx.currentTime, v=clamp(effort,0,1),
+      thrust=clamp(meta.shop.thrust||0,0,9),
+      pitch=(HULLS[meta.hull]||HULLS.vector).enginePitch*(1+0.025*thrust),
+      presence=1+0.04*thrust;
+    if(!force && Math.abs(v-e.last)<0.018 && t-e.lastAt<0.12) return;
+    const tau=v>(e.last<0?0:e.last)?0.08:0.22;
+    const set=(p,value)=>{ p.cancelScheduledValues(t); p.setTargetAtTime(value,t,tau); };
+    set(e.gain.gain,(0.0024+0.0376*v)*presence);
+    set(e.a.frequency,(24+56*v)*pitch); set(e.b.frequency,(27+60*v)*pitch); set(e.sub.frequency,(29+27*v)*pitch);
+    set(e.filter.frequency,120+400*v); set(e.lfo.frequency,7+12*v); set(e.depth.gain,35+85*v);
+    e.last=v; e.lastAt=t;
+  },
+  engineStop(fade=0.3){
+    const e=this.engine; if(!e||!this.ctx) return;
+    this.engine=null;
+    const t=this.ctx.currentTime;
+    e.gain.gain.cancelScheduledValues(t);
+    e.gain.gain.setTargetAtTime(0.0001,t,Math.max(0.01,fade/4));
+    for(const o of [e.a,e.b,e.sub,e.lfo]){ try{o.stop(t+fade);}catch(err){} }
+  },
+  warpCharge(){
+    // a distorted, formant-like engine growl rolling through the first countdown beat
+    this.growl(1.58,0.095);
+    this.rumble(1.55,0.06);
+    this.sweep(36,82,1.55,"sine",0.15,0.74);
+    this.sweep(64,230,1.42,"triangle",0.055,0.78,0.02);
+    this.sweep(130,620,1.18,"triangle",0.028,0.82,0.08);
+    this.sweep(360,1280,0.76,"sine",0.012,0.88,0.34);
+  },
+  warpOpen(){
+    // phase-lock chirps instead of a noise impact when the countdown takes the frame
+    this.sweep(1800,420,0.34,"sine",0.065,0.12);
+    this.sweep(260,1040,0.42,"triangle",0.055,0.22,0.02);
+    this.sweep(720,1440,0.5,"sine",0.025,0.35,0.08);
+  },
+  warpCruise(){
+    if(!this.ctx||this.warpEngine) return;
+    const t=this.ctx.currentTime, a=this.ctx.createOscillator(), b=this.ctx.createOscillator(),
+      sh=this.ctx.createWaveShaper(), f=this.ctx.createBiquadFilter(), g=this.ctx.createGain(),
+      lfo=this.ctx.createOscillator(), depth=this.ctx.createGain(),
+      thrust=clamp(meta.shop.thrust||0,0,9),
+      pitch=(HULLS[meta.hull]||HULLS.vector).enginePitch*(1+0.025*thrust);
+    a.type="sawtooth"; b.type="triangle"; lfo.type="triangle";
+    a.frequency.value=92*pitch; b.frequency.value=142*pitch; lfo.frequency.value=11;
+    const curve=new Float32Array(256);
+    for(let i=0;i<curve.length;i++){ const x=i*2/(curve.length-1)-1; curve[i]=Math.tanh(x*1.9); }
+    sh.curve=curve; sh.oversample="2x";
+    f.type="lowpass"; f.Q.value=2.8; f.frequency.value=820; depth.gain.value=42;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(0.022*(1+0.025*thrust),t+0.55);
+    a.connect(sh); b.connect(sh); sh.connect(f); f.connect(g); g.connect(this.master);
+    lfo.connect(depth); depth.connect(f.frequency);
+    a.start(t); b.start(t); lfo.start(t);
+    this.warpEngine={a,b,lfo,gain:g};
+  },
+  warpCruiseStop(fade=0.5){
+    const e=this.warpEngine; if(!e||!this.ctx) return;
+    this.warpEngine=null;
+    const t=this.ctx.currentTime;
+    e.gain.gain.cancelScheduledValues(t);
+    e.gain.gain.setTargetAtTime(0.0001,t,Math.max(0.01,fade/4));
+    for(const o of [e.a,e.b,e.lfo]){ try{o.stop(t+fade);}catch(err){} }
+  },
+  warpSnap(){
+    // clean electronic deceleration: a sub fall with a short crystalline answer
+    this.sweep(190,48,0.55,"sine",0.13,0.08);
+    this.sweep(1900,520,0.28,"triangle",0.045,0.08,0.015);
   },
   noise(dur,vol=0.3,fc=1200){
     if(!this.ctx||this.muted) return;
@@ -2089,7 +2231,7 @@ function killEnemy(i){
   if(e.boss){
     banner("☠ "+e.name+" DESTROYED ☠");
     G.rushT=10; // the arena answers the kill with a double-strength surge
-    dropPilotPrisoner(e.x,e.y);
+    if(Math.random()<1/3) dropPilotPrisoner(e.x,e.y); // prisoners are a lucky find, not a given
     // a slain boss opens the devil's table
     if(!G.pactsOpen){ G.pactsOpen=true; G.pactDue=true; }
     // kill-cam: a beat of slow-mo on the wreck while explosions chain through it
@@ -2132,23 +2274,56 @@ function reap(){
 }
 
 // ---------- player ----------
+function seedWarpStars(){
+  G.warpStars=[];
+  for(let k=0;k<150;k++)
+    G.warpStars.push({x:rnd(W),y:rnd(-H*0.2,H),sp:rnd(450,1500),b:rnd(0.2,1)});
+  G.warpInT=0; G.warpDigit=0; G.warpSnapped=false; G.warpStarted=false;
+}
+function moveWarpStars(dt,mul){
+  for(const s of G.warpStars){
+    s.y+=s.sp*mul*dt;
+    if(s.y>H+60){ s.y=rnd(-160,-40); s.x=rnd(W); s.sp=rnd(450,1500); s.b=rnd(0.2,1); }
+  }
+}
 function updatePlayer(dt){
   const s=stats;
-  // launch flythrough: the ship streaks up into the arena before control hands over
+  // warp arrival: streaking starfield, ARRIVING IN 3-2-1, then a hard snap out of warp
   if(G.launch>0){
     G.launch-=dt;
-    const p=clamp(1-G.launch/1.3,0,1), e=1-Math.pow(1-p,3);
-    player.x=W/2; player.y=lerp(H+90,H/2,e);
-    player.vx=0; player.vy=-520*(1-p);
-    player.angle=-Math.PI/2;
+    if(!G.warpStars) seedWarpStars();
+    if(!G.warpStarted){
+      G.warpStarted=true;
+      AU.warpCruise();
+    }
+    G.warpInT=Math.min(1.1,(G.warpInT||0)+dt);
+    // full speed through the countdown, then a cubic collapse — the snap
+    const mul=G.launch>0.45?1:Math.pow(clamp(G.launch/0.45,0,1),3);
+    G.warpMul=mul;
+    // stars pour in at the top and stream out the bottom
+    moveWarpStars(dt,mul);
+    // the ship rides the warp at frame center, vibrating with the drive
+    player.x=W/2+rnd(-1.5,1.5)*mul; player.y=H/2+rnd(-1.5,1.5)*mul;
+    player.vx=0; player.vy=0; player.angle=-Math.PI/2;
     player.trail.push({x:player.x,y:player.y,life:0.35});
     if(player.trail.length>40) player.trail.shift();
     for(const t of player.trail) t.life-=dt;
     if(Math.random()<0.85)
-      parts.push({x:player.x+rnd(-4,4),y:player.y+12,vx:rnd(-30,30),vy:rnd(140,240),
+      parts.push({x:player.x+rnd(-4,4),y:player.y+12,vx:rnd(-30,30),vy:rnd(140,240)*(0.3+mul),
         life:0.4,max:0.4,r:2.4,c:scheme().c1,drag:0.96});
+    const digit=Math.min(3,Math.max(1,Math.ceil((G.launch-0.45)/0.6)));
+    if(G.launch>0.45 && digit!==G.warpDigit){
+      G.warpDigit=digit;
+      AU.tone(500+(3-digit)*160,0.12,"square",0.08,60);
+    }
+    if(G.launch<=0.45 && !G.warpSnapped){
+      G.warpSnapped=true; // out of warp — everything slams back to sublight, no flash
+      shake(9);
+      AU.warpCruiseStop(0.5);
+      AU.warpSnap();
+    }
     G.invuln=Math.max(G.invuln,0.8);
-    if(G.launch<=0){ banner("SURVIVE"); flashScreen(0.12); AU.tone(520,0.2,"triangle",0.1,140); }
+    if(G.launch<=0){ G.warpFade=1.8; banner("SURVIVE"); AU.tone(520,0.2,"triangle",0.1,140); AU.engineStart(); }
     return;
   }
   let ax=0,ay=0,keyed=false;
@@ -2168,6 +2343,9 @@ function updatePlayer(dt){
   } else { player.vx*=0.94; player.vy*=0.94; }
   player.x = clamp(player.x+player.vx*dt, 14, W-14);
   player.y = clamp(player.y+player.vy*dt, 14, H-14);
+  // engine effort is the remaining control gap: far cursor = harder, louder drive
+  const mouseGap=mouseActive?Math.hypot(mouseX-player.x,mouseY-player.y):0;
+  G.engineEffort=keyed?1:clamp(mouseGap/Math.max(1,Math.hypot(W,H)*0.45),0,1);
   G.invuln = Math.max(0,G.invuln-dt);
   // the slow opening shots hold their heat; cooling starts once the trigger is truly off
   if(player.heat>0 && G.t-(player.lastShot||0)>1.1)
@@ -2637,9 +2815,24 @@ function updateShards(dt){
     const s=shards[i];
     s.t+=dt; s.vx*=0.92; s.vy*=0.92;
     const dx=player.x-s.x, dy=player.y-s.y, dd=Math.hypot(dx,dy)||1;
+    if(s.pilot){
+      // a rescued prisoner floats for the middle of the arena, parting the crowd around them
+      const cx=W/2-s.x, cy=H/2-s.y, cd=Math.hypot(cx,cy)||1;
+      if(cd>10){ s.vx+=cx/cd*50*dt; s.vy+=cy/cd*50*dt; }
+      for(const o of shards){
+        if(o===s||o.pilot) continue;
+        const ox=o.x-s.x, oy=o.y-s.y, od=Math.hypot(ox,oy)||1;
+        if(od<100){ const f=(1-od/100)*700; o.vx+=ox/od*f*dt; o.vy+=oy/od*f*dt; }
+      }
+      for(const e of enemies){
+        if(e.boss) continue;
+        const ex=e.x-s.x, ey=e.y-s.y, ed=Math.hypot(ex,ey)||1;
+        if(ed<150){ const f=(1-ed/150)*1100; e.vx+=ex/ed*f*dt; e.vy+=ey/ed*f*dt; }
+      }
+    }
     if(dd<stats.magnet){ const pull=900*(1-dd/stats.magnet)+200; s.vx+=dx/dd*pull*dt*8; s.vy+=dy/dd*pull*dt*8; }
     s.x+=s.vx*dt; s.y+=s.vy*dt;
-    if(dd<16){
+    if(dd<(s.pilot?26:16)){
       shards.splice(i,1);
       if(s.pilot){
         if(unlockRandomPilot(s.x,s.y)) return;
@@ -2820,6 +3013,7 @@ function chooseCard(i){
 // ---------- death & meta (near-miss framing) ----------
 function startDeath(){
   G.state="dying"; G.deathT=0;
+  AU.engineStop(0.45);
   // the crash site becomes a singularity that swallows the whole arena
   G.deathHole={x:player.x,y:player.y,collapsed:false};
   zones=[]; waves=[]; bolts=[]; flail=null; G.arena=null; G.cine=null;
@@ -2864,7 +3058,10 @@ function showDeathScreen(){
 }
 
 // ---------- run lifecycle ----------
-function startRun(){
+function startRun(carryWarp=false){
+  AU.engineStop(0.08);
+  const carriedStars=carryWarp?G.warpStars:null;
+  const carriedWarpIn=carryWarp?(G.warpInT||0):0;
   enemies=[];pbul=[];ebul=[];shards=[];parts=[];texts=[];zones=[];holes=[];bolts=[];waves=[];flail=null;flares=[];taken=[];queuedPilotCard=null;
   stats=baseStats();
   // daily streak bonus
@@ -2897,7 +3094,8 @@ function startRun(){
     surge:0,level:1,xp:0,xpNext:8,maxHp:hull.hp,
     invuln:1.2,shake:0,hitstop:0,timeScale:1,flash:0,
     spawnAcc:0,eliteAcc:0,introduced:{},scoredThisRun:0,musicAcc:0,arena:null,arenaAcc:0,bossN:0,
-    cine:null,launch:1.3,miniDone:false,rushT:0,bossOrder:null,
+    cine:null,launch:2.25,miniDone:false,rushT:0,bossOrder:null,warpZoom:0,
+    warpStars:carriedStars,warpInT:carriedWarpIn,warpStarted:false,engineEffort:0,
   });
   G.introAt=rollIntroPlan();
   G.pactScore=1; G.pactGraze=1; G.pactEspd=1; G.pactEbul=1;
@@ -2922,7 +3120,7 @@ function startRun(){
   G.coresRun=0; player.volleys=0; player.heat=0; player.heatTarget=null;
   G.coach=(meta.runs===0); G.coachStep=0; G.coachSurge=false;
   G.runWeapon=null;
-  player.x=W/2; player.y=H+90; player.vx=player.vy=0; player.trail=[]; // launch from below the frame
+  player.x=W/2; player.y=H/2; player.vx=player.vy=0; player.trail=[]; // arrives at frame center, in warp
   drawHearts();
   document.getElementById("lvl").textContent="NEXT BONUS · LV 1";
   document.getElementById("best").textContent="BEST "+fmtN(meta.best);
@@ -2932,7 +3130,7 @@ function startRun(){
   document.getElementById("hud").classList.add("on");
   document.getElementById("wrap").classList.remove("cine"); // letterbox opens as the ship streaks in
   applySchemeCSS();
-  AU.dash();
+  AU.warpOpen();
 }
 function drawHearts(){
   const el=document.getElementById("hearts");
@@ -2992,11 +3190,38 @@ function handleKey(code){
 }
 // restarting is deliberate: the ONE MORE RUN button, SPACE, or R — never a stray click
 // first flight ever gets the protocol first — skippable, and launching either way
-let pendingLaunch=false;
+let pendingLaunch=false, engaging=false;
 function tryStart(){
   AU.init();
-  if(meta.runs===0){ pendingLaunch=true; openTut(); }
-  else startRun();
+  if(meta.runs===0){ pendingLaunch=true; openTut(); return; }
+  if(engaging) return;
+  const m=document.getElementById("menu");
+  if(m.classList.contains("on")){
+    // the text blurs out while the camera reframes onto the orbiting demo ship,
+    // gliding it to center and rotating its heading to point up — then the warp takes over
+    engaging=true;
+    m.classList.add("engage");
+    // the warp field begins blooming under the title dive on this exact frame,
+    // then the same stars carry straight into the countdown
+    seedWarpStars();
+    // freeze the ship's orbit angle now, so the tracking rotation aims at a FIXED
+    // target and settles with zero angular velocity — the warp then picks it up
+    // at the same value and the same (zero) velocity, so the seam has no kink
+    menuEngage={t:0,max:1.1,a0:menuShip.a};
+    AU.warpCruise();
+    AU.warpCharge();
+    setTimeout(()=>{
+      // the reframe has already turned the demo ship upright. Carry only its zoom:
+      // carrying the camera bank too would rotate the upright warp ship and countdown
+      // a second time, then visibly unwind them as the numbers appear.
+      engaging=false; menuEngage=null; startRun(true);
+      G.warpZoom=1;
+      m.classList.remove("engage");
+      // hand back to the stylesheet so the menu is pristine next time it opens
+      m.style.transition=""; m.style.transform=""; m.style.transformOrigin="";
+      m.style.filter=""; m.style.opacity="";
+    },1100);
+  } else startRun();
 }
 document.getElementById("startBtn").addEventListener("pointerdown",e=>{
   e.stopPropagation(); tryStart();
@@ -3079,6 +3304,8 @@ function coachMsg(m){
 
 // ---------- back to menu from death ----------
 function goMenu(){
+  AU.engineStop(0.2);
+  AU.warpCruiseStop(0.2);
   G.state="menu";
   queuedPilotCard=null;
   hideBanner();
@@ -3587,14 +3814,37 @@ for(let i=0;i<8;i++){
 }
 
 // ---------- menu attract demo: a real ship grazing real foes ----------
-let menuFoes=[], menuGlow=0, menuShip={x:0,y:0,a:0};
+let menuFoes=[], menuGlow=0, menuShip={x:0,y:0,a:0}, menuEngage=null;
 function updateMenuDemo(now,dt){
   const cx=W/2, cy=H/2, R=Math.min(W,H)*0.46;
   const a=now*0.00038;
-  menuShip.a=a;
-  menuShip.x=cx+Math.cos(a)*R; menuShip.y=cy+Math.sin(a)*R;
+  // during engage the orbit is frozen at its snapshot angle so the reframe rotation
+  // aims at a fixed heading and comes to rest, instead of chasing a moving ship
+  menuShip.a = menuEngage ? menuEngage.a0 : a;
+  let sx=cx+Math.cos(menuShip.a)*R, sy=cy+Math.sin(menuShip.a)*R;
   menuGlow=Math.max(0,menuGlow-dt*2);
-  if(menuFoes.length<4 && Math.random()<0.03){
+  if(menuEngage){
+    // the whole world turns as the camera swings to track the ship — the DOM text
+    // rotates in lock-step with the canvas (same p and dAng), then blurs away into the warp
+    menuEngage.t=Math.min(menuEngage.max,menuEngage.t+dt);
+    G.warpInT=Math.min(menuEngage.max,(G.warpInT||0)+dt);
+    moveWarpStars(dt,1);
+    const q=menuEngage.t/menuEngage.max, p=q*q*(3-2*q);
+    // glide the ship itself to center so the reframe ends as a pure center-pivot
+    // rotation — identical to the warp's opening frame, so the handoff can't pop
+    sx=lerp(sx,cx,p); sy=lerp(sy,cy,p);
+    let dAng=(-Math.PI/2)-(menuShip.a+Math.PI/2);
+    dAng=((dAng+Math.PI)%TAU+TAU)%TAU-Math.PI;
+    dAng=clamp(dAng,-0.8,0.8); // a cinematic bank, never a flip
+    const m=document.getElementById("menu");
+    m.style.transition="none";
+    m.style.transformOrigin="50% 50%";
+    m.style.transform="rotate("+(dAng*p).toFixed(4)+"rad) scale("+(1+0.6*p).toFixed(3)+")";
+    m.style.filter="blur("+(16*p).toFixed(1)+"px)";
+    m.style.opacity=clamp(1-1.3*p,0,1).toFixed(3);
+  }
+  menuShip.x=sx; menuShip.y=sy;
+  if(!menuEngage && menuFoes.length<4 && Math.random()<0.03){
     const side=(Math.random()*4)|0, m=30;
     let x,y;
     if(side===0){x=rnd(W);y=-m;} else if(side===1){x=W+m;y=rnd(H);}
@@ -3639,6 +3889,30 @@ function render(now){
   let sx=0,sy=0;
   if(G.shake>0.2){ sx=rnd(-G.shake,G.shake); sy=rnd(-G.shake,G.shake); }
   ctx.save(); ctx.translate(sx,sy);
+  // engaging: the frame reframes onto the orbiting demo ship — glides it to center,
+  // rotates the world so its heading points up, and eases in toward the warp's opening
+  if(G.state==="menu" && menuEngage){
+    const q=menuEngage.t/menuEngage.max, p=q*q*(3-2*q);
+    let dAng=(-Math.PI/2)-(menuShip.a+Math.PI/2);
+    dAng=((dAng+Math.PI)%TAU+TAU)%TAU-Math.PI; // shortest way round
+    dAng=clamp(dAng,-0.8,0.8); // a cinematic bank, never a flip
+    const z=1+0.35*p;
+    // pivot about the ship, which is itself gliding to center — so at p=1 this is a
+    // pure center-pivot rotate+zoom, exactly what the warp opens with
+    ctx.translate(menuShip.x,menuShip.y); ctx.rotate(dAng*p); ctx.scale(z,z);
+    ctx.translate(-menuShip.x,-menuShip.y);
+  }
+  // carry the reframe's zoom into the warp, but not its camera bank: the reframe
+  // already leaves the ship upright, and the countdown should arrive level.
+  if(G.state==="playing" && G.launch>0 && G.warpZoom){
+    const el=2.25-G.launch; // time since the warp opened
+    const T=0.8;
+    const f0=clamp(1-el/T,0,1), f=f0*f0*(3-2*f0); // 1 → 0
+    if(f>0){
+      ctx.translate(W/2,H/2); ctx.scale(1+0.35*f,1+0.35*f);
+      ctx.translate(-W/2,-H/2);
+    }
+  }
   // dying: the camera leans into the singularity
   if(G.state==="dying" && G.deathHole){
     const z=1+Math.min(1,G.deathT/1.1)*0.14;
@@ -3711,7 +3985,7 @@ function render(now){
     ctx.strokeStyle=s.c2; ctx.globalAlpha=0.14+menuGlow*0.45; ctx.lineWidth=1;
     ctx.beginPath(); ctx.arc(menuShip.x,menuShip.y,46,0,TAU); ctx.stroke();
     ctx.globalAlpha=1;
-    // hull triangle pointing along travel
+    // hull triangle pointing along travel (the engage reframe rotates the world instead)
     ctx.globalCompositeOperation="source-over";
     ctx.save(); ctx.translate(menuShip.x,menuShip.y); ctx.rotate(a1+Math.PI/2);
     ctx.fillStyle="#fff"; ctx.globalAlpha=0.9;
@@ -3792,12 +4066,21 @@ function render(now){
   // shards — sharp spinning slivers (hexes for cores, to match the ⬢), not fuzzy dots
   for(const sh of shards){
     if(sh.pilot){
-      const bob=Math.sin(sh.t*4)*2;
-      drawGlow(sh.x,sh.y,13,"#9ef7ff",0.45);
-      ctx.save(); ctx.translate(sh.x,sh.y+bob);
+      // twice life-size, waving, and lit like a rescue beacon
+      const bob=Math.sin(sh.t*4)*4;
+      drawGlow(sh.x,sh.y,30,"#9ef7ff",0.7);
+      ctx.save(); ctx.translate(sh.x,sh.y+bob); ctx.scale(2,2);
+      // pulsing rescue ring
+      ctx.strokeStyle="#9ef7ff"; ctx.globalAlpha=0.45+0.3*Math.sin(sh.t*3);
+      ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.arc(0,2,16+Math.sin(sh.t*3)*2,0,TAU); ctx.stroke();
+      ctx.globalAlpha=1;
       ctx.strokeStyle="#ffffff"; ctx.fillStyle="#9ef7ff"; ctx.lineWidth=2; ctx.lineCap="round";
       ctx.beginPath(); ctx.arc(0,-7,3.5,0,TAU); ctx.fill();
-      ctx.beginPath(); ctx.moveTo(0,-3); ctx.lineTo(0,6); ctx.moveTo(-6,1); ctx.lineTo(6,1);
+      // body, grounded arm, legs — and one arm up, waving for pickup
+      const wave=Math.sin(sh.t*6)*3;
+      ctx.beginPath(); ctx.moveTo(0,-3); ctx.lineTo(0,6); ctx.moveTo(-6,3); ctx.lineTo(0,1);
+      ctx.moveTo(0,1); ctx.lineTo(6,-6+wave);
       ctx.moveTo(0,6); ctx.lineTo(-5,12); ctx.moveTo(0,6); ctx.lineTo(5,12); ctx.stroke();
       ctx.restore();
       continue;
@@ -4036,6 +4319,60 @@ function render(now){
     drawGlow(p.x,p.y,p.r*a+0.5,p.c,a*0.9);
   }
 
+  // warp arrival: the same field blooms beneath ENGAGE, then carries into the countdown
+  const warpPreflight=G.state==="menu" && menuEngage;
+  if((G.state==="playing"||warpPreflight) && G.warpStars){
+    const cx=W/2, cy=H/2;
+    const mul=warpPreflight?1:(G.launch>0?(G.warpMul===undefined?1:G.warpMul):0);
+    // grow the streaks, brightness and colour split together from the button press
+    const inQ=clamp((G.warpInT||0)/1.1,0,1);
+    const ramp=inQ*inQ*(3-2*inQ);
+    const fade=(warpPreflight||G.launch>0)?ramp:clamp(G.warpFade/1.8,0,1);
+    const off=(1+2.2*mul)*ramp; // the restrained full-warp split is 3.2px
+    ctx.save();
+    if(warpPreflight){
+      // keep the emerging streaks vertical while the menu world banks around them;
+      // the shared 1→1.35 zoom remains, so their scale is continuous at handoff
+      const q=menuEngage.t/menuEngage.max, p=q*q*(3-2*q);
+      let dAng=(-Math.PI/2)-(menuShip.a+Math.PI/2);
+      dAng=((dAng+Math.PI)%TAU+TAU)%TAU-Math.PI;
+      dAng=clamp(dAng,-0.8,0.8);
+      ctx.translate(menuShip.x,menuShip.y); ctx.rotate(-dAng*p);
+      ctx.translate(-menuShip.x,-menuShip.y);
+    }
+    ctx.globalCompositeOperation="lighter";
+    ctx.lineCap="round";
+    for(const s of G.warpStars){
+      const len=Math.max(3, s.sp*mul*0.085*(0.25+0.75*ramp));
+      const a=s.b*(0.25+0.75*mul)*fade;
+      ctx.lineWidth=1.4+s.b*1.8;
+      // wide magenta and electric-blue ghosts, with a tighter white core
+      ctx.strokeStyle="#ff3df0"; ctx.globalAlpha=a*0.72;
+      ctx.beginPath(); ctx.moveTo(s.x-off,s.y-len); ctx.lineTo(s.x-off,s.y); ctx.stroke();
+      ctx.strokeStyle="#4ef3ff"; ctx.globalAlpha=a*0.72;
+      ctx.beginPath(); ctx.moveTo(s.x+off,s.y-len); ctx.lineTo(s.x+off,s.y); ctx.stroke();
+      ctx.lineWidth=0.8+s.b*1.1;
+      ctx.strokeStyle="#ffffff"; ctx.globalAlpha=a;
+      ctx.beginPath(); ctx.moveTo(s.x,s.y-len); ctx.lineTo(s.x,s.y); ctx.stroke();
+    }
+    ctx.globalCompositeOperation="source-over";
+    if(G.state==="playing" && G.launch>0.45){
+      const digit=Math.min(3,Math.max(1,Math.ceil((G.launch-0.45)/0.6)));
+      const frac=((G.launch-0.45)-(digit-1)*0.6)/0.6; // 1→0 through each beat
+      const a=Math.min(1,(1-frac)*5)*Math.min(1,frac*3+0.35);
+      ctx.textAlign="center"; ctx.fillStyle="#ffffff";
+      ctx.shadowColor="#9ef7ff"; ctx.shadowBlur=18;
+      ctx.globalAlpha=a*0.8;
+      ctx.font="700 14px ui-monospace,Menlo,monospace";
+      ctx.fillText("A R R I V I N G  I N",cx,cy-118);
+      ctx.globalAlpha=a;
+      ctx.font="700 "+Math.round(72+(1-frac)*10)+"px ui-monospace,Menlo,monospace";
+      ctx.fillText(String(digit),cx,cy-46);
+      ctx.shadowBlur=0;
+    }
+    ctx.globalAlpha=1; ctx.restore();
+  }
+
   // floating texts
   ctx.globalCompositeOperation="source-over";
   for(const t of texts){
@@ -4128,6 +4465,12 @@ function loop(now){
 
   if(G.state==="playing"){
     if(G.hitstop>0){ G.hitstop-=dt; render(now); return; }
+    // out of warp: the leftover stars hang in place and fade away slowly
+    if(G.warpStars && G.launch<=0){
+      G.warpFade-=dt;
+      for(const s of G.warpStars) s.y+=s.sp*0.02*dt;
+      if(G.warpFade<=0) G.warpStars=null;
+    }
     // cinematic moments: world crawls, camera leans in
     if(G.cine){
       G.cine.t-=dt;
@@ -4235,6 +4578,12 @@ function loop(now){
   for(let i=flares.length-1;i>=0;i--){
     flares[i].life-=dt;
     if(flares[i].life<=0) flares.splice(i,1);
+  }
+
+  // the continuous growl voices how hard the ship is working to reach the cursor
+  if(AU.engine){
+    const moving=G.state==="playing" && G.launch<=0;
+    AU.engineSet(moving?(G.engineEffort||0):0);
   }
 
   // soundtrack: calm on menus, drums+bass in play, hook after 1:00, ghost hats after 2:30
