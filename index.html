@@ -2175,7 +2175,7 @@ function updatePlayer(dt){
       AU.noise(0.4,0.2,1600); AU.tone(180,0.5,"sawtooth",0.14,-120);
     }
     G.invuln=Math.max(G.invuln,0.8);
-    if(G.launch<=0){ G.warpStars=null; banner("SURVIVE"); flashScreen(0.12); AU.tone(520,0.2,"triangle",0.1,140); }
+    if(G.launch<=0){ G.warpFade=1.8; banner("SURVIVE"); flashScreen(0.12); AU.tone(520,0.2,"triangle",0.1,140); }
     return;
   }
   let ax=0,ay=0,keyed=false;
@@ -4096,15 +4096,16 @@ function render(now){
   }
 
   // warp arrival: streaks pouring top to bottom, chromatically fringed, countdown over the top
-  if(G.state==="playing" && G.launch>0 && G.warpStars){
-    const cx=W/2, cy=H/2, mul=G.warpMul===undefined?1:G.warpMul;
+  if(G.state==="playing" && G.warpStars){
+    const cx=W/2, cy=H/2, mul=G.launch>0?(G.warpMul===undefined?1:G.warpMul):0;
+    const fade=G.launch>0?1:clamp(G.warpFade/1.8,0,1); // lingering stars dim gently, not a hard cut
     const off=(1+2.2*mul); // aberration split widens with warp speed
     ctx.save();
     ctx.globalCompositeOperation="lighter";
     ctx.lineCap="round";
     for(const s of G.warpStars){
       const len=Math.max(3, s.sp*mul*0.085);
-      const a=s.b*(0.25+0.75*mul);
+      const a=s.b*(0.25+0.75*mul)*fade;
       ctx.lineWidth=1+s.b*1.4;
       // magenta and cyan fringes either side, white core — the game's own palette split apart
       ctx.strokeStyle="#ff3df0"; ctx.globalAlpha=a*0.4;
@@ -4224,6 +4225,12 @@ function loop(now){
 
   if(G.state==="playing"){
     if(G.hitstop>0){ G.hitstop-=dt; render(now); return; }
+    // out of warp: the leftover stars hang in place and fade away slowly
+    if(G.warpStars && G.launch<=0){
+      G.warpFade-=dt;
+      for(const s of G.warpStars) s.y+=s.sp*0.02*dt;
+      if(G.warpFade<=0) G.warpStars=null;
+    }
     // cinematic moments: world crawls, camera leans in
     if(G.cine){
       G.cine.t-=dt;
