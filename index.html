@@ -1225,8 +1225,32 @@ const AU = {
     this.sweep(720,1440,0.5,"sine",0.025,0.35,0.08);
   },
   warpCruise(){
-    this.sweep(68,132,2.0,"sine",0.055,0.2);
-    this.sweep(136,264,1.7,"triangle",0.022,0.28,0.08);
+    if(!this.ctx||this.warpEngine) return;
+    const t=this.ctx.currentTime, a=this.ctx.createOscillator(), b=this.ctx.createOscillator(),
+      sh=this.ctx.createWaveShaper(), f=this.ctx.createBiquadFilter(), g=this.ctx.createGain(),
+      lfo=this.ctx.createOscillator(), depth=this.ctx.createGain(),
+      thrust=clamp(meta.shop.thrust||0,0,9),
+      pitch=(HULLS[meta.hull]||HULLS.vector).enginePitch*(1+0.025*thrust);
+    a.type="sawtooth"; b.type="triangle"; lfo.type="triangle";
+    a.frequency.value=92*pitch; b.frequency.value=142*pitch; lfo.frequency.value=11;
+    const curve=new Float32Array(256);
+    for(let i=0;i<curve.length;i++){ const x=i*2/(curve.length-1)-1; curve[i]=Math.tanh(x*1.9); }
+    sh.curve=curve; sh.oversample="2x";
+    f.type="lowpass"; f.Q.value=2.8; f.frequency.value=820; depth.gain.value=42;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(0.022*(1+0.025*thrust),t+0.55);
+    a.connect(sh); b.connect(sh); sh.connect(f); f.connect(g); g.connect(this.master);
+    lfo.connect(depth); depth.connect(f.frequency);
+    a.start(t); b.start(t); lfo.start(t);
+    this.warpEngine={a,b,lfo,gain:g};
+  },
+  warpCruiseStop(fade=0.5){
+    const e=this.warpEngine; if(!e||!this.ctx) return;
+    this.warpEngine=null;
+    const t=this.ctx.currentTime;
+    e.gain.gain.cancelScheduledValues(t);
+    e.gain.gain.setTargetAtTime(0.0001,t,Math.max(0.01,fade/4));
+    for(const o of [e.a,e.b,e.lfo]){ try{o.stop(t+fade);}catch(err){} }
   },
   warpSnap(){
     // clean electronic deceleration: a sub fall with a short crystalline answer
@@ -2295,6 +2319,7 @@ function updatePlayer(dt){
     if(G.launch<=0.45 && !G.warpSnapped){
       G.warpSnapped=true; // out of warp — everything slams back to sublight, no flash
       shake(9);
+      AU.warpCruiseStop(0.5);
       AU.warpSnap();
     }
     G.invuln=Math.max(G.invuln,0.8);
@@ -3183,6 +3208,7 @@ function tryStart(){
     // target and settles with zero angular velocity — the warp then picks it up
     // at the same value and the same (zero) velocity, so the seam has no kink
     menuEngage={t:0,max:1.1,a0:menuShip.a};
+    AU.warpCruise();
     AU.warpCharge();
     setTimeout(()=>{
       // the reframe has already turned the demo ship upright. Carry only its zoom:
@@ -3279,6 +3305,7 @@ function coachMsg(m){
 // ---------- back to menu from death ----------
 function goMenu(){
   AU.engineStop(0.2);
+  AU.warpCruiseStop(0.2);
   G.state="menu";
   queuedPilotCard=null;
   hideBanner();
