@@ -1174,12 +1174,12 @@ const AU = {
       f=this.ctx.createBiquadFilter(), g=this.ctx.createGain(), sg=this.ctx.createGain(),
       lfo=this.ctx.createOscillator(), depth=this.ctx.createGain();
     a.type="sawtooth"; b.type="sawtooth"; sub.type="sine"; lfo.type="triangle";
-    a.frequency.value=30; b.frequency.value=33; sub.frequency.value=36; lfo.frequency.value=9;
+    a.frequency.value=24; b.frequency.value=27; sub.frequency.value=29; lfo.frequency.value=7;
     const curve=new Float32Array(256);
     for(let i=0;i<curve.length;i++){ const x=i*2/(curve.length-1)-1; curve[i]=Math.tanh(x*2.6); }
     sh.curve=curve; sh.oversample="2x";
-    f.type="lowpass"; f.Q.value=3.4; f.frequency.value=165;
-    depth.gain.value=52; sg.gain.value=0.58; g.gain.value=0.0001;
+    f.type="lowpass"; f.Q.value=3.4; f.frequency.value=120;
+    depth.gain.value=35; sg.gain.value=0.5; g.gain.value=0.0001;
     a.connect(sh); b.connect(sh); sh.connect(f); f.connect(g);
     sub.connect(sg); sg.connect(g); g.connect(this.master);
     lfo.connect(depth); depth.connect(f.frequency);
@@ -1187,15 +1187,15 @@ const AU = {
     this.engine={a,b,sub,lfo,filter:f,gain:g,depth,last:-1,lastAt:-1};
     this.engineSet(0,true);
   },
-  engineSet(speed,force=false){
+  engineSet(effort,force=false){
     const e=this.engine; if(!e||!this.ctx) return;
-    const t=this.ctx.currentTime, v=Math.pow(clamp(speed,0,1),0.72);
+    const t=this.ctx.currentTime, v=clamp(effort,0,1);
     if(!force && Math.abs(v-e.last)<0.018 && t-e.lastAt<0.12) return;
-    const tau=v>(e.last<0?0:e.last)?0.075:0.18;
+    const tau=v>(e.last<0?0:e.last)?0.08:0.22;
     const set=(p,value)=>{ p.cancelScheduledValues(t); p.setTargetAtTime(value,t,tau); };
-    set(e.gain.gain,0.0075+0.045*v);
-    set(e.a.frequency,30+50*v); set(e.b.frequency,33+54*v); set(e.sub.frequency,36+20*v);
-    set(e.filter.frequency,165+355*v); set(e.lfo.frequency,9+10*v); set(e.depth.gain,52+68*v);
+    set(e.gain.gain,0.0012+0.0188*v);
+    set(e.a.frequency,24+38*v); set(e.b.frequency,27+41*v); set(e.sub.frequency,29+13*v);
+    set(e.filter.frequency,120+280*v); set(e.lfo.frequency,7+8*v); set(e.depth.gain,35+50*v);
     e.last=v; e.lastAt=t;
   },
   engineStop(fade=0.3){
@@ -2315,6 +2315,9 @@ function updatePlayer(dt){
   } else { player.vx*=0.94; player.vy*=0.94; }
   player.x = clamp(player.x+player.vx*dt, 14, W-14);
   player.y = clamp(player.y+player.vy*dt, 14, H-14);
+  // engine effort is the remaining control gap: far cursor = harder, louder drive
+  const mouseGap=mouseActive?Math.hypot(mouseX-player.x,mouseY-player.y):0;
+  G.engineEffort=keyed?1:clamp(mouseGap/Math.max(1,Math.hypot(W,H)*0.45),0,1);
   G.invuln = Math.max(0,G.invuln-dt);
   // the slow opening shots hold their heat; cooling starts once the trigger is truly off
   if(player.heat>0 && G.t-(player.lastShot||0)>1.1)
@@ -3064,7 +3067,7 @@ function startRun(carryWarp=false){
     invuln:1.2,shake:0,hitstop:0,timeScale:1,flash:0,
     spawnAcc:0,eliteAcc:0,introduced:{},scoredThisRun:0,musicAcc:0,arena:null,arenaAcc:0,bossN:0,
     cine:null,launch:2.25,miniDone:false,rushT:0,bossOrder:null,warpZoom:0,
-    warpStars:carriedStars,warpInT:carriedWarpIn,warpStarted:false,
+    warpStars:carriedStars,warpInT:carriedWarpIn,warpStarted:false,engineEffort:0,
   });
   G.introAt=rollIntroPlan();
   G.pactScore=1; G.pactGraze=1; G.pactEspd=1; G.pactEbul=1;
@@ -4547,10 +4550,10 @@ function loop(now){
     if(flares[i].life<=0) flares.splice(i,1);
   }
 
-  // the continuous growl follows actual ship velocity, not input intent
+  // the continuous growl voices how hard the ship is working to reach the cursor
   if(AU.engine){
     const moving=G.state==="playing" && G.launch<=0;
-    AU.engineSet(moving?Math.hypot(player.vx,player.vy)/Math.max(1,stats.speed):0);
+    AU.engineSet(moving?(G.engineEffort||0):0);
   }
 
   // soundtrack: calm on menus, drums+bass in play, hook after 1:00, ghost hats after 2:30
