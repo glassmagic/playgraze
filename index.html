@@ -2939,7 +2939,7 @@ function startRun(){
     surge:0,level:1,xp:0,xpNext:8,maxHp:hull.hp,
     invuln:1.2,shake:0,hitstop:0,timeScale:1,flash:0,
     spawnAcc:0,eliteAcc:0,introduced:{},scoredThisRun:0,musicAcc:0,arena:null,arenaAcc:0,bossN:0,
-    cine:null,launch:2.25,miniDone:false,rushT:0,bossOrder:null,warpCarry:0,warpRot:0,
+    cine:null,launch:2.25,miniDone:false,rushT:0,bossOrder:null,warpZoom:0,
   });
   G.introAt=rollIntroPlan();
   G.pactScore=1; G.pactGraze=1; G.pactEspd=1; G.pactEbul=1;
@@ -3051,12 +3051,11 @@ function tryStart(){
     menuEngage={t:0,max:1.1,a0:menuShip.a};
     AU.tone(90,1.0,"sawtooth",0.08,60);
     setTimeout(()=>{
-      // hand the reframe's final rotation/zoom to the warp so the cut is invisible
-      let d=(-Math.PI/2)-(menuShip.a+Math.PI/2);
-      d=((d+Math.PI)%TAU+TAU)%TAU-Math.PI;
-      d=clamp(d,-0.8,0.8); // a cinematic bank, never a flip
+      // the reframe has already turned the demo ship upright. Carry only its zoom:
+      // carrying the camera bank too would rotate the upright warp ship and countdown
+      // a second time, then visibly unwind them as the numbers appear.
       engaging=false; menuEngage=null; startRun();
-      G.warpCarry=1; G.warpRot=d;
+      G.warpZoom=1;
       m.classList.remove("engage");
       // hand back to the stylesheet so the menu is pristine next time it opens
       m.style.transition=""; m.style.transform=""; m.style.transformOrigin="";
@@ -3739,15 +3738,14 @@ function render(now){
     ctx.translate(menuShip.x,menuShip.y); ctx.rotate(dAng*p); ctx.scale(z,z);
     ctx.translate(-menuShip.x,-menuShip.y);
   }
-  // out of the reframe, the warp gently unwinds that same rotation and zoom back to
-  // level — the SHORT way to 0, about center. Both sides are ~motionless at the seam
-  // (smoothstep endpoints), so the handoff is continuous with no pop and no full spin.
-  if(G.state==="playing" && G.launch>0 && G.warpCarry){
+  // carry the reframe's zoom into the warp, but not its camera bank: the reframe
+  // already leaves the ship upright, and the countdown should arrive level.
+  if(G.state==="playing" && G.launch>0 && G.warpZoom){
     const el=2.25-G.launch; // time since the warp opened
     const T=0.8;
     const f0=clamp(1-el/T,0,1), f=f0*f0*(3-2*f0); // 1 → 0
     if(f>0){
-      ctx.translate(W/2,H/2); ctx.rotate((G.warpRot||0)*f); ctx.scale(1+0.35*f,1+0.35*f);
+      ctx.translate(W/2,H/2); ctx.scale(1+0.35*f,1+0.35*f);
       ctx.translate(-W/2,-H/2);
     }
   }
