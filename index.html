@@ -3045,12 +3045,16 @@ function tryStart(){
     // gliding it to center and rotating its heading to point up — then the warp takes over
     engaging=true;
     m.classList.add("engage");
-    menuEngage={t:0,max:1.1};
+    // freeze the ship's orbit angle now, so the tracking rotation aims at a FIXED
+    // target and settles with zero angular velocity — the warp then picks it up
+    // at the same value and the same (zero) velocity, so the seam has no kink
+    menuEngage={t:0,max:1.1,a0:menuShip.a};
     AU.tone(90,1.0,"sawtooth",0.08,60);
     setTimeout(()=>{
       // hand the reframe's final rotation/zoom to the warp so the cut is invisible
       let d=(-Math.PI/2)-(menuShip.a+Math.PI/2);
       d=((d+Math.PI)%TAU+TAU)%TAU-Math.PI;
+      d=clamp(d,-0.8,0.8); // a cinematic bank, never a flip
       engaging=false; menuEngage=null; startRun();
       G.warpCarry=1; G.warpRot=d;
       m.classList.remove("engage");
@@ -3653,8 +3657,10 @@ let menuFoes=[], menuGlow=0, menuShip={x:0,y:0,a:0}, menuEngage=null;
 function updateMenuDemo(now,dt){
   const cx=W/2, cy=H/2, R=Math.min(W,H)*0.46;
   const a=now*0.00038;
-  menuShip.a=a;
-  let sx=cx+Math.cos(a)*R, sy=cy+Math.sin(a)*R;
+  // during engage the orbit is frozen at its snapshot angle so the reframe rotation
+  // aims at a fixed heading and comes to rest, instead of chasing a moving ship
+  menuShip.a = menuEngage ? menuEngage.a0 : a;
+  let sx=cx+Math.cos(menuShip.a)*R, sy=cy+Math.sin(menuShip.a)*R;
   menuGlow=Math.max(0,menuGlow-dt*2);
   if(menuEngage){
     // the whole world turns as the camera swings to track the ship — the DOM text
@@ -3666,6 +3672,7 @@ function updateMenuDemo(now,dt){
     sx=lerp(sx,cx,p); sy=lerp(sy,cy,p);
     let dAng=(-Math.PI/2)-(menuShip.a+Math.PI/2);
     dAng=((dAng+Math.PI)%TAU+TAU)%TAU-Math.PI;
+    dAng=clamp(dAng,-0.8,0.8); // a cinematic bank, never a flip
     const m=document.getElementById("menu");
     m.style.transition="none";
     m.style.transformOrigin="50% 50%";
@@ -3725,6 +3732,7 @@ function render(now){
     const q=menuEngage.t/menuEngage.max, p=q*q*(3-2*q);
     let dAng=(-Math.PI/2)-(menuShip.a+Math.PI/2);
     dAng=((dAng+Math.PI)%TAU+TAU)%TAU-Math.PI; // shortest way round
+    dAng=clamp(dAng,-0.8,0.8); // a cinematic bank, never a flip
     const z=1+0.35*p;
     // pivot about the ship, which is itself gliding to center — so at p=1 this is a
     // pure center-pivot rotate+zoom, exactly what the warp opens with
