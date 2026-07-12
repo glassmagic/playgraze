@@ -3654,13 +3654,16 @@ function updateMenuDemo(now,dt){
   const cx=W/2, cy=H/2, R=Math.min(W,H)*0.46;
   const a=now*0.00038;
   menuShip.a=a;
-  menuShip.x=cx+Math.cos(a)*R; menuShip.y=cy+Math.sin(a)*R;
+  let sx=cx+Math.cos(a)*R, sy=cy+Math.sin(a)*R;
   menuGlow=Math.max(0,menuGlow-dt*2);
   if(menuEngage){
     // the whole world turns as the camera swings to track the ship — the DOM text
     // rotates in lock-step with the canvas (same p and dAng), then blurs away into the warp
     menuEngage.t=Math.min(menuEngage.max,menuEngage.t+dt);
     const q=menuEngage.t/menuEngage.max, p=q*q*(3-2*q);
+    // glide the ship itself to center so the reframe ends as a pure center-pivot
+    // rotation — identical to the warp's opening frame, so the handoff can't pop
+    sx=lerp(sx,cx,p); sy=lerp(sy,cy,p);
     let dAng=(-Math.PI/2)-(menuShip.a+Math.PI/2);
     dAng=((dAng+Math.PI)%TAU+TAU)%TAU-Math.PI;
     const m=document.getElementById("menu");
@@ -3670,6 +3673,7 @@ function updateMenuDemo(now,dt){
     m.style.filter="blur("+(16*p).toFixed(1)+"px)";
     m.style.opacity=clamp(1-1.3*p,0,1).toFixed(3);
   }
+  menuShip.x=sx; menuShip.y=sy;
   if(!menuEngage && menuFoes.length<4 && Math.random()<0.03){
     const side=(Math.random()*4)|0, m=30;
     let x,y;
@@ -3719,26 +3723,23 @@ function render(now){
   // rotates the world so its heading points up, and eases in toward the warp's opening
   if(G.state==="menu" && menuEngage){
     const q=menuEngage.t/menuEngage.max, p=q*q*(3-2*q);
-    const tx=lerp(menuShip.x,W/2,p), ty=lerp(menuShip.y,H/2,p);
     let dAng=(-Math.PI/2)-(menuShip.a+Math.PI/2);
     dAng=((dAng+Math.PI)%TAU+TAU)%TAU-Math.PI; // shortest way round
     const z=1+0.35*p;
-    ctx.translate(tx,ty); ctx.rotate(dAng*p); ctx.scale(z,z);
+    // pivot about the ship, which is itself gliding to center — so at p=1 this is a
+    // pure center-pivot rotate+zoom, exactly what the warp opens with
+    ctx.translate(menuShip.x,menuShip.y); ctx.rotate(dAng*p); ctx.scale(z,z);
     ctx.translate(-menuShip.x,-menuShip.y);
   }
-  // engaged starts keep the reframe's rotation and zoom. The rotation never reverses:
-  // it keeps turning the SAME direction until the world comes level (a full turn ends
-  // at ±2π, which is the identity — so the handoff into gameplay has no pop at all)
+  // out of the reframe, the warp gently unwinds that same rotation and zoom back to
+  // level — the SHORT way to 0, about center. Both sides are ~motionless at the seam
+  // (smoothstep endpoints), so the handoff is continuous with no pop and no full spin.
   if(G.state==="playing" && G.launch>0 && G.warpCarry){
     const el=2.25-G.launch; // time since the warp opened
-    const z0=clamp(1-el/0.7,0,1), zh=z0*z0*(3-2*z0);
-    const d=G.warpRot||0, cont=Math.abs(d)>0.25;
-    const target=cont?Math.sign(d)*TAU:0; // continue round, or shed a tiny angle invisibly
-    const T=cont?clamp(Math.abs(target-d)/3.5,0.4,1.6):0.6;
-    const r0=clamp(1-el/T,0,1), rh=r0*r0*(3-2*r0);
-    const th=target+(d-target)*rh;
-    if(zh>0||rh>0){
-      ctx.translate(W/2,H/2); ctx.rotate(th); ctx.scale(1+0.35*zh,1+0.35*zh);
+    const T=0.8;
+    const f0=clamp(1-el/T,0,1), f=f0*f0*(3-2*f0); // 1 → 0
+    if(f>0){
+      ctx.translate(W/2,H/2); ctx.rotate((G.warpRot||0)*f); ctx.scale(1+0.35*f,1+0.35*f);
       ctx.translate(-W/2,-H/2);
     }
   }
