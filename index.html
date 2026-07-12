@@ -4158,21 +4158,24 @@ function render(now){
   // warp arrival: streaks pouring top to bottom, chromatically fringed, countdown over the top
   if(G.state==="playing" && G.warpStars){
     const cx=W/2, cy=H/2, mul=G.launch>0?(G.warpMul===undefined?1:G.warpMul):0;
-    // streaks ease in over the warp's first 0.6s and linger gently after the snap — no hard cuts
-    const fade=G.launch>0?clamp((2.25-G.launch)/0.6,0,1):clamp(G.warpFade/1.8,0,1);
-    const off=(1+2.2*mul); // aberration split widens with warp speed
+    // grow the streaks, brightness and colour split together so warp blooms in smoothly
+    const inQ=G.launch>0?clamp((2.25-G.launch)/0.8,0,1):1;
+    const ramp=inQ*inQ*(3-2*inQ);
+    const fade=G.launch>0?ramp:clamp(G.warpFade/1.8,0,1);
+    const off=(2+8*mul)*ramp; // broad magenta/blue separation at full warp
     ctx.save();
     ctx.globalCompositeOperation="lighter";
     ctx.lineCap="round";
     for(const s of G.warpStars){
-      const len=Math.max(3, s.sp*mul*0.085);
+      const len=Math.max(3, s.sp*mul*0.085*(0.25+0.75*ramp));
       const a=s.b*(0.25+0.75*mul)*fade;
-      ctx.lineWidth=1+s.b*1.4;
-      // magenta and cyan fringes either side, white core — the game's own palette split apart
-      ctx.strokeStyle="#ff3df0"; ctx.globalAlpha=a*0.4;
+      ctx.lineWidth=1.4+s.b*1.8;
+      // wide magenta and electric-blue ghosts, with a tighter white core
+      ctx.strokeStyle="#ff3df0"; ctx.globalAlpha=a*0.72;
       ctx.beginPath(); ctx.moveTo(s.x-off,s.y-len); ctx.lineTo(s.x-off,s.y); ctx.stroke();
-      ctx.strokeStyle="#9ef7ff"; ctx.globalAlpha=a*0.4;
+      ctx.strokeStyle="#4ef3ff"; ctx.globalAlpha=a*0.72;
       ctx.beginPath(); ctx.moveTo(s.x+off,s.y-len); ctx.lineTo(s.x+off,s.y); ctx.stroke();
+      ctx.lineWidth=0.8+s.b*1.1;
       ctx.strokeStyle="#ffffff"; ctx.globalAlpha=a;
       ctx.beginPath(); ctx.moveTo(s.x,s.y-len); ctx.lineTo(s.x,s.y); ctx.stroke();
     }
