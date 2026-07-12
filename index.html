@@ -1118,6 +1118,37 @@ const AU = {
     g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
     o.connect(g); g.connect(this.master); o.start(t); o.stop(t+dur+0.02);
   },
+  sweep(f0,f1,dur,type="sine",vol=0.1,peak=0.75,delay=0){
+    if(!this.ctx||this.muted) return;
+    const t=this.ctx.currentTime+delay, o=this.ctx.createOscillator(), g=this.ctx.createGain();
+    o.type=type; o.frequency.setValueAtTime(Math.max(20,f0),t);
+    o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(vol,t+dur*peak);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(this.master); o.start(t); o.stop(t+dur+0.03);
+  },
+  warpCharge(){
+    // a three-stage drive spool: sub lift, harmonic climb, then a glassy top-end bloom
+    this.sweep(52,230,1.08,"sine",0.12,0.88);
+    this.sweep(140,980,0.98,"triangle",0.055,0.9,0.06);
+    this.sweep(380,1680,0.72,"sine",0.028,0.92,0.28);
+  },
+  warpOpen(){
+    // phase-lock chirps instead of a noise impact when the countdown takes the frame
+    this.sweep(1800,420,0.34,"sine",0.065,0.12);
+    this.sweep(260,1040,0.42,"triangle",0.055,0.22,0.02);
+    this.sweep(720,1440,0.5,"sine",0.025,0.35,0.08);
+  },
+  warpCruise(){
+    this.sweep(68,132,2.0,"sine",0.055,0.2);
+    this.sweep(136,264,1.7,"triangle",0.022,0.28,0.08);
+  },
+  warpSnap(){
+    // clean electronic deceleration: a sub fall with a short crystalline answer
+    this.sweep(190,48,0.55,"sine",0.13,0.08);
+    this.sweep(1900,520,0.28,"triangle",0.045,0.08,0.015);
+  },
   noise(dur,vol=0.3,fc=1200){
     if(!this.ctx||this.muted) return;
     const t=this.ctx.currentTime, n=this.ctx.sampleRate*dur,
@@ -2155,7 +2186,7 @@ function updatePlayer(dt){
     if(!G.warpStars) seedWarpStars();
     if(!G.warpStarted){
       G.warpStarted=true;
-      AU.tone(70,2.0,"sawtooth",0.09,50);
+      AU.warpCruise();
     }
     G.warpInT=Math.min(1.1,(G.warpInT||0)+dt);
     // full speed through the countdown, then a cubic collapse — the snap
@@ -2180,7 +2211,7 @@ function updatePlayer(dt){
     if(G.launch<=0.45 && !G.warpSnapped){
       G.warpSnapped=true; // out of warp — everything slams back to sublight, no flash
       shake(9);
-      AU.noise(0.4,0.2,1600); AU.tone(180,0.5,"sawtooth",0.14,-120);
+      AU.warpSnap();
     }
     G.invuln=Math.max(G.invuln,0.8);
     if(G.launch<=0){ G.warpFade=1.8; banner("SURVIVE"); AU.tone(520,0.2,"triangle",0.1,140); }
@@ -2985,7 +3016,7 @@ function startRun(carryWarp=false){
   document.getElementById("hud").classList.add("on");
   document.getElementById("wrap").classList.remove("cine"); // letterbox opens as the ship streaks in
   applySchemeCSS();
-  AU.dash();
+  AU.warpOpen();
 }
 function drawHearts(){
   const el=document.getElementById("hearts");
@@ -3063,7 +3094,7 @@ function tryStart(){
     // target and settles with zero angular velocity — the warp then picks it up
     // at the same value and the same (zero) velocity, so the seam has no kink
     menuEngage={t:0,max:1.1,a0:menuShip.a};
-    AU.tone(90,1.0,"sawtooth",0.08,60);
+    AU.warpCharge();
     setTimeout(()=>{
       // the reframe has already turned the demo ship upright. Carry only its zoom:
       // carrying the camera bank too would rotate the upright warp ship and countdown
