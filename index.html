@@ -881,10 +881,10 @@ const WEAPONS = {
 // ship hulls — real tradeoffs, chosen before a run. size is honest: it scales
 // the drawn ship AND the hitbox
 const HULLS = {
-  vector:{nm:"VECTOR", ds:"the baseline — balanced in all things",      price:0,    speed:1,   graze:1,    hp:3, size:1,    shape:[1,1]},
-  dart:  {nm:"DART",   ds:"+30% speed, +25% graze ring — two hearts, barely there", price:2000, speed:1.3, graze:1.25, hp:2, size:0.78, shape:[1.25,0.72]},
-  aegis: {nm:"AEGIS",  ds:"four hearts of plate — slow, narrow ring, big silhouette", price:3000, speed:0.8, graze:0.85, hp:4, size:1.25, shape:[0.9,1.35]},
-  brick: {nm:"BRICK",  ds:"five hearts. handles like a fridge. beloved.", price:5000, speed:0.65, graze:0.75, hp:5, size:1.5, shape:[0.85,1.6]},
+  vector:{nm:"VECTOR", ds:"the baseline — balanced in all things",      price:0,    speed:1,   graze:1,    hp:3, size:1,    shape:[1,1],       enginePitch:1.18},
+  dart:  {nm:"DART",   ds:"+30% speed, +25% graze ring — two hearts, barely there", price:2000, speed:1.3, graze:1.25, hp:2, size:0.78, shape:[1.25,0.72], enginePitch:1.75},
+  aegis: {nm:"AEGIS",  ds:"four hearts of plate — slow, narrow ring, big silhouette", price:3000, speed:0.8, graze:0.85, hp:4, size:1.25, shape:[0.9,1.35], enginePitch:1},
+  brick: {nm:"BRICK",  ds:"five hearts. handles like a fridge. beloved.", price:5000, speed:0.65, graze:0.75, hp:5, size:1.5, shape:[0.85,1.6], enginePitch:0.82},
 };
 // pilots — hands on the stick, each with their own habits.
 // acc scales spread & aim jitter (lower = steadier), rof scales fire rate
@@ -1189,12 +1189,13 @@ const AU = {
   },
   engineSet(effort,force=false){
     const e=this.engine; if(!e||!this.ctx) return;
-    const t=this.ctx.currentTime, v=clamp(effort,0,1);
+    const t=this.ctx.currentTime, v=clamp(effort,0,1),
+      pitch=(HULLS[meta.hull]||HULLS.vector).enginePitch;
     if(!force && Math.abs(v-e.last)<0.018 && t-e.lastAt<0.12) return;
     const tau=v>(e.last<0?0:e.last)?0.08:0.22;
     const set=(p,value)=>{ p.cancelScheduledValues(t); p.setTargetAtTime(value,t,tau); };
     set(e.gain.gain,0.0024+0.0376*v); // exactly 2× across the whole effort range
-    set(e.a.frequency,24+56*v); set(e.b.frequency,27+60*v); set(e.sub.frequency,29+27*v);
+    set(e.a.frequency,(24+56*v)*pitch); set(e.b.frequency,(27+60*v)*pitch); set(e.sub.frequency,(29+27*v)*pitch);
     set(e.filter.frequency,120+400*v); set(e.lfo.frequency,7+12*v); set(e.depth.gain,35+85*v);
     e.last=v; e.lastAt=t;
   },
