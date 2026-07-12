@@ -103,7 +103,7 @@
   /* ---------- menu — restrained, cinematic ---------- */
   /* no backdrop-filter here: blurring the live canvas every frame tanks menu framerate */
   #menu{background:rgba(3,3,14,.42);backdrop-filter:none;-webkit-backdrop-filter:none;
-    transition:opacity .65s ease-in,transform .65s ease-in,filter .65s ease-in;}
+    transition:opacity 1.1s ease-in,transform 1.1s ease-in,filter 1.1s ease-in;}
   /* pressing ENGAGE: the camera dives in and the menu blurs away into the warp */
   #menu.engage{opacity:0;transform:scale(1.6);filter:blur(16px);pointer-events:none;}
   /* slow ken-burns drift + anamorphic flare wash behind the title */
@@ -2939,7 +2939,7 @@ function startRun(){
     surge:0,level:1,xp:0,xpNext:8,maxHp:hull.hp,
     invuln:1.2,shake:0,hitstop:0,timeScale:1,flash:0,
     spawnAcc:0,eliteAcc:0,introduced:{},scoredThisRun:0,musicAcc:0,arena:null,arenaAcc:0,bossN:0,
-    cine:null,launch:2.25,miniDone:false,rushT:0,bossOrder:null,
+    cine:null,launch:2.25,miniDone:false,rushT:0,bossOrder:null,warpCarry:0,warpRot:0,
   });
   G.introAt=rollIntroPlan();
   G.pactScore=1; G.pactGraze=1; G.pactEspd=1; G.pactEbul=1;
@@ -3045,9 +3045,16 @@ function tryStart(){
     // gliding it to center and rotating its heading to point up — then the warp takes over
     engaging=true;
     m.classList.add("engage");
-    menuEngage={t:0,max:0.65};
-    AU.tone(90,0.6,"sawtooth",0.08,80);
-    setTimeout(()=>{ engaging=false; menuEngage=null; startRun(); m.classList.remove("engage"); },650);
+    menuEngage={t:0,max:1.1};
+    AU.tone(90,1.0,"sawtooth",0.08,60);
+    setTimeout(()=>{
+      // hand the reframe's final rotation/zoom to the warp so the cut is invisible
+      let d=(-Math.PI/2)-(menuShip.a+Math.PI/2);
+      d=((d+Math.PI)%TAU+TAU)%TAU-Math.PI;
+      engaging=false; menuEngage=null; startRun();
+      G.warpCarry=1; G.warpRot=d;
+      m.classList.remove("engage");
+    },1100);
   } else startRun();
 }
 document.getElementById("startBtn").addEventListener("pointerdown",e=>{
@@ -3703,6 +3710,15 @@ function render(now){
     ctx.translate(tx,ty); ctx.rotate(dAng*p); ctx.scale(z,z);
     ctx.translate(-menuShip.x,-menuShip.y);
   }
+  // engaged starts keep the reframe's rotation and zoom, unwinding them through the warp's opening
+  if(G.state==="playing" && G.launch>0 && G.warpCarry){
+    const h0=clamp((G.launch-(2.25-0.7))/0.7,0,1), h=h0*h0*(3-2*h0);
+    if(h>0){
+      const z=1+0.35*h;
+      ctx.translate(W/2,H/2); ctx.rotate((G.warpRot||0)*h); ctx.scale(z,z);
+      ctx.translate(-W/2,-H/2);
+    }
+  }
   // dying: the camera leans into the singularity
   if(G.state==="dying" && G.deathHole){
     const z=1+Math.min(1,G.deathT/1.1)*0.14;
@@ -4112,7 +4128,8 @@ function render(now){
   // warp arrival: streaks pouring top to bottom, chromatically fringed, countdown over the top
   if(G.state==="playing" && G.warpStars){
     const cx=W/2, cy=H/2, mul=G.launch>0?(G.warpMul===undefined?1:G.warpMul):0;
-    const fade=G.launch>0?1:clamp(G.warpFade/1.8,0,1); // lingering stars dim gently, not a hard cut
+    // streaks ease in over the warp's first 0.6s and linger gently after the snap — no hard cuts
+    const fade=G.launch>0?clamp((2.25-G.launch)/0.6,0,1):clamp(G.warpFade/1.8,0,1);
     const off=(1+2.2*mul); // aberration split widens with warp speed
     ctx.save();
     ctx.globalCompositeOperation="lighter";
