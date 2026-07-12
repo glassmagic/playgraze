@@ -2939,7 +2939,7 @@ function startRun(){
     surge:0,level:1,xp:0,xpNext:8,maxHp:hull.hp,
     invuln:1.2,shake:0,hitstop:0,timeScale:1,flash:0,
     spawnAcc:0,eliteAcc:0,introduced:{},scoredThisRun:0,musicAcc:0,arena:null,arenaAcc:0,bossN:0,
-    cine:null,launch:2.25,miniDone:false,rushT:0,bossOrder:null,warpCarry:0,warpRot:0,
+    cine:null,launch:2.25,miniDone:false,rushT:0,bossOrder:null,warpCarry:0,
   });
   G.introAt=rollIntroPlan();
   G.pactScore=1; G.pactGraze=1; G.pactEspd=1; G.pactEbul=1;
@@ -3048,11 +3048,9 @@ function tryStart(){
     menuEngage={t:0,max:1.1};
     AU.tone(90,1.0,"sawtooth",0.08,60);
     setTimeout(()=>{
-      // hand the reframe's final rotation/zoom to the warp so the cut is invisible
-      let d=(-Math.PI/2)-(menuShip.a+Math.PI/2);
-      d=((d+Math.PI)%TAU+TAU)%TAU-Math.PI;
+      // hand the reframe's final zoom to the warp so the cut is invisible
       engaging=false; menuEngage=null; startRun();
-      G.warpCarry=1; G.warpRot=d;
+      G.warpCarry=1;
       m.classList.remove("engage");
     },1100);
   } else startRun();
@@ -3699,23 +3697,21 @@ function render(now){
   let sx=0,sy=0;
   if(G.shake>0.2){ sx=rnd(-G.shake,G.shake); sy=rnd(-G.shake,G.shake); }
   ctx.save(); ctx.translate(sx,sy);
-  // engaging: the frame reframes onto the orbiting demo ship — glides it to center,
-  // rotates its heading to point up, and eases in to match the warp's opening shot
+  // engaging: the frame reframes onto the orbiting demo ship — glides it to center and
+  // eases in; the ship itself turns to face up, so the world never counter-rotates
   if(G.state==="menu" && menuEngage){
     const q=menuEngage.t/menuEngage.max, p=q*q*(3-2*q);
     const tx=lerp(menuShip.x,W/2,p), ty=lerp(menuShip.y,H/2,p);
-    let dAng=(-Math.PI/2)-(menuShip.a+Math.PI/2);
-    dAng=((dAng+Math.PI)%TAU+TAU)%TAU-Math.PI; // shortest way round
     const z=1+0.35*p;
-    ctx.translate(tx,ty); ctx.rotate(dAng*p); ctx.scale(z,z);
+    ctx.translate(tx,ty); ctx.scale(z,z);
     ctx.translate(-menuShip.x,-menuShip.y);
   }
-  // engaged starts keep the reframe's rotation and zoom, unwinding them through the warp's opening
+  // engaged starts keep the reframe's zoom, easing it out through the warp's opening
   if(G.state==="playing" && G.launch>0 && G.warpCarry){
     const h0=clamp((G.launch-(2.25-0.7))/0.7,0,1), h=h0*h0*(3-2*h0);
     if(h>0){
       const z=1+0.35*h;
-      ctx.translate(W/2,H/2); ctx.rotate((G.warpRot||0)*h); ctx.scale(z,z);
+      ctx.translate(W/2,H/2); ctx.scale(z,z);
       ctx.translate(-W/2,-H/2);
     }
   }
@@ -3791,9 +3787,16 @@ function render(now){
     ctx.strokeStyle=s.c2; ctx.globalAlpha=0.14+menuGlow*0.45; ctx.lineWidth=1;
     ctx.beginPath(); ctx.arc(menuShip.x,menuShip.y,46,0,TAU); ctx.stroke();
     ctx.globalAlpha=1;
-    // hull triangle pointing along travel
+    // hull triangle pointing along travel — turning nose-up as the engage reframe runs
+    let hullAng=a1+Math.PI/2;
+    if(menuEngage){
+      const q=menuEngage.t/menuEngage.max, p=q*q*(3-2*q);
+      let d=(-Math.PI/2)-hullAng;
+      d=((d+Math.PI)%TAU+TAU)%TAU-Math.PI; // shortest way round
+      hullAng+=d*p;
+    }
     ctx.globalCompositeOperation="source-over";
-    ctx.save(); ctx.translate(menuShip.x,menuShip.y); ctx.rotate(a1+Math.PI/2);
+    ctx.save(); ctx.translate(menuShip.x,menuShip.y); ctx.rotate(hullAng);
     ctx.fillStyle="#fff"; ctx.globalAlpha=0.9;
     ctx.beginPath(); ctx.moveTo(5,0); ctx.lineTo(-3.5,-3.5); ctx.lineTo(-3.5,3.5); ctx.closePath(); ctx.fill();
     ctx.globalAlpha=1; ctx.restore();
