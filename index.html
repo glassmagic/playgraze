@@ -103,7 +103,7 @@
   /* ---------- menu — restrained, cinematic ---------- */
   /* no backdrop-filter here: blurring the live canvas every frame tanks menu framerate */
   #menu{background:rgba(3,3,14,.42);backdrop-filter:none;-webkit-backdrop-filter:none;
-    transition:opacity .5s ease-in,transform .5s ease-in,filter .5s ease-in;}
+    transition:opacity .65s ease-in,transform .65s ease-in,filter .65s ease-in;}
   /* pressing ENGAGE: the camera dives in and the menu blurs away into the warp */
   #menu.engage{opacity:0;transform:scale(1.6);filter:blur(16px);pointer-events:none;}
   /* slow ken-burns drift + anamorphic flare wash behind the title */
@@ -3041,11 +3041,13 @@ function tryStart(){
   if(engaging) return;
   const m=document.getElementById("menu");
   if(m.classList.contains("on")){
-    // camera dives in, menu blurs out, and the warp picks up where it fades
+    // the text blurs out while the camera reframes onto the orbiting demo ship,
+    // gliding it to center and rotating its heading to point up — then the warp takes over
     engaging=true;
     m.classList.add("engage");
-    AU.tone(90,0.5,"sawtooth",0.08,80);
-    setTimeout(()=>{ engaging=false; startRun(); m.classList.remove("engage"); },480);
+    menuEngage={t:0,max:0.65};
+    AU.tone(90,0.6,"sawtooth",0.08,80);
+    setTimeout(()=>{ engaging=false; menuEngage=null; startRun(); m.classList.remove("engage"); },650);
   } else startRun();
 }
 document.getElementById("startBtn").addEventListener("pointerdown",e=>{
@@ -3637,14 +3639,15 @@ for(let i=0;i<8;i++){
 }
 
 // ---------- menu attract demo: a real ship grazing real foes ----------
-let menuFoes=[], menuGlow=0, menuShip={x:0,y:0,a:0};
+let menuFoes=[], menuGlow=0, menuShip={x:0,y:0,a:0}, menuEngage=null;
 function updateMenuDemo(now,dt){
   const cx=W/2, cy=H/2, R=Math.min(W,H)*0.46;
   const a=now*0.00038;
   menuShip.a=a;
   menuShip.x=cx+Math.cos(a)*R; menuShip.y=cy+Math.sin(a)*R;
   menuGlow=Math.max(0,menuGlow-dt*2);
-  if(menuFoes.length<4 && Math.random()<0.03){
+  if(menuEngage) menuEngage.t=Math.min(menuEngage.max,menuEngage.t+dt);
+  if(!menuEngage && menuFoes.length<4 && Math.random()<0.03){
     const side=(Math.random()*4)|0, m=30;
     let x,y;
     if(side===0){x=rnd(W);y=-m;} else if(side===1){x=W+m;y=rnd(H);}
@@ -3689,6 +3692,17 @@ function render(now){
   let sx=0,sy=0;
   if(G.shake>0.2){ sx=rnd(-G.shake,G.shake); sy=rnd(-G.shake,G.shake); }
   ctx.save(); ctx.translate(sx,sy);
+  // engaging: the frame reframes onto the orbiting demo ship — glides it to center,
+  // rotates its heading to point up, and eases in to match the warp's opening shot
+  if(G.state==="menu" && menuEngage){
+    const q=menuEngage.t/menuEngage.max, p=q*q*(3-2*q);
+    const tx=lerp(menuShip.x,W/2,p), ty=lerp(menuShip.y,H/2,p);
+    let dAng=(-Math.PI/2)-(menuShip.a+Math.PI/2);
+    dAng=((dAng+Math.PI)%TAU+TAU)%TAU-Math.PI; // shortest way round
+    const z=1+0.35*p;
+    ctx.translate(tx,ty); ctx.rotate(dAng*p); ctx.scale(z,z);
+    ctx.translate(-menuShip.x,-menuShip.y);
+  }
   // dying: the camera leans into the singularity
   if(G.state==="dying" && G.deathHole){
     const z=1+Math.min(1,G.deathT/1.1)*0.14;
