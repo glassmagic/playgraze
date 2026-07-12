@@ -102,7 +102,10 @@
   .overlay.on{opacity:1;pointer-events:auto;}
   /* ---------- menu — restrained, cinematic ---------- */
   /* no backdrop-filter here: blurring the live canvas every frame tanks menu framerate */
-  #menu{background:rgba(3,3,14,.42);backdrop-filter:none;-webkit-backdrop-filter:none;}
+  #menu{background:rgba(3,3,14,.42);backdrop-filter:none;-webkit-backdrop-filter:none;
+    transition:opacity .5s ease-in,transform .5s ease-in,filter .5s ease-in;}
+  /* pressing ENGAGE: the camera dives in and the menu blurs away into the warp */
+  #menu.engage{opacity:0;transform:scale(1.6);filter:blur(16px);pointer-events:none;}
   /* slow ken-burns drift + anamorphic flare wash behind the title */
   #titleGroup{display:flex;flex-direction:column;align-items:center;position:relative;
     will-change:transform;animation:kenburns 26s ease-in-out infinite alternate;}
@@ -2140,17 +2143,17 @@ function updatePlayer(dt){
     if(!G.warpStars){
       G.warpStars=[];
       for(let k=0;k<150;k++)
-        G.warpStars.push({a:rnd(TAU),d:rnd(30,Math.max(W,H)*0.7),sp:rnd(300,900),
-          c:Math.random()<0.35?"#9ef7ff":"#ffffff"});
+        G.warpStars.push({x:rnd(W),y:rnd(-H*0.2,H),sp:rnd(450,1500),b:rnd(0.2,1)});
       G.warpDigit=0; G.warpSnapped=false;
       AU.tone(70,2.0,"sawtooth",0.09,50);
     }
     // full speed through the countdown, then a cubic collapse — the snap
     const mul=G.launch>0.45?1:Math.pow(clamp(G.launch/0.45,0,1),3);
     G.warpMul=mul;
+    // stars pour in at the top and stream out the bottom
     for(const s of G.warpStars){
-      s.d+=s.sp*mul*dt*(1+s.d*0.004);
-      if(s.d>Math.max(W,H)*0.75){ s.d=rnd(20,80); s.a=rnd(TAU); s.sp=rnd(300,900); }
+      s.y+=s.sp*mul*dt;
+      if(s.y>H+60){ s.y=rnd(-160,-40); s.x=rnd(W); s.sp=rnd(450,1500); s.b=rnd(0.2,1); }
     }
     // the ship rides the warp at frame center, vibrating with the drive
     player.x=W/2+rnd(-1.5,1.5)*mul; player.y=H/2+rnd(-1.5,1.5)*mul;
@@ -3031,11 +3034,19 @@ function handleKey(code){
 }
 // restarting is deliberate: the ONE MORE RUN button, SPACE, or R — never a stray click
 // first flight ever gets the protocol first — skippable, and launching either way
-let pendingLaunch=false;
+let pendingLaunch=false, engaging=false;
 function tryStart(){
   AU.init();
-  if(meta.runs===0){ pendingLaunch=true; openTut(); }
-  else startRun();
+  if(meta.runs===0){ pendingLaunch=true; openTut(); return; }
+  if(engaging) return;
+  const m=document.getElementById("menu");
+  if(m.classList.contains("on")){
+    // camera dives in, menu blurs out, and the warp picks up where it fades
+    engaging=true;
+    m.classList.add("engage");
+    AU.tone(90,0.5,"sawtooth",0.08,80);
+    setTimeout(()=>{ engaging=false; startRun(); m.classList.remove("engage"); },480);
+  } else startRun();
 }
 document.getElementById("startBtn").addEventListener("pointerdown",e=>{
   e.stopPropagation(); tryStart();
@@ -4084,20 +4095,24 @@ function render(now){
     drawGlow(p.x,p.y,p.r*a+0.5,p.c,a*0.9);
   }
 
-  // warp arrival: streaks radiating from center, with the countdown over the top
+  // warp arrival: streaks pouring top to bottom, chromatically fringed, countdown over the top
   if(G.state==="playing" && G.launch>0 && G.warpStars){
     const cx=W/2, cy=H/2, mul=G.warpMul===undefined?1:G.warpMul;
+    const off=(1+2.2*mul); // aberration split widens with warp speed
     ctx.save();
     ctx.globalCompositeOperation="lighter";
     ctx.lineCap="round";
     for(const s of G.warpStars){
-      const len=Math.max(2, s.sp*mul*0.09*(1+s.d*0.002));
-      const x1=cx+Math.cos(s.a)*s.d, y1=cy+Math.sin(s.a)*s.d;
-      const x0=cx+Math.cos(s.a)*Math.max(4,s.d-len), y0=cy+Math.sin(s.a)*Math.max(4,s.d-len);
-      ctx.strokeStyle=s.c;
-      ctx.globalAlpha=Math.min(0.85,0.25+s.d/300)*(0.2+0.8*mul);
-      ctx.lineWidth=s.d>200?2.2:1.4;
-      ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke();
+      const len=Math.max(3, s.sp*mul*0.085);
+      const a=s.b*(0.25+0.75*mul);
+      ctx.lineWidth=1+s.b*1.4;
+      // magenta and cyan fringes either side, white core — the game's own palette split apart
+      ctx.strokeStyle="#ff3df0"; ctx.globalAlpha=a*0.4;
+      ctx.beginPath(); ctx.moveTo(s.x-off,s.y-len); ctx.lineTo(s.x-off,s.y); ctx.stroke();
+      ctx.strokeStyle="#9ef7ff"; ctx.globalAlpha=a*0.4;
+      ctx.beginPath(); ctx.moveTo(s.x+off,s.y-len); ctx.lineTo(s.x+off,s.y); ctx.stroke();
+      ctx.strokeStyle="#ffffff"; ctx.globalAlpha=a;
+      ctx.beginPath(); ctx.moveTo(s.x,s.y-len); ctx.lineTo(s.x,s.y); ctx.stroke();
     }
     ctx.globalCompositeOperation="source-over";
     if(G.launch>0.45){
