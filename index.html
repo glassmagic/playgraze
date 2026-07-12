@@ -1167,6 +1167,45 @@ const AU = {
     a.start(t); b.start(t); lfo.start(t);
     a.stop(t+dur+0.03); b.stop(t+dur+0.03); lfo.stop(t+dur+0.03);
   },
+  engineStart(){
+    if(!this.ctx||this.engine) return;
+    const t=this.ctx.currentTime, a=this.ctx.createOscillator(), b=this.ctx.createOscillator(),
+      sub=this.ctx.createOscillator(), sh=this.ctx.createWaveShaper(),
+      f=this.ctx.createBiquadFilter(), g=this.ctx.createGain(), sg=this.ctx.createGain(),
+      lfo=this.ctx.createOscillator(), depth=this.ctx.createGain();
+    a.type="sawtooth"; b.type="sawtooth"; sub.type="sine"; lfo.type="triangle";
+    a.frequency.value=30; b.frequency.value=33; sub.frequency.value=36; lfo.frequency.value=9;
+    const curve=new Float32Array(256);
+    for(let i=0;i<curve.length;i++){ const x=i*2/(curve.length-1)-1; curve[i]=Math.tanh(x*2.6); }
+    sh.curve=curve; sh.oversample="2x";
+    f.type="lowpass"; f.Q.value=3.4; f.frequency.value=165;
+    depth.gain.value=52; sg.gain.value=0.58; g.gain.value=0.0001;
+    a.connect(sh); b.connect(sh); sh.connect(f); f.connect(g);
+    sub.connect(sg); sg.connect(g); g.connect(this.master);
+    lfo.connect(depth); depth.connect(f.frequency);
+    a.start(t); b.start(t); sub.start(t); lfo.start(t);
+    this.engine={a,b,sub,lfo,filter:f,gain:g,depth,last:-1,lastAt:-1};
+    this.engineSet(0,true);
+  },
+  engineSet(speed,force=false){
+    const e=this.engine; if(!e||!this.ctx) return;
+    const t=this.ctx.currentTime, v=Math.pow(clamp(speed,0,1),0.72);
+    if(!force && Math.abs(v-e.last)<0.018 && t-e.lastAt<0.12) return;
+    const tau=v>(e.last<0?0:e.last)?0.075:0.18;
+    const set=(p,value)=>{ p.cancelScheduledValues(t); p.setTargetAtTime(value,t,tau); };
+    set(e.gain.gain,0.0075+0.045*v);
+    set(e.a.frequency,30+50*v); set(e.b.frequency,33+54*v); set(e.sub.frequency,36+20*v);
+    set(e.filter.frequency,165+355*v); set(e.lfo.frequency,9+10*v); set(e.depth.gain,52+68*v);
+    e.last=v; e.lastAt=t;
+  },
+  engineStop(fade=0.3){
+    const e=this.engine; if(!e||!this.ctx) return;
+    this.engine=null;
+    const t=this.ctx.currentTime;
+    e.gain.gain.cancelScheduledValues(t);
+    e.gain.gain.setTargetAtTime(0.0001,t,Math.max(0.01,fade/4));
+    for(const o of [e.a,e.b,e.sub,e.lfo]){ try{o.stop(t+fade);}catch(err){} }
+  },
   warpCharge(){
     // a distorted, formant-like engine growl rolling through the first countdown beat
     this.growl(1.58,0.095);
@@ -2256,7 +2295,7 @@ function updatePlayer(dt){
       AU.warpSnap();
     }
     G.invuln=Math.max(G.invuln,0.8);
-    if(G.launch<=0){ G.warpFade=1.8; banner("SURVIVE"); AU.tone(520,0.2,"triangle",0.1,140); }
+    if(G.launch<=0){ G.warpFade=1.8; banner("SURVIVE"); AU.tone(520,0.2,"triangle",0.1,140); AU.engineStart(); }
     return;
   }
   let ax=0,ay=0,keyed=false;
@@ -2943,6 +2982,7 @@ function chooseCard(i){
 // ---------- death & meta (near-miss framing) ----------
 function startDeath(){
   G.state="dying"; G.deathT=0;
+  AU.engineStop(0.45);
   // the crash site becomes a singularity that swallows the whole arena
   G.deathHole={x:player.x,y:player.y,collapsed:false};
   zones=[]; waves=[]; bolts=[]; flail=null; G.arena=null; G.cine=null;
@@ -2988,6 +3028,7 @@ function showDeathScreen(){
 
 // ---------- run lifecycle ----------
 function startRun(carryWarp=false){
+  AU.engineStop(0.08);
   const carriedStars=carryWarp?G.warpStars:null;
   const carriedWarpIn=carryWarp?(G.warpInT||0):0;
   enemies=[];pbul=[];ebul=[];shards=[];parts=[];texts=[];zones=[];holes=[];bolts=[];waves=[];flail=null;flares=[];taken=[];queuedPilotCard=null;
@@ -3231,6 +3272,7 @@ function coachMsg(m){
 
 // ---------- back to menu from death ----------
 function goMenu(){
+  AU.engineStop(0.2);
   G.state="menu";
   queuedPilotCard=null;
   hideBanner();
@@ -4503,6 +4545,12 @@ function loop(now){
   for(let i=flares.length-1;i>=0;i--){
     flares[i].life-=dt;
     if(flares[i].life<=0) flares.splice(i,1);
+  }
+
+  // the continuous growl follows actual ship velocity, not input intent
+  if(AU.engine){
+    const moving=G.state==="playing" && G.launch<=0;
+    AU.engineSet(moving?Math.hypot(player.vx,player.vy)/Math.max(1,stats.speed):0);
   }
 
   // soundtrack: calm on menus, drums+bass in play, hook after 1:00, ghost hats after 2:30
