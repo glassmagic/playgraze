@@ -2135,26 +2135,34 @@ function reap(){
 }
 
 // ---------- player ----------
+function seedWarpStars(){
+  G.warpStars=[];
+  for(let k=0;k<150;k++)
+    G.warpStars.push({x:rnd(W),y:rnd(-H*0.2,H),sp:rnd(450,1500),b:rnd(0.2,1)});
+  G.warpInT=0; G.warpDigit=0; G.warpSnapped=false; G.warpStarted=false;
+}
+function moveWarpStars(dt,mul){
+  for(const s of G.warpStars){
+    s.y+=s.sp*mul*dt;
+    if(s.y>H+60){ s.y=rnd(-160,-40); s.x=rnd(W); s.sp=rnd(450,1500); s.b=rnd(0.2,1); }
+  }
+}
 function updatePlayer(dt){
   const s=stats;
   // warp arrival: streaking starfield, ARRIVING IN 3-2-1, then a hard snap out of warp
   if(G.launch>0){
     G.launch-=dt;
-    if(!G.warpStars){
-      G.warpStars=[];
-      for(let k=0;k<150;k++)
-        G.warpStars.push({x:rnd(W),y:rnd(-H*0.2,H),sp:rnd(450,1500),b:rnd(0.2,1)});
-      G.warpDigit=0; G.warpSnapped=false;
+    if(!G.warpStars) seedWarpStars();
+    if(!G.warpStarted){
+      G.warpStarted=true;
       AU.tone(70,2.0,"sawtooth",0.09,50);
     }
+    G.warpInT=Math.min(1.1,(G.warpInT||0)+dt);
     // full speed through the countdown, then a cubic collapse — the snap
     const mul=G.launch>0.45?1:Math.pow(clamp(G.launch/0.45,0,1),3);
     G.warpMul=mul;
     // stars pour in at the top and stream out the bottom
-    for(const s of G.warpStars){
-      s.y+=s.sp*mul*dt;
-      if(s.y>H+60){ s.y=rnd(-160,-40); s.x=rnd(W); s.sp=rnd(450,1500); s.b=rnd(0.2,1); }
-    }
+    moveWarpStars(dt,mul);
     // the ship rides the warp at frame center, vibrating with the drive
     player.x=W/2+rnd(-1.5,1.5)*mul; player.y=H/2+rnd(-1.5,1.5)*mul;
     player.vx=0; player.vy=0; player.angle=-Math.PI/2;
@@ -2906,7 +2914,9 @@ function showDeathScreen(){
 }
 
 // ---------- run lifecycle ----------
-function startRun(){
+function startRun(carryWarp=false){
+  const carriedStars=carryWarp?G.warpStars:null;
+  const carriedWarpIn=carryWarp?(G.warpInT||0):0;
   enemies=[];pbul=[];ebul=[];shards=[];parts=[];texts=[];zones=[];holes=[];bolts=[];waves=[];flail=null;flares=[];taken=[];queuedPilotCard=null;
   stats=baseStats();
   // daily streak bonus
@@ -2940,6 +2950,7 @@ function startRun(){
     invuln:1.2,shake:0,hitstop:0,timeScale:1,flash:0,
     spawnAcc:0,eliteAcc:0,introduced:{},scoredThisRun:0,musicAcc:0,arena:null,arenaAcc:0,bossN:0,
     cine:null,launch:2.25,miniDone:false,rushT:0,bossOrder:null,warpZoom:0,
+    warpStars:carriedStars,warpInT:carriedWarpIn,warpStarted:false,
   });
   G.introAt=rollIntroPlan();
   G.pactScore=1; G.pactGraze=1; G.pactEspd=1; G.pactEbul=1;
@@ -3045,6 +3056,9 @@ function tryStart(){
     // gliding it to center and rotating its heading to point up — then the warp takes over
     engaging=true;
     m.classList.add("engage");
+    // the warp field begins blooming under the title dive on this exact frame,
+    // then the same stars carry straight into the countdown
+    seedWarpStars();
     // freeze the ship's orbit angle now, so the tracking rotation aims at a FIXED
     // target and settles with zero angular velocity — the warp then picks it up
     // at the same value and the same (zero) velocity, so the seam has no kink
@@ -3054,7 +3068,7 @@ function tryStart(){
       // the reframe has already turned the demo ship upright. Carry only its zoom:
       // carrying the camera bank too would rotate the upright warp ship and countdown
       // a second time, then visibly unwind them as the numbers appear.
-      engaging=false; menuEngage=null; startRun();
+      engaging=false; menuEngage=null; startRun(true);
       G.warpZoom=1;
       m.classList.remove("engage");
       // hand back to the stylesheet so the menu is pristine next time it opens
@@ -3665,6 +3679,8 @@ function updateMenuDemo(now,dt){
     // the whole world turns as the camera swings to track the ship — the DOM text
     // rotates in lock-step with the canvas (same p and dAng), then blurs away into the warp
     menuEngage.t=Math.min(menuEngage.max,menuEngage.t+dt);
+    G.warpInT=Math.min(menuEngage.max,(G.warpInT||0)+dt);
+    moveWarpStars(dt,1);
     const q=menuEngage.t/menuEngage.max, p=q*q*(3-2*q);
     // glide the ship itself to center so the reframe ends as a pure center-pivot
     // rotation — identical to the warp's opening frame, so the handoff can't pop
@@ -4155,15 +4171,27 @@ function render(now){
     drawGlow(p.x,p.y,p.r*a+0.5,p.c,a*0.9);
   }
 
-  // warp arrival: streaks pouring top to bottom, chromatically fringed, countdown over the top
-  if(G.state==="playing" && G.warpStars){
-    const cx=W/2, cy=H/2, mul=G.launch>0?(G.warpMul===undefined?1:G.warpMul):0;
-    // grow the streaks, brightness and colour split together so warp blooms in smoothly
-    const inQ=G.launch>0?clamp((2.25-G.launch)/0.8,0,1):1;
+  // warp arrival: the same field blooms beneath ENGAGE, then carries into the countdown
+  const warpPreflight=G.state==="menu" && menuEngage;
+  if((G.state==="playing"||warpPreflight) && G.warpStars){
+    const cx=W/2, cy=H/2;
+    const mul=warpPreflight?1:(G.launch>0?(G.warpMul===undefined?1:G.warpMul):0);
+    // grow the streaks, brightness and colour split together from the button press
+    const inQ=clamp((G.warpInT||0)/1.1,0,1);
     const ramp=inQ*inQ*(3-2*inQ);
-    const fade=G.launch>0?ramp:clamp(G.warpFade/1.8,0,1);
-    const off=(2+8*mul)*ramp; // broad magenta/blue separation at full warp
+    const fade=(warpPreflight||G.launch>0)?ramp:clamp(G.warpFade/1.8,0,1);
+    const off=(1+2.2*mul)*ramp; // the restrained full-warp split is 3.2px
     ctx.save();
+    if(warpPreflight){
+      // keep the emerging streaks vertical while the menu world banks around them;
+      // the shared 1→1.35 zoom remains, so their scale is continuous at handoff
+      const q=menuEngage.t/menuEngage.max, p=q*q*(3-2*q);
+      let dAng=(-Math.PI/2)-(menuShip.a+Math.PI/2);
+      dAng=((dAng+Math.PI)%TAU+TAU)%TAU-Math.PI;
+      dAng=clamp(dAng,-0.8,0.8);
+      ctx.translate(menuShip.x,menuShip.y); ctx.rotate(-dAng*p);
+      ctx.translate(-menuShip.x,-menuShip.y);
+    }
     ctx.globalCompositeOperation="lighter";
     ctx.lineCap="round";
     for(const s of G.warpStars){
@@ -4180,7 +4208,7 @@ function render(now){
       ctx.beginPath(); ctx.moveTo(s.x,s.y-len); ctx.lineTo(s.x,s.y); ctx.stroke();
     }
     ctx.globalCompositeOperation="source-over";
-    if(G.launch>0.45){
+    if(G.state==="playing" && G.launch>0.45){
       const digit=Math.min(3,Math.max(1,Math.ceil((G.launch-0.45)/0.6)));
       const frac=((G.launch-0.45)-(digit-1)*0.6)/0.6; // 1→0 through each beat
       const a=Math.min(1,(1-frac)*5)*Math.min(1,frac*3+0.35);
