@@ -1193,9 +1193,9 @@ const AU = {
     if(!force && Math.abs(v-e.last)<0.018 && t-e.lastAt<0.12) return;
     const tau=v>(e.last<0?0:e.last)?0.08:0.22;
     const set=(p,value)=>{ p.cancelScheduledValues(t); p.setTargetAtTime(value,t,tau); };
-    set(e.gain.gain,0.0012+0.0188*v);
-    set(e.a.frequency,24+38*v); set(e.b.frequency,27+41*v); set(e.sub.frequency,29+13*v);
-    set(e.filter.frequency,120+280*v); set(e.lfo.frequency,7+8*v); set(e.depth.gain,35+50*v);
+    set(e.gain.gain,0.0024+0.0376*v); // exactly 2× across the whole effort range
+    set(e.a.frequency,24+56*v); set(e.b.frequency,27+60*v); set(e.sub.frequency,29+27*v);
+    set(e.filter.frequency,120+400*v); set(e.lfo.frequency,7+12*v); set(e.depth.gain,35+85*v);
     e.last=v; e.lastAt=t;
   },
   engineStop(fade=0.3){
