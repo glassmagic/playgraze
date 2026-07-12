@@ -2170,12 +2170,12 @@ function updatePlayer(dt){
       AU.tone(500+(3-digit)*160,0.12,"square",0.08,60);
     }
     if(G.launch<=0.45 && !G.warpSnapped){
-      G.warpSnapped=true; // out of warp — everything slams back to sublight
-      flashScreen(0.3); shake(9);
+      G.warpSnapped=true; // out of warp — everything slams back to sublight, no flash
+      shake(9);
       AU.noise(0.4,0.2,1600); AU.tone(180,0.5,"sawtooth",0.14,-120);
     }
     G.invuln=Math.max(G.invuln,0.8);
-    if(G.launch<=0){ G.warpFade=1.8; banner("SURVIVE"); flashScreen(0.12); AU.tone(520,0.2,"triangle",0.1,140); }
+    if(G.launch<=0){ G.warpFade=1.8; banner("SURVIVE"); AU.tone(520,0.2,"triangle",0.1,140); }
     return;
   }
   let ax=0,ay=0,keyed=false;
