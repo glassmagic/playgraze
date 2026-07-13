@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>GRAZE performance fixture</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#02030a;color:#dfe9ff;font:12px ui-monospace,Menlo,monospace}
+  iframe{position:fixed;inset:0;width:100%;height:100%;border:0}
+  #result{position:fixed;z-index:2;left:12px;bottom:12px;max-width:min(680px,calc(100vw - 48px));
+    white-space:pre-wrap;padding:12px 14px;border:1px solid #35507f;background:rgba(2,5,16,.9);box-shadow:0 0 24px #06122f}
+  html.mobile iframe{right:auto;bottom:auto;width:390px;height:700px;box-shadow:0 0 0 1px #35507f}
+  html.mobile #result{left:410px;bottom:12px;max-width:calc(100vw - 450px)}
+  .pass{border-color:#4eff8f!important}.fail{border-color:#ff5d7e!important;color:#ffd8df}
+</style>
+<iframe id="game" title="deterministic GRAZE stress scene"></iframe>
+<pre id="result">loading deterministic fixture…</pre>
+<script>
+"use strict";
+if(new URLSearchParams(location.search).has("mobile")) document.documentElement.classList.add("mobile");
+const frame=document.getElementById("game"), result=document.getElementById("result");
+const fixtureSource=String.raw`
+setTimeout(()=>{
+  try{
+    __fixtureSeed=0x51f15e;
+    AU.muted=true;
+    startRun(); G.launch=0; G.state="levelup"; G.invuln=99999; G.introAt=rollIntroPlan();
+    player.x=W/2; player.y=H/2; player.vx=player.vy=0;
+    stats.homing=1; stats.orbitals=2; stats.bloom=1; stats.chill=1; stats.nanites=1; G.kills=87;
+    for(const def of BOSS_KITS) meta.bossKills[def.kit]=1;
+    const types=Object.keys(ETYPES).filter(t=>t!=="courier");
+    for(let i=0;i<130;i++){
+      const e=spawnEnemy(types[i%types.length],i%13===0,40+(i*83)%(W-80),40+(i*47)%(H-80));
+      e.hp=e.maxhp=9999; e._fixtureId=i;
+    }
+    for(let i=0;i<400;i++){
+      const a=i*0.31;
+      addPbul(W/2+Math.cos(a)*rnd(80,380),H/2+Math.sin(a)*rnd(80,260),Math.cos(a)*300,Math.sin(a)*300,4,4,0,0,4,0);
+    }
+    for(let i=0;i<250;i++){
+      const a=i*0.23;
+      addEbul((i*61)%W,(i*37)%H,Math.cos(a)*100,Math.sin(a)*100,5,5);
+    }
+    for(let i=0;i<300;i++) addShard((i*67)%W,(i*41)%H,0,0,i%17===0?5:1,0,false,i);
+    DRONE_KEYS.forEach((id,i)=>{
+      const d=DRONES[id],a=i/DRONE_KEYS.length*TAU;
+      drones.push({id,x:W/2+Math.cos(a)*170,y:H/2+Math.sin(a)*130,hp:d.hp,maxhp:d.hp,r:d.r,fireT:0.12,spin:0,decay:d.hp/d.life});
+    });
+    burst(W/2,H/2,"#ff3df0",600,260,4,1.2);
+    rebuildEnemyGrid();
+
+    let parityChecks=0;
+    for(let i=0;i<240;i++){
+      const x=rnd(-40,W+40),y=rnd(-40,H+40),r=rnd(20,440);
+      const exact=enemies.filter(e=>!e.dead&&!e.eaten&&d2(x,y,e.x,e.y)<r*r).map(e=>e._fixtureId);
+      const grid=queryEnemies(x,y,r,enemyQueryC).filter(e=>d2(x,y,e.x,e.y)<r*r).map(e=>e._fixtureId).sort((a,b)=>a-b);
+      if(exact.length!==grid.length||exact.some((id,j)=>id!==grid[j])) throw Error("grid parity failed at query "+i);
+      const br=rnd(2,12);
+      const exactHit=enemies.filter(e=>!e.dead&&!e.eaten&&d2(x,y,e.x,e.y)<(br+e.r)*(br+e.r)).map(e=>e._fixtureId);
+      const gridHit=queryEnemies(x,y,br+enemyGridMaxR,enemyQueryC,true).filter(e=>d2(x,y,e.x,e.y)<(br+e.r)*(br+e.r)).map(e=>e._fixtureId);
+      if(exactHit.length!==gridHit.length||exactHit.some((id,j)=>id!==gridHit[j])) throw Error("collision parity failed at query "+i);
+      parityChecks+=2;
+    }
+
+    for(let i=0;i<12;i++) render(performance.now()+i*8.333);
+    const renderCounts={enemies:enemies.length,pbul:pbul.length,ebul:ebul.length,shards:shards.length,parts:parts.length,drones:drones.length};
+    const r0=performance.now();
+    for(let i=0;i<180;i++) render(r0+i*8.333);
+    const renderMs=(performance.now()-r0)/180;
+    const u0=performance.now();
+    for(let i=0;i<120;i++){ rebuildEnemyGrid(); updateBullets(0); }
+    const bulletMs=(performance.now()-u0)/120;
+    syncHUD(1);
+    const uniform=list=>{
+      if(!list.length) return true;
+      const shape=Object.keys(list[0]).join("|");
+      return list.every(o=>Object.keys(o).join("|")===shape);
+    };
+    if(!uniform(pbul)||!uniform(ebul)||!uniform(shards)||!uniform(parts)) throw Error("transient object shape drift");
+    const poolProbe=takeTransient("text"), poolList=[poolProbe]; poolProbe.dead=1; compactDead(poolList,"text");
+    const reusedProbe=takeTransient("text");
+    if(reusedProbe!==poolProbe) throw Error("transient pool failed to reuse an object");
+    reusedProbe.dead=1; poolList.push(reusedProbe); compactDead(poolList,"text");
+    holes.push({x:W*0.35,y:H*0.45,t:4,soft:true});
+    holes.push({x:W*0.68,y:H*0.56,t:4,soft:false});
+    zones.push({x:W*0.58,y:H*0.42,r:74,t:0.4,max:0.4});
+    stats.magnet=0;
+    for(let frame=0;frame<120;frame++){
+      const dt=1/60; G.t+=dt;
+      rebuildEnemyGrid(); updatePlayer(dt); updateDrones(dt); updateEnemies(dt); rebuildEnemyGrid();
+      updateBullets(dt); updateWaves(dt); updateFlail(dt); updateShards(dt); updateZones(dt); updateHoles(dt); updateArena(dt); reap();
+    }
+    const simulationDigest={
+      score:G.score,kills:G.kills,xp:+G.xp.toFixed(3),enemies:enemies.length,pbul:pbul.length,ebul:ebul.length,
+      shards:shards.length,drones:drones.length,
+      enemyX:+enemies.reduce((n,e)=>n+e.x,0).toFixed(3),enemyY:+enemies.reduce((n,e)=>n+e.y,0).toFixed(3),
+    };
+    const summary={
+      pass:true,parityChecks,poolReuseChecks:1,shapeChecks:4,viewport:W+"×"+H+" @"+DPR+"x",renderMs:+renderMs.toFixed(3),bulletMs:+bulletMs.toFixed(3),
+      renderCounts,
+      simulationDigest,
+      note:"Lower timings are better; compare on the same browser and hardware."
+    };
+    parent.postMessage({type:"graze-perf",summary},"*");
+  }catch(error){ parent.postMessage({type:"graze-perf",summary:{pass:false,error:error.stack||String(error)}},"*"); }
+},0);
+`;
+window.addEventListener("message",event=>{
+  if(event.source!==frame.contentWindow||event.data?.type!=="graze-perf") return;
+  const data=event.data.summary;
+  result.className=data.pass?"pass":"fail";
+  result.textContent=(data.pass?"PASS — deterministic performance fixture\n":"FAIL — deterministic performance fixture\n")+JSON.stringify(data,null,2);
+});
+fetch("index.html",{cache:"no-store"}).then(r=>r.text()).then(html=>{
+  const strict='"use strict";';
+  const at=html.indexOf(strict);
+  if(at<0) throw Error("main script marker not found");
+  html=html.slice(0,at+strict.length)+'\nlet __fixtureSeed=0x51f15e; Math.random=()=>{__fixtureSeed=(__fixtureSeed*1664525+1013904223)>>>0;return __fixtureSeed/4294967296;};'+html.slice(at+strict.length);
+  const end=html.lastIndexOf("<"+"/script>");
+  if(end<0) throw Error("main script end not found");
+  frame.srcdoc=html.slice(0,end)+"\n"+fixtureSource+"\n"+html.slice(end);
+}).catch(error=>{ result.className="fail"; result.textContent=error.stack||String(error); });
+</script>
+</html>

@@ -7,6 +7,7 @@ GRAZE is a neon survival arena ("danger pays") that lives at **https://playgraze
 | File | What it is |
 |---|---|
 | `index.html` | The whole game: CSS, HTML overlays, and ~3,600 lines of vanilla JS on one `<canvas>`. All audio is synthesized (Web Audio), including the soundtrack. |
+| `perf-fixture.html` | Deterministic browser-only stress scene. It loads `index.html`, seeds randomness, verifies spatial-grid parity, and reports render/bullet timings without a build step. |
 | `netlify/functions/scores.mjs` | Leaderboard API at `/api/scores`, storing into Netlify Blobs (store `leaderboard`, key `scores`). |
 | `manifest.json`, `sw.js`, `icon.svg` | PWA: installable via SETTINGS → INSTALL. The service worker is network-first for the shell so deploys land instantly. |
 | `package.json` | Only exists to pin `@netlify/blobs` for the function bundle. Netlify runs `npm ci` automatically — there is still no build command. |
@@ -92,6 +93,7 @@ Real players exist (Peter T., Conrad-Peter T., Shaunak, AdamP, DanDan…). Their
 - **Cheat mode**: the hidden hotspot is the top-left of the Z in the menu wordmark. Its entry string is validated against a SHA-256 digest; never put the plaintext in the repository. Enabling snapshots the entire pre-cheat `meta`, grants every weapon/ship/pilot plus max ship systems and 999,999 cores, and persists a CHEAT MODE badge. Disabling restores the snapshot exactly and returns to the menu. Cheat runs cannot submit leaderboard scores. Because every pilot is pre-unlocked, cheat-mode prisoner pickups choose a random non-REX dossier so rescue-card testing still works.
 - **Cinematics**: launch flythrough (`G.launch`), boss intro/kill-cam (`G.cine`), death singularity (drags everything in, camera push, collapse flash, canvas snapshot idea was removed), staggered SIGNAL LOST entrance, count-up score, analog title flicker.
 - **Background**: pre-baked nebula sprites + stars + wreckage debris on an ever-running camera tour (`cam`: drift 5–12px/s, glides 40–70px/s every 15–30s).
+- **Performance**: enemies are indexed into a 160px spatial grid twice per live frame (before and after enemy movement); every candidate still gets the original exact distance test. Hot transient objects (bullets, shards, particles, texts, bolts, flares, Death Bloom rings) use fixed-shape pools plus stable compaction instead of per-hit `splice`. Glow/RGB/path/audio-noise data and HUD nodes are cached. `perf-fixture.html` is the repeatable browser stress/parity check; compare its timings only on the same browser and hardware.
 
 ## Key decisions & their reasons (not visible in code)
 

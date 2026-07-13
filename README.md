@@ -46,3 +46,5 @@ Progress saves to `localStorage` (a double-click reset button in settings wipes 
 - Cinematic dressing (film grain, letterboxing, color grade, anamorphic title flare) is done in CSS on top of the canvas; in-engine cinematics — the launch flythrough, boss intro slow-mo, kill-cam, and a parallax wreckage layer — run on the canvas itself.
 - Works with touch — the ship follows your finger.
 - Installable as a **PWA** (settings → INSTALL): a service worker keeps the shell cached for instant, offline-capable launches while deploys still land immediately.
+
+For repeatable performance checks, serve the repository locally and open [`perf-fixture.html`](perf-fixture.html). It seeds the game, validates broad-phase collision parity, runs a fixed stress simulation, and reports same-machine render/update timings. Add `?mobile` for the 390×700 narrow-screen fixture.
