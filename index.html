@@ -88,6 +88,16 @@
     box-shadow:0 0 12px #ffb84e;transition:width .1s;}
   #surgewrap.full #surgelabel{color:#ffd84e;text-shadow:0 0 10px #ffb84e;animation:pulse 1.2s infinite alternate;}
   #surgewrap.full #surgebg{box-shadow:0 0 18px #ffb84e;}
+  /* consumable drone bay — number keys on desktop, the same eight slots are tappable */
+  #dronewrap{position:absolute;bottom:57px;right:18px;width:244px;text-align:right;
+    pointer-events:auto;padding:6px 0 0 6px;opacity:.92;}
+  #dronelabel{font-size:9px;letter-spacing:2px;color:#9ef7ff;margin-bottom:4px;white-space:nowrap;}
+  #droneSlots{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;}
+  .droneSlot{font:inherit;height:20px;padding:0 4px;border:1px solid rgba(78,243,255,.32);border-radius:2px;
+    background:rgba(5,12,28,.82);color:#9ef7ff;font-size:8px;letter-spacing:1px;cursor:pointer;white-space:nowrap;}
+  .droneSlot:hover:not(.empty){border-color:#fff;box-shadow:0 0 9px rgba(78,243,255,.45);}
+  .droneSlot.empty{opacity:.32;color:#7d92b8;cursor:default;border-color:rgba(140,170,220,.18);}
+  .droneSlot b{color:#fff;font-weight:700;}
   @keyframes pulse{from{opacity:.6;}to{opacity:1;}}
   /* banner */
   #banner{position:absolute;top:26%;left:0;right:0;text-align:center;pointer-events:none;
@@ -371,13 +381,24 @@
   #sTitle{font-size:26px;letter-spacing:14px;font-weight:200;color:#eef6ff;
     font-family:"Helvetica Neue","Inter",-apple-system,"Segoe UI",Arial,sans-serif;}
   #sCores{margin-top:10px;color:#ffd84e;letter-spacing:3px;font-size:13px;text-shadow:0 0 10px rgba(255,216,78,.5);}
-  #sTabs{margin:26px 0 22px;display:flex;gap:8px;}
+  #sTabs{margin:26px 0 22px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:920px;}
   .stab{font-size:10px;letter-spacing:3px;color:#7d92b8;padding:9px 18px;cursor:pointer;
     border:1px solid rgba(140,170,220,.2);border-radius:3px;background:rgba(10,14,30,.5);
     transition:all .15s;}
   .stab:hover{color:#fff;border-color:var(--c1);}
   .stab.sel{color:#04040c;background:var(--c1);border-color:var(--c1);font-weight:700;}
-  #sWeapons,#sHulls,#sPilots{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:740px;}
+  .stab.gated{color:#5a6e92;border-style:dashed;}
+  #sWeapons,#sDrones,#sHulls,#sPilots{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:740px;}
+  #sDrones .wcard{min-width:220px;max-width:235px;}
+  #sDrones .droneLock{width:min(620px,88vw);padding:28px 24px;border:1px dashed rgba(180,140,255,.38);
+    border-radius:5px;background:rgba(10,8,28,.7);text-align:center;}
+  .droneLock .dlk{font-size:9px;letter-spacing:5px;color:#b48cff;}
+  .droneLock .dlt{margin-top:10px;font-size:18px;letter-spacing:6px;color:#eef6ff;}
+  .droneLock .dlb{margin-top:12px;font-size:10px;line-height:1.8;letter-spacing:1.5px;color:#7d92b8;}
+  .droneLock .dlbosses{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-top:18px;}
+  .droneLock .dlboss{padding:7px 10px;border:1px solid rgba(140,170,220,.18);color:#5a6e92;
+    font-size:8px;letter-spacing:1.5px;}
+  .droneLock .dlboss.done{color:#7fe8a8;border-color:rgba(127,232,168,.45);}
   #sPilots .wcard{min-width:200px;max-width:220px;}
   .wcard{padding:12px 16px;border:1px solid rgba(140,170,220,.25);border-radius:4px;cursor:pointer;
     text-align:center;min-width:128px;transition:all .15s;background:rgba(10,14,30,.6);}
@@ -539,12 +560,13 @@
   .tCore{font-size:42px;color:#ffd84e;text-shadow:0 0 20px rgba(255,216,78,.7);
     animation:pulse .8s infinite alternate;}
   /* first-run coach hints */
-  #coach{position:absolute;bottom:64px;left:0;right:0;text-align:center;font-size:11px;
+  #coach{position:absolute;bottom:140px;left:0;right:0;text-align:center;font-size:11px;
     letter-spacing:3px;color:#9fb6d8;opacity:0;transition:opacity .5s;pointer-events:none;
     text-shadow:0 1px 8px rgba(0,0,0,.9);}
   #coach.on{opacity:1;}
   #muteBtn{position:absolute;bottom:82px;right:26px;font-size:9px;color:#5a6e92;letter-spacing:2px;
     cursor:pointer;pointer-events:auto;z-index:6;opacity:.7;transition:opacity .2s;}
+  #hud.on~#muteBtn{bottom:125px;}
   /* the scrolling overlays have their own room — get the floating toggle out of the way */
   #tut.on~#muteBtn,#store.on~#muteBtn,#board.on~#muteBtn,#settings.on~#muteBtn,#shareCard.on~#muteBtn,
   #death.on~#muteBtn{opacity:0;pointer-events:none;}
@@ -564,7 +586,8 @@
     #store{padding:34px 0 30px;}
     #sTitle{font-size:20px;letter-spacing:10px;}
     #sTabs{margin:18px 0 16px;} .stab{padding:8px 12px;letter-spacing:2px;}
-    #sWeapons,#sHulls,#sPilots{gap:8px;width:94vw;}
+    #sWeapons,#sDrones,#sHulls,#sPilots{gap:8px;width:94vw;}
+    #sDrones .wcard{min-width:0;max-width:none;}
     .wcard{min-width:0;flex:1 1 calc(50% - 8px);padding:10px 8px;}
     #sShip{width:94vw;gap:6px;}
     .srow{flex-wrap:wrap;gap:8px 12px;padding:10px 12px;}
@@ -581,6 +604,7 @@
     #pilotContinue{margin-top:14px;}
     #cheatBadge{top:50px;right:10px;font-size:8px;letter-spacing:2px;padding:6px 8px;}
     .cheatPanel{padding:24px 20px;}
+    #coach{left:8px;right:8px;font-size:9px;letter-spacing:2px;}
   }
 </style>
 </head>
@@ -609,6 +633,10 @@
     <div id="surgewrap">
       <div id="surgelabel">SURGE — SPACE</div>
       <div id="surgebg"><div id="surgebar"></div></div>
+    </div>
+    <div id="dronewrap">
+      <div id="dronelabel">DRONE BAY — NUMBER KEYS</div>
+      <div id="droneSlots"></div>
     </div>
     <div id="coach"></div>
   </div>
@@ -679,12 +707,14 @@
     <div id="sCores"></div>
     <div id="sTabs">
       <span class="stab sel" data-tab="weapons">WEAPONS</span>
+      <span class="stab" data-tab="drones">DRONES</span>
       <span class="stab" data-tab="hulls">SHIPS</span>
       <span class="stab" data-tab="pilots">PILOTS</span>
       <span class="stab" data-tab="ship">SHIP SYSTEMS</span>
       <span class="stab" data-tab="paint">PAINTWORK</span>
     </div>
     <div id="sWeapons"></div>
+    <div id="sDrones"></div>
     <div id="sHulls"></div>
     <div id="sPilots"></div>
     <div id="sShip"></div>
@@ -804,7 +834,7 @@ const lerp = (a,b,t)=> a+(b-a)*t;
 const d2 = (ax,ay,bx,by)=>{const dx=ax-bx,dy=ay-by;return dx*dx+dy*dy;};
 const fmtT = s =>{s|=0;return ((s/60)|0)+":"+("0"+(s%60)).slice(-2);};
 const fmtN = n => (n|0).toLocaleString("en-US");
-const VERSION="1.18.0"; // bump the minor on every PR — shown in settings to track deploys
+const VERSION="1.19.0"; // bump the minor on every PR — shown in settings to track deploys
 const CHEAT_DIGEST="ec32b0485b795525c4e600167c76ecb6e7fcc17c3afa27649b705e25022a5c93";
 
 // ---------- persistence ----------
@@ -815,7 +845,7 @@ const store = {
 const meta = Object.assign({
   best:0, totalScore:0, runs:0, scheme:"pulse",
   streak:0, lastDay:"", muted:false,
-  cores:0, weapon:"pulse", owned:null, shop:null, player:""
+  cores:0, weapon:"pulse", owned:null, shop:null, player:"", droneStock:null, bossKills:null
 }, store.load());
 meta.owned = Object.assign({pulse:true}, meta.owned||{});
 meta.shop  = Object.assign({gun:0,cycle:0,hull:0,thrust:0,magnet:0,graze:0,surge:0,luck:0}, meta.shop||{});
@@ -824,6 +854,11 @@ meta.hull  = meta.hull||"vector";
 meta.pilot = meta.pilot||"rex";
 meta.pilots = Object.assign({rex:true}, meta.pilots||{});
 meta.hulls = Object.assign({vector:true}, meta.hulls||{});
+meta.droneStock = Object.assign({}, meta.droneStock||{});
+meta.bossKills = Object.assign({}, meta.bossKills||{});
+// migrate the original one-blueprint save shape into one consumable unit of each purchase
+for(const id in (meta.drones||{})){ if(meta.drones[id] && !meta.droneStock[id]) meta.droneStock[id]=1; }
+delete meta.drone; delete meta.drones;
 
 // daily streak (a reason to come back tomorrow)
 (function(){
@@ -878,6 +913,43 @@ const WEAPONS = {
   conradiator:{nm:"CONRADIATOR",ds:"spool-up bullet hose — starts steady, ends ferocious, vents at full heat",price:4200},
   well:   {nm:"SINGULARITY SEED",ds:"every 6th shot plants a gravity well",price:5500},
 };
+// deployable hangar hardware — each purchase adds one consumable unit to the bay.
+// Multiple units can fight together; integrity drains naturally and under enemy fire/contact.
+const DRONES = {
+  watchdog:{nm:"WATCHDOG",short:"WDG", role:"BALLISTIC SENTRY", ds:"cheap rapid-fire point defence", price:2000,
+    hp:260,life:38,aggro:620,r:13,c:"#4ef3ff",kind:"gun",range:540,rate:0.28,dmg:18},
+  arc:{nm:"ARC NODE",short:"ARC", role:"CHAIN LIGHTNING", ds:"forks electricity through four clustered enemies", price:4000,
+    hp:220,life:32,aggro:660,r:13,c:"#b48cff",kind:"arc",range:470,rate:1.05,dmg:24,chains:4},
+  helios:{nm:"HELIOS",short:"HEL", role:"CUTTING LASER", ds:"long-range beam pierces packed targets", price:7000,
+    hp:180,life:24,aggro:540,r:12,c:"#ffd84e",kind:"laser",range:640,rate:0.09,dmg:8,pierce:3},
+  mortar:{nm:"MORTAR",short:"MRT", role:"AREA BOMBARDMENT", ds:"slow heavy blasts erase dense enemy packs", price:10000,
+    hp:320,life:42,aggro:780,r:16,c:"#ff9b3d",kind:"mortar",range:760,rate:2.2,dmg:55,blast:120},
+  bastion:{nm:"BASTION",short:"BST", role:"FLAK DEFENCE", ds:"intercepts waves of hostile projectiles", price:14000,
+    hp:420,life:44,aggro:840,r:17,c:"#7dffe0",kind:"flak",range:175,rate:0.16},
+  graviton:{nm:"GRAVITON",short:"GRV", role:"CROWD CONTROL", ds:"drags the horde into a tight kill pocket", price:19000,
+    hp:480,life:48,aggro:960,r:18,c:"#cf7dff",kind:"gravity",range:300,pull:1350},
+  patcher:{nm:"PATCHER",short:"PTC", role:"FIELD REPAIR", ds:"restores hull, then repels nearby enemies", price:25000,
+    hp:240,life:30,aggro:580,r:14,c:"#7fe8a8",kind:"repair",rate:8},
+  siren:{nm:"SIREN",short:"SRN", role:"MAXIMUM DECOY", ds:"enormous integrity. extreme attraction. hostile pulse.", price:32000,
+    hp:1100,life:55,aggro:1500,r:20,c:"#ff3df0",kind:"decoy",rate:1.6,range:250},
+};
+const DRONE_KEYS=Object.keys(DRONES);
+const DRONE_BOSS_IDS=["voidmaw","hex","tyrant","cannibal"];
+const DRONE_BOSS_NAMES={voidmaw:"VOIDMAW",hex:"HEXAGON PRIME",tyrant:"NULL TYRANT",cannibal:"THE CANNIBAL"};
+function droneBossProgress(){ return DRONE_BOSS_IDS.filter(id=>meta.bossKills[id]).length; }
+function dronesUnlocked(){ return droneBossProgress()===DRONE_BOSS_IDS.length; }
+function recordDroneBossKill(e){
+  if(e.mini||!DRONE_BOSS_IDS.includes(e.kit)||meta.bossKills[e.kit]) return;
+  meta.bossKills[e.kit]=true; store.save(meta);
+  const progress=droneBossProgress();
+  if(dronesUnlocked()){
+    banner("⬡ DRONE BAY UNLOCKED ⬡");
+    ftext(e.x,e.y-62,"ALL FOUR SIGNALS BROKEN", "#b48cff",18);
+    AU.levelup(); flashScreen(0.25);
+  } else {
+    ftext(e.x,e.y-62,"BOSS ARCHIVE "+progress+" / 4", "#b48cff",15);
+  }
+}
 // ship hulls — real tradeoffs, chosen before a run. size is honest: it scales
 // the drawn ship AND the hitbox
 const HULLS = {
@@ -993,6 +1065,8 @@ const cloneSave=v=>JSON.parse(JSON.stringify(v));
 function applyCheatEntitlements(){
   meta.cores=999999;
   for(const id of Object.keys(WEAPONS)){ meta.owned[id]=true; meta.seen[id]=true; }
+  for(const id of DRONE_BOSS_IDS) meta.bossKills[id]=true;
+  for(const id of DRONE_KEYS) meta.droneStock[id]=99;
   for(const id of Object.keys(HULLS)) meta.hulls[id]=true;
   for(const id of Object.keys(PILOTS)) meta.pilots[id]=true;
   for(const it of SHOP) meta.shop[it.id]=it.max;
@@ -1063,7 +1137,9 @@ function disableCheatMode(){
   if(backup) Object.assign(meta,backup);
   else Object.assign(meta,{best:0,totalScore:0,runs:0,scheme:"pulse",streak:1,lastDay:"",muted:false,
     cores:0,weapon:"pulse",owned:{pulse:true},shop:{gun:0,cycle:0,hull:0,thrust:0,magnet:0,graze:0,surge:0,luck:0},
-    player:"",seen:{},hull:"vector",hulls:{vector:true},pilot:"rex",pilots:{rex:true}});
+    player:"",seen:{},hull:"vector",hulls:{vector:true},pilot:"rex",pilots:{rex:true},droneStock:{},bossKills:{}});
+  meta.droneStock=Object.assign({},meta.droneStock||{});
+  meta.bossKills=Object.assign({},meta.bossKills||{});
   store.save(meta);
   AU.muted=!!meta.muted;
   if(AU.master) AU.master.gain.value=AU.muted?0:0.5;
@@ -1546,6 +1622,12 @@ window.addEventListener("keydown",audioUnlock,{once:true});
 window.addEventListener("pointerdown",e=>{ mouseX=e.clientX; mouseY=e.clientY; mouseActive=true; });
 document.getElementById("muteBtn").addEventListener("pointerdown",e=>{e.stopPropagation(); AU.toggle();});
 document.getElementById("surgewrap").addEventListener("pointerdown",e=>{e.stopPropagation(); tryNova();});
+for(let i=0;i<DRONE_KEYS.length;i++){
+  const id=DRONE_KEYS[i], b=document.createElement("button");
+  b.className="droneSlot empty"; b.dataset.drone=id;
+  b.addEventListener("pointerdown",e=>{e.stopPropagation();deployDrone(id);});
+  document.getElementById("droneSlots").appendChild(b);
+}
 
 // ---------- game state ----------
 const G = {
@@ -1556,11 +1638,12 @@ const G = {
   shake:0, hitstop:0, timeScale:1, deathT:0,
   flash:0, lastBanner:-99, musicAcc:0,
   spawnAcc:0, eliteAcc:0, introduced:{},
-  scoredThisRun:0,
+  scoredThisRun:0, enemyLateLevel:0, enemyDamageCarry:0,
 };
 const player = { x:0,y:0,vx:0,vy:0,r:9,angle:0,fireT:0,trail:[] };
 let enemies=[], pbul=[], ebul=[], shards=[], parts=[], texts=[], zones=[], holes=[], bolts=[], orbAngle=0;
 let waves=[], flail=null;
+let drones=[];
 let flares=[]; // anamorphic streaks for the big beats
 function addFlare(x,y,w,c,life=0.45){ flares.push({x,y,w,c,life,max:life}); }
 
@@ -1660,6 +1743,115 @@ function bumpCombo(n=1){
   if(m>G.peakMult) G.peakMult=m;
 }
 
+// ---------- deployable drones ----------
+function deployDrone(id){
+  if(G.state!=="playing"||G.launch>0) return;
+  if(!dronesUnlocked()){ AU.deny(); return; }
+  const d=DRONES[id], stock=meta.droneStock[id]||0;
+  if(!d||stock<=0){ AU.deny(); return; }
+  meta.droneStock[id]=stock-1; store.save(meta);
+  const dr={id,x:player.x,y:player.y,hp:d.hp,maxhp:d.hp,r:d.r,fireT:d.kind==="repair"?d.rate:0.12,
+    spin:0,decay:d.hp/d.life};
+  drones.push(dr);
+  burst(dr.x,dr.y,d.c,20,260,3.4,0.55);
+  addFlare(dr.x,dr.y,360,hex2rgb(d.c).slice(4,-1),0.38);
+  ftext(dr.x,dr.y-30,d.nm+" ONLINE",d.c,16);
+  banner("⬡ "+d.nm+" DEPLOYED ⬡");
+  AU.teleport(); shake(3);
+}
+function dronePower(n){
+  return n*(1+G.t/75)*(1+0.08*(meta.shop.gun||0));
+}
+function droneTarget(dr,range){
+  let best=null, bd=range*range;
+  for(const e of enemies){
+    if(e.hp<=0||e.eaten) continue;
+    const dd=d2(dr.x,dr.y,e.x,e.y);
+    if(dd<bd){ bd=dd; best=e; }
+  }
+  return best;
+}
+function destroyDrone(i){
+  const dr=drones[i]; if(!dr) return;
+  const d=DRONES[dr.id], x=dr.x, y=dr.y;
+  drones.splice(i,1);
+  burst(x,y,d.c,28,360,4,0.7); burst(x,y,"#ffffff",10,220,2.5,0.4);
+  addFlare(x,y,420,hex2rgb(d.c).slice(4,-1),0.45);
+  ftext(x,y-24,d.nm+" LOST","#ff5d7e",16);
+  banner("DRONE SIGNAL LOST");
+  AU.boom(); shake(6);
+}
+function updateDrones(dt){
+  for(let i=drones.length-1;i>=0;i--){
+    const dr=drones[i], d=DRONES[dr.id];
+    dr.hp-=dr.decay*dt;
+    dr.fireT-=dt; dr.spin+=dt*(d.kind==="gravity"?2.2:4.5);
+    if(dr.hp<=0){ destroyDrone(i); continue; }
+    if(d.kind==="gravity"){
+      for(const e of enemies){
+        if(e.boss||e.hp<=0) continue;
+        const dx=dr.x-e.x, dy=dr.y-e.y, dd=Math.hypot(dx,dy)||1;
+        if(dd<d.range){
+          const f=(1-dd/d.range)*d.pull;
+          e.vx+=dx/dd*f*dt; e.vy+=dy/dd*f*dt; e.slowT=Math.max(e.slowT||0,0.12);
+        }
+      }
+      continue;
+    }
+    if(dr.fireT>0) continue;
+    dr.fireT=d.rate;
+    if(d.kind==="gun"||d.kind==="laser"){
+      const e=droneTarget(dr,d.range); if(!e) continue;
+      const a=Math.atan2(e.y-dr.y,e.x-dr.x), sp=d.kind==="laser"?950:620;
+      pbul.push({x:dr.x,y:dr.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,r:d.kind==="laser"?3:4,
+        dmg:dronePower(d.dmg),pierce:d.pierce||0,bounces:0,life:d.range/sp,home:0,droneShot:1,c:d.c});
+      if(d.kind==="laser") bolts.push({pts:[{x:dr.x,y:dr.y},{x:e.x,y:e.y}],life:0.055,max:0.055,c:d.c,w:1.4});
+    } else if(d.kind==="arc"){
+      const first=droneTarget(dr,d.range); if(!first) continue;
+      const hit=[], pts=[{x:dr.x,y:dr.y}]; let cur=first;
+      for(let k=0;k<d.chains&&cur;k++){
+        hit.push(cur); pts.push({x:cur.x,y:cur.y}); cur.hp-=dronePower(d.dmg*(1-k*0.12)); cur.hitT=0.1;
+        let next=null,bd=190*190;
+        for(const e of enemies){ if(hit.includes(e)||e.hp<=0) continue; const dd=d2(cur.x,cur.y,e.x,e.y); if(dd<bd){bd=dd;next=e;} }
+        cur=next;
+      }
+      bolts.push({pts,life:0.14,max:0.14,c:d.c,w:2.7}); AU.tone(760,0.07,"triangle",0.045,180);
+    } else if(d.kind==="mortar"){
+      const e=droneTarget(dr,d.range); if(!e) continue;
+      const x=e.x,y=e.y;
+      burst(x,y,d.c,18,320,3.5,0.55); addFlare(x,y,260,hex2rgb(d.c).slice(4,-1),0.28);
+      for(const o of enemies){ if(d2(x,y,o.x,o.y)<d.blast*d.blast){ o.hp-=dronePower(d.dmg); o.hitT=0.12; } }
+      AU.mortar(); shake(3);
+    } else if(d.kind==="flak"){
+      let n=0;
+      for(let j=ebul.length-1;j>=0&&n<7;j--){
+        if(d2(dr.x,dr.y,ebul[j].x,ebul[j].y)<d.range*d.range){
+          burst(ebul[j].x,ebul[j].y,d.c,3,130,2,0.25); ebul.splice(j,1); n++;
+        }
+      }
+      if(n){ AU.tone(1100,0.045,"square",0.03,-250); }
+    } else if(d.kind==="repair"){
+      if(G.hp<G.maxHp){
+        G.hp=Math.min(G.maxHp,G.hp+1); drawHearts(); ftext(player.x,player.y-28,"+ HULL — PATCHER",d.c,14);
+        burst(player.x,player.y,d.c,12,190,2.6,0.45); AU.coin();
+      } else {
+        for(const e of enemies){
+          const dx=e.x-dr.x,dy=e.y-dr.y,dd=Math.hypot(dx,dy)||1;
+          if(dd<170){ e.vx+=dx/dd*260; e.vy+=dy/dd*260; }
+        }
+      }
+    } else if(d.kind==="decoy"){
+      burst(dr.x,dr.y,d.c,9,180,2.5,0.35);
+      for(const e of enemies){
+        if(e.boss||e.hp<=0) continue;
+        const dx=e.x-dr.x,dy=e.y-dr.y,dd=Math.hypot(dx,dy)||1;
+        if(dd<d.range){ e.vx+=dx/dd*300; e.vy+=dy/dd*300; e.hp-=dronePower(5); }
+      }
+      AU.tone(140,0.1,"sine",0.045,40);
+    }
+  }
+}
+
 // ---------- enemies ----------
 const ETYPES = {
   chaser:  {r:11, hp:18,  sc:10, c:"#ff3df0", at:0,   name:null},
@@ -1679,6 +1871,18 @@ const ETYPES = {
 };
 const WSPAWN={chaser:3,drifter:1.5,weaver:1.4,phantom:1.0,sniper:1.2,charger:1.1,splitter:1.2,mortar:0.6,tank:0.7,
   warden:1.0,bomber:0.7,leech:1.0};
+// after ten minutes, every completed additional minute adds another 10% enemy hull and damage
+function enemyLateLevel(){ return Math.max(0,Math.floor(Math.max(0,G.t-600)/60+1e-9)); }
+function enemyLateScale(){ return 1+enemyLateLevel()*0.1; }
+function updateLateEnemyScaling(){
+  const level=enemyLateLevel(), old=G.enemyLateLevel||0;
+  if(level<=old) return;
+  const factor=(1+level*0.1)/(1+old*0.1);
+  for(const e of enemies){ e.hp*=factor; e.maxhp*=factor; }
+  G.enemyLateLevel=level;
+  banner("⚠ DEEP SPACE PRESSURE +"+(level*10)+"% ⚠");
+  AU.warn(); flashScreen(0.08);
+}
 function spawnEnemy(type, elite=false, px, py){
   const t = ETYPES[type];
   let x,y;
@@ -1688,7 +1892,7 @@ function spawnEnemy(type, elite=false, px, py){
     if(side===0){x=rnd(W);y=-m;} else if(side===1){x=W+m;y=rnd(H);}
     else if(side===2){x=rnd(W);y=H+m;} else {x=-m;y=rnd(H);}
   }
-  const hpScale = (1 + G.t/75)*(MUT.ehp||1);
+  const hpScale = (1 + G.t/75)*(MUT.ehp||1)*enemyLateScale();
   // elites carry an affix — each warps the fight a different way
   const affix = elite ? pick(["shield","split","spray"]) : null;
   const hpMul = (elite?5:1) * (affix==="shield"?1.8:1);
@@ -1812,7 +2016,7 @@ function spawnBoss(mini=false){
   const side=(Math.random()*4)|0, m=80; let x,y;
   if(side===0){x=rnd(W);y=-m;} else if(side===1){x=W+m;y=rnd(H);}
   else if(side===2){x=rnd(W);y=H+m;} else {x=-m;y=rnd(H);}
-  const hp=(mini?520:4500*G.bossN)*(1+G.t/300)*(MUT.ehp||1);
+  const hp=(mini?520:4500*G.bossN)*(1+G.t/300)*(MUT.ehp||1)*enemyLateScale();
   enemies.push({
     type:"boss", boss:true, mini, name, kit:def.kit, x, y, vx:0, vy:0, r:mini?30:42,
     hp, maxhp:hp, sc:mini?250:600*G.bossN, c:def.c, elite:false, affix:null,
@@ -1956,7 +2160,8 @@ function updateArena(dt){
     if(a.warn>0) a.warn-=dt;
     else {
       a.x+=a.dir*a.speed*dt;
-      if(Math.abs(player.x-a.x)<12) damagePlayer();
+      if(Math.abs(player.x-a.x)<12) damagePlayer(1); // arena hazard, not enemy damage
+      for(const dr of drones){ if(Math.abs(dr.x-a.x)<dr.r+8) dr.hp-=180*dt; }
       for(const e of enemies){ if(Math.abs(e.x-a.x)<14){ e.hp-=140*dt; e.hitT=0.05; } }
     }
   }
@@ -1964,12 +2169,20 @@ function updateArena(dt){
 }
 
 function updateEnemies(dt){
-  const px=player.x, py=player.y;
+  const ppx=player.x, ppy=player.y;
   for(let i=enemies.length-1;i>=0;i--){
     const e=enemies[i];
     // swallowed by the cannibal — gone without score, shards, or death effects
     if(e.eaten){ enemies.splice(i,1); continue; }
     e.hitT=Math.max(0,e.hitT-dt);
+    let px=ppx, py=ppy, lure=null, lureSignal=Infinity;
+    if(!e.boss && e.type!=="courier" && e.type!=="leech"){
+      for(const dr of drones){
+        const def=DRONES[dr.id], dd=d2(e.x,e.y,dr.x,dr.y), signal=dd/(def.aggro*def.aggro);
+        if(signal<1&&signal<lureSignal){ lure=dr; lureSignal=signal; }
+      }
+      if(lure){ px=lure.x; py=lure.y; }
+    }
     const dx=px-e.x, dy=py-e.y, dd=Math.sqrt(dx*dx+dy*dy)||1;
     const sMul = (e.elite?0.8:1)*(MUT.espd||1)*(G.pactEspd||1);
     switch(e.type){
@@ -2163,6 +2376,10 @@ function updateEnemies(dt){
         }
         break; }
     }
+    // free-roaming drifters and bombers still bend toward the drone's broadcast
+    if(lure && (e.type==="drifter"||e.type==="bomber")){
+      e.vx+=dx/dd*150*dt; e.vy+=dy/dd*150*dt;
+    }
     // burst elites periodically ring the field with bullets
     if(e.affix==="spray"){
       e.sprayT=(e.sprayT??rnd(1.6,2.6))-dt;
@@ -2181,6 +2398,20 @@ function updateEnemies(dt){
     if(e.slowT>0){ e.slowT-=dt; slowF=0.6; }
     e.x+=e.vx*dt*slowF; e.y+=e.vy*dt*slowF;
     if(e.type!=="drifter"){ e.x=clamp(e.x,-80,W+80); e.y=clamp(e.y,-80,H+80); }
+    // enemies that reach the lure chew through its integrity in discrete hits
+    if(lure && drones.includes(lure)){
+      const rr=e.r+lure.r;
+      if(d2(e.x,e.y,lure.x,lure.y)<rr*rr){
+        e.droneHitT=(e.droneHitT||0)-dt;
+        if(e.droneHitT<=0){
+          e.droneHitT=0.7;
+          const hit=(2+e.r*0.1)*(e.elite?3:1);
+          lure.hp-=hit;
+          burst(lure.x,lure.y,DRONES[lure.id].c,2,90,1.7,0.2);
+          e.vx*=0.72; e.vy*=0.72;
+        }
+      }
+    }
   }
 }
 
@@ -2230,6 +2461,7 @@ function killEnemy(i){
   // bosses go down like a second sun (the herald a touch dimmer)
   if(e.boss){
     banner("☠ "+e.name+" DESTROYED ☠");
+    recordDroneBossKill(e);
     G.rushT=10; // the arena answers the kill with a double-strength surge
     if(Math.random()<1/3) dropPilotPrisoner(e.x,e.y); // prisoners are a lucky find, not a given
     // a slain boss opens the devil's table
@@ -2721,10 +2953,17 @@ function updateBullets(dt){
     }
     b.x+=b.vx*dt*ts; b.y+=b.vy*dt*ts; b.life-=dt;
     if(b.life<=0||b.x<-40||b.x>W+40||b.y<-40||b.y>H+40){ ebul.splice(i,1); continue; }
+    let hitDrone=null;
+    for(const dr of drones){ if(d2(b.x,b.y,dr.x,dr.y)<(dr.r+b.r)*(dr.r+b.r)){ hitDrone=dr;break; } }
+    if(hitDrone){
+      hitDrone.hp-=b.meteor?24:12;
+      burst(b.x,b.y,DRONES[hitDrone.id].c,3,130,2,0.25);
+      ebul.splice(i,1); continue;
+    }
     const dd=d2(b.x,b.y,player.x,player.y);
     const hitR=(player.r+b.r), gzR=stats.grazeR;
     if(dd<hitR*hitR){
-      ebul.splice(i,1); damagePlayer(); continue;
+      ebul.splice(i,1); damagePlayer(b.meteor?1:enemyLateScale()); continue;
     }
     if(!b.grazed && dd<gzR*gzR){ b.grazed=1; doGraze(b.x,b.y); }
   }
@@ -2751,9 +2990,15 @@ function doGraze(x,y){
   if(G.grazes%10===0) ftext(player.x,player.y-26,"GRAZE ×"+G.grazes,scheme().c2,13);
 }
 
-function damagePlayer(){
+function damagePlayer(amount=enemyLateScale()){
   if(G.invuln>0) return;
-  G.hp--; drawHearts();
+  const whole=Math.floor(amount), fraction=amount-whole;
+  G.enemyDamageCarry=(G.enemyDamageCarry||0)+fraction;
+  const extra=Math.floor(G.enemyDamageCarry+1e-9);
+  G.enemyDamageCarry-=extra;
+  const damage=Math.max(1,whole+extra);
+  G.hp-=damage; drawHearts();
+  if(damage>1) ftext(player.x,player.y-34,"-"+damage+" HULL — DEEP PRESSURE","#ff5d7e",14);
   G.invuln=1.0;
   G.combo=Math.floor(G.combo/2);
   shake(16); hitstop(0.12); flashScreen(0.35);
@@ -2873,6 +3118,7 @@ function updateZones(dt){
         ebul.push({x:z.x,y:z.y,vx:Math.cos(a)*200,vy:Math.sin(a)*200,r:5,grazed:0,life:4});
       }
       if(d2(player.x,player.y,z.x,z.y)<z.r*z.r) damagePlayer();
+      for(const dr of drones){ if(d2(dr.x,dr.y,z.x,z.y)<z.r*z.r) dr.hp-=55; }
     }
   }
 }
@@ -3014,6 +3260,7 @@ function chooseCard(i){
 function startDeath(){
   G.state="dying"; G.deathT=0;
   AU.engineStop(0.45);
+  drones=[];
   // the crash site becomes a singularity that swallows the whole arena
   G.deathHole={x:player.x,y:player.y,collapsed:false};
   zones=[]; waves=[]; bolts=[]; flail=null; G.arena=null; G.cine=null;
@@ -3062,7 +3309,7 @@ function startRun(carryWarp=false){
   AU.engineStop(0.08);
   const carriedStars=carryWarp?G.warpStars:null;
   const carriedWarpIn=carryWarp?(G.warpInT||0):0;
-  enemies=[];pbul=[];ebul=[];shards=[];parts=[];texts=[];zones=[];holes=[];bolts=[];waves=[];flail=null;flares=[];taken=[];queuedPilotCard=null;
+  enemies=[];pbul=[];ebul=[];shards=[];parts=[];texts=[];zones=[];holes=[];bolts=[];waves=[];flail=null;drones=[];flares=[];taken=[];queuedPilotCard=null;
   stats=baseStats();
   // daily streak bonus
   stats.damage *= 1 + 0.05*meta.streak;
@@ -3096,6 +3343,7 @@ function startRun(carryWarp=false){
     spawnAcc:0,eliteAcc:0,introduced:{},scoredThisRun:0,musicAcc:0,arena:null,arenaAcc:0,bossN:0,
     cine:null,launch:2.25,miniDone:false,rushT:0,bossOrder:null,warpZoom:0,
     warpStars:carriedStars,warpInT:carriedWarpIn,warpStarted:false,engineEffort:0,
+    enemyLateLevel:0,enemyDamageCarry:0,
   });
   G.introAt=rollIntroPlan();
   G.pactScore=1; G.pactGraze=1; G.pactEspd=1; G.pactEbul=1;
@@ -3177,7 +3425,9 @@ function handleKey(code){
     if(code==="Escape"||code==="Backspace") closeSettings();
     return;
   }
-  if(G.state==="playing" && code==="Space") tryNova();
+  const droneKey=code.match(/^(?:Digit|Numpad)([1-8])$/);
+  if(G.state==="playing" && droneKey) deployDrone(DRONE_KEYS[Number(droneKey[1])-1]);
+  else if(G.state==="playing" && code==="Space") tryNova();
   else if(G.state==="levelup"){
     if(code==="Digit1")chooseCard(0);
     if(code==="Digit2")chooseCard(1);
@@ -3257,7 +3507,7 @@ const TUT=[
  {t:"BONUSES", v:'<div class="tCards"><i></i><i class="mid"></i><i></i></div>',
   b:"Fallen enemies drop <b>shards</b>. Shards fill the <b>bonus bar</b> along the bottom of the screen — when it fills, time pauses and you choose from <b>three bonuses</b>, common through <b>legendary</b>.<br><br>Builds compound: split shots ricochet, frost slows, death blooms chain. No two runs play alike."},
  {t:"THE HANGAR SHOP", v:'<div class="tCore">⬢</div>',
-  b:"Enemies drop <b>⬢ cores</b>, and your score converts to more when you fall — every run leaves you richer, win or lose.<br><br>Spend them in the <b>HANGAR SHOP</b> — the gold button on the menu and the death screen — on <b>permanent</b> upgrades that make every future run stronger: ship systems, thirteen weapons, whole new ships, pilots. When the hangar button glows, you can afford something new. Check it after every death."},
+  b:"Enemies drop <b>⬢ cores</b>, and your score converts to more when you fall — every run leaves you richer, win or lose.<br><br>Spend them in the <b>HANGAR SHOP</b> — the gold button on the menu and death screen — on permanent systems, weapons, ships and pilots. Defeat <b>all four named boss kinds</b> to unlock the restricted combat-drone bay. Check the hangar after every death."},
 ];
 let tutPage=0;
 function renderTut(){
@@ -3306,6 +3556,7 @@ function coachMsg(m){
 function goMenu(){
   AU.engineStop(0.2);
   AU.warpCruiseStop(0.2);
+  drones=[];
   G.state="menu";
   queuedPilotCard=null;
   hideBanner();
@@ -3324,6 +3575,7 @@ function goMenu(){
 function canAffordGear(){
   let m=Infinity;
   for(const id in WEAPONS){ if(!meta.owned[id] && meta.seen[id]) m=Math.min(m,WEAPONS[id].price); }
+  if(dronesUnlocked()) for(const id in DRONES) m=Math.min(m,DRONES[id].price); // gated consumables remain repeat-purchasable
   for(const id in HULLS){ if(!meta.hulls[id]) m=Math.min(m,HULLS[id].price); }
   for(const it of SHOP){ const lv=meta.shop[it.id]||0; if(lv<it.max) m=Math.min(m,shopPrice(it,lv)); }
   return meta.cores>=m;
@@ -3347,6 +3599,8 @@ function bindReset(el){
         lastDay:new Date().toISOString().slice(0,10),cores:0,weapon:"pulse",player:""});
       meta.owned={pulse:true};
       meta.seen={};
+      meta.droneStock={};
+      meta.bossKills={};
       meta.hull="vector"; meta.hulls={vector:true}; meta.pilot="rex"; meta.pilots={rex:true};
       meta.shop={gun:0,cycle:0,hull:0,thrust:0,magnet:0,graze:0,surge:0,luck:0};
       delete meta.cheat; delete meta.cheatBackup;
@@ -3659,6 +3913,39 @@ function buildStore(){
     });
     wEl.appendChild(d);
   }
+  // drones — expensive consumable inventory; every purchase adds another deployable unit
+  const dEl=document.getElementById("sDrones"); dEl.innerHTML="";
+  const droneOpen=dronesUnlocked(), droneProgress=droneBossProgress();
+  const droneTab=document.querySelector('#sTabs .stab[data-tab="drones"]');
+  droneTab.textContent=droneOpen?"DRONES":"DRONES "+droneProgress+"/4";
+  droneTab.classList.toggle("gated",!droneOpen);
+  if(!droneOpen){
+    const lock=document.createElement("div"); lock.className="droneLock";
+    lock.innerHTML="<div class='dlk'>RESTRICTED HARDWARE</div><div class='dlt'>BREAK ALL FOUR SIGNALS</div>"+
+      "<div class='dlb'>defeat every named boss kind at least once. progress persists across runs.</div>"+
+      "<div class='dlbosses'>"+DRONE_BOSS_IDS.map(id=>"<div class='dlboss"+(meta.bossKills[id]?" done":"")+"'>"+
+        (meta.bossKills[id]?"✓ ":"◇ ")+DRONE_BOSS_NAMES[id]+"</div>").join("")+"</div>";
+    dEl.appendChild(lock);
+  } else {
+    for(const id in DRONES){
+      const d=DRONES[id], stock=meta.droneStock[id]||0, slot=DRONE_KEYS.indexOf(id)+1;
+      const attract=d.aggro>=1200?"EXTREME":d.aggro>=850?"HIGH":"MEDIUM";
+      const card=document.createElement("div");
+      card.className="wcard"+(stock>0?" sel":"")+(meta.cores<d.price?" locked":"");
+      card.innerHTML="<div class='wn'>"+slot+" · "+d.nm+"</div><div class='wd'><b>"+d.role+"</b><br>"+d.ds+
+        "<br>"+d.life+"s · "+d.hp+" integrity · "+attract+" attract</div>"+
+        "<div class='wp'>×"+stock+" IN BAY · ⬢ "+fmtN(d.price)+"</div>";
+      card.addEventListener("pointerenter",()=>AU.hover());
+      card.addEventListener("pointerdown",e=>{
+        e.stopPropagation();
+        if(meta.cores>=d.price){
+          meta.cores-=d.price; meta.droneStock[id]=(meta.droneStock[id]||0)+1;
+          store.save(meta); AU.buy(); buildStore(); buildMenu();
+        } else AU.deny();
+      });
+      dEl.appendChild(card);
+    }
+  }
   // hulls — same buy/equip grammar as weapons
   const hEl=document.getElementById("sHulls"); hEl.innerHTML="";
   for(const id in HULLS){
@@ -3723,6 +4010,7 @@ function buildStore(){
 function setStoreTab(t){
   document.querySelectorAll("#sTabs .stab").forEach(b=>b.classList.toggle("sel",b.dataset.tab===t));
   document.getElementById("sWeapons").style.display = t==="weapons"?"":"none";
+  document.getElementById("sDrones").style.display  = t==="drones"?"":"none";
   document.getElementById("sHulls").style.display   = t==="hulls"?"":"none";
   document.getElementById("sPilots").style.display  = t==="pilots"?"":"none";
   document.getElementById("sShip").style.display    = t==="ship"?"":"none";
@@ -3878,6 +4166,50 @@ function updateMenuDemo(now,dt){
 }
 
 // ---------- render ----------
+function drawDrone(dr,now){
+  const d=DRONES[dr.id], hp=clamp(dr.hp/dr.maxhp,0,1), pulse=0.5+0.5*Math.sin(now*0.008);
+  ctx.globalCompositeOperation="lighter";
+  ctx.strokeStyle=d.c; ctx.globalAlpha=0.06+0.04*pulse; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.arc(dr.x,dr.y,Math.min(d.aggro,260)*(0.94+0.03*pulse),0,TAU); ctx.stroke();
+  ctx.globalAlpha=1;
+  drawGlow(dr.x,dr.y,d.r+4,d.c,0.8);
+  ctx.globalCompositeOperation="source-over";
+  ctx.save(); ctx.translate(dr.x,dr.y); ctx.rotate(dr.spin);
+  ctx.strokeStyle=d.c; ctx.fillStyle="rgba(5,10,24,.92)"; ctx.lineWidth=2;
+  ctx.beginPath();
+  for(let k=0;k<6;k++){ const a=k/6*TAU; k?ctx.lineTo(Math.cos(a)*d.r,Math.sin(a)*d.r):ctx.moveTo(Math.cos(a)*d.r,Math.sin(a)*d.r); }
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle="#ffffff"; ctx.fillStyle=d.c; ctx.lineWidth=1.5;
+  if(d.kind==="gun"){
+    ctx.fillRect(0,-2,d.r+9,4); ctx.beginPath(); ctx.arc(0,0,5,0,TAU); ctx.fill();
+  } else if(d.kind==="arc"){
+    for(let k=0;k<3;k++){ const a=k/3*TAU; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(a)*12,Math.sin(a)*12); ctx.stroke(); }
+    ctx.beginPath(); ctx.arc(0,0,4,0,TAU); ctx.fill();
+  } else if(d.kind==="laser"){
+    ctx.beginPath(); ctx.moveTo(-8,-7); ctx.lineTo(12,0); ctx.lineTo(-8,7); ctx.closePath(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(2,0,3,0,TAU); ctx.fill();
+  } else if(d.kind==="mortar"){
+    ctx.fillRect(-3,-6,16,12); ctx.beginPath(); ctx.arc(-4,0,7,0,TAU); ctx.stroke();
+  } else if(d.kind==="flak"){
+    for(let k=0;k<4;k++){ const a=k/4*TAU; ctx.strokeRect(Math.cos(a)*9-2,Math.sin(a)*9-2,4,4); }
+    ctx.beginPath(); ctx.arc(0,0,5,0,TAU); ctx.stroke();
+  } else if(d.kind==="gravity"){
+    ctx.beginPath(); ctx.arc(0,0,4,0,TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(0,0,9,0,Math.PI*1.45); ctx.stroke();
+  } else if(d.kind==="repair"){
+    ctx.fillRect(-3,-10,6,20); ctx.fillRect(-10,-3,20,6);
+  } else {
+    ctx.beginPath(); ctx.arc(0,0,8,0,TAU); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-7,0); ctx.lineTo(0,-11); ctx.lineTo(7,0); ctx.stroke();
+  }
+  ctx.restore();
+  // its natural timer and combat damage are one honest integrity meter
+  const bw=48,bx=dr.x-bw/2,by=dr.y-d.r-13;
+  ctx.fillStyle="rgba(255,255,255,.12)"; ctx.fillRect(bx,by,bw,4);
+  ctx.fillStyle=hp>0.35?d.c:"#ff5d7e"; ctx.fillRect(bx,by,bw*hp,4);
+  ctx.globalCompositeOperation="lighter";
+}
+
 function render(now){
   const s=scheme();
   // bg fade
@@ -4106,6 +4438,9 @@ function render(now){
     ctx.globalAlpha=1; ctx.restore();
   }
 
+  // deployed hangar drones — static defence, honest individual health, overlapping aggro signals
+  for(const dr of drones) drawDrone(dr,now);
+
   // enemies
   for(const e of enemies){
     const flash=e.hitT>0;
@@ -4173,7 +4508,7 @@ function render(now){
     else if(b.glaive) drawGlow(b.x,b.y,b.r+1.5,s.bullet,1);
     else if(b.prism) drawGlow(b.x,b.y,b.r+2+Math.sin(now*0.02)*1.5,"#bfe9ff",1);
     else if(b.steam) drawGlow(b.x,b.y,b.r+1.5,"#dfe9ff",0.9);
-    else drawGlow(b.x,b.y,b.r,s.bullet,0.9);
+    else drawGlow(b.x,b.y,b.r,b.c||s.bullet,0.9);
   }
 
   // anamorphic flares — the big beats get the lens treatment
@@ -4425,6 +4760,17 @@ function syncHUD(dt){
   document.getElementById("surgewrap").classList.toggle("full",full);
   document.getElementById("surgelabel").textContent =
     full ? (TOUCH?"⚡ TAP — RELEASE":"⚡ SPACE — RELEASE") : (TOUCH?"SURGE — TAP":"SURGE — SPACE");
+  const droneOpen=dronesUnlocked(), droneWrap=document.getElementById("dronewrap");
+  droneWrap.style.display=droneOpen?"":"none";
+  if(droneOpen){
+    document.getElementById("dronelabel").textContent="DRONE BAY · "+drones.length+" ACTIVE"+(TOUCH?" · TAP":" · KEYS 1–8");
+    document.querySelectorAll(".droneSlot").forEach((b,i)=>{
+      const id=DRONE_KEYS[i], n=meta.droneStock[id]||0;
+      b.innerHTML="<b>"+(i+1)+"</b> "+DRONES[id].short+" ×"+n;
+      b.classList.toggle("empty",n<=0);
+      b.title=DRONES[id].nm+" — "+n+" in bay";
+    });
+  }
   // rival line — silent until you breach the top ten, then a countdown of places
   const rEl=document.getElementById("rival");
   if(G.rivals && G.rivals.length && G.score>G.rivalEntry){
@@ -4488,8 +4834,10 @@ function loop(now){
     if(G.comboTimer>0) G.comboTimer-=dt;
     else if(G.combo>0) G.combo=Math.max(0,G.combo-dt*9);
 
+    updateLateEnemyScaling();
     director(dt);
     updatePlayer(dt);
+    updateDrones(dt);
     updateEnemies(dt);
     updateBullets(dt);
     updateWaves(dt);
