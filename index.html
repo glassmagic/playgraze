@@ -387,8 +387,18 @@
     transition:all .15s;}
   .stab:hover{color:#fff;border-color:var(--c1);}
   .stab.sel{color:#04040c;background:var(--c1);border-color:var(--c1);font-weight:700;}
+  .stab.gated{color:#5a6e92;border-style:dashed;}
   #sWeapons,#sDrones,#sHulls,#sPilots{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:740px;}
   #sDrones .wcard{min-width:220px;max-width:235px;}
+  #sDrones .droneLock{width:min(620px,88vw);padding:28px 24px;border:1px dashed rgba(180,140,255,.38);
+    border-radius:5px;background:rgba(10,8,28,.7);text-align:center;}
+  .droneLock .dlk{font-size:9px;letter-spacing:5px;color:#b48cff;}
+  .droneLock .dlt{margin-top:10px;font-size:18px;letter-spacing:6px;color:#eef6ff;}
+  .droneLock .dlb{margin-top:12px;font-size:10px;line-height:1.8;letter-spacing:1.5px;color:#7d92b8;}
+  .droneLock .dlbosses{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-top:18px;}
+  .droneLock .dlboss{padding:7px 10px;border:1px solid rgba(140,170,220,.18);color:#5a6e92;
+    font-size:8px;letter-spacing:1.5px;}
+  .droneLock .dlboss.done{color:#7fe8a8;border-color:rgba(127,232,168,.45);}
   #sPilots .wcard{min-width:200px;max-width:220px;}
   .wcard{padding:12px 16px;border:1px solid rgba(140,170,220,.25);border-radius:4px;cursor:pointer;
     text-align:center;min-width:128px;transition:all .15s;background:rgba(10,14,30,.6);}
@@ -835,7 +845,7 @@ const store = {
 const meta = Object.assign({
   best:0, totalScore:0, runs:0, scheme:"pulse",
   streak:0, lastDay:"", muted:false,
-  cores:0, weapon:"pulse", owned:null, shop:null, player:"", droneStock:null
+  cores:0, weapon:"pulse", owned:null, shop:null, player:"", droneStock:null, bossKills:null
 }, store.load());
 meta.owned = Object.assign({pulse:true}, meta.owned||{});
 meta.shop  = Object.assign({gun:0,cycle:0,hull:0,thrust:0,magnet:0,graze:0,surge:0,luck:0}, meta.shop||{});
@@ -845,6 +855,7 @@ meta.pilot = meta.pilot||"rex";
 meta.pilots = Object.assign({rex:true}, meta.pilots||{});
 meta.hulls = Object.assign({vector:true}, meta.hulls||{});
 meta.droneStock = Object.assign({}, meta.droneStock||{});
+meta.bossKills = Object.assign({}, meta.bossKills||{});
 // migrate the original one-blueprint save shape into one consumable unit of each purchase
 for(const id in (meta.drones||{})){ if(meta.drones[id] && !meta.droneStock[id]) meta.droneStock[id]=1; }
 delete meta.drone; delete meta.drones;
@@ -905,24 +916,40 @@ const WEAPONS = {
 // deployable hangar hardware — each purchase adds one consumable unit to the bay.
 // Multiple units can fight together; integrity drains naturally and under enemy fire/contact.
 const DRONES = {
-  watchdog:{nm:"WATCHDOG",short:"WDG", role:"BALLISTIC SENTRY", ds:"rapidly tracks the nearest hostile", price:2500,
+  watchdog:{nm:"WATCHDOG",short:"WDG", role:"BALLISTIC SENTRY", ds:"cheap rapid-fire point defence", price:2000,
     hp:260,life:38,aggro:620,r:13,c:"#4ef3ff",kind:"gun",range:540,rate:0.28,dmg:18},
-  arc:{nm:"ARC NODE",short:"ARC", role:"CHAIN LIGHTNING", ds:"forks electricity through clustered enemies", price:4200,
+  arc:{nm:"ARC NODE",short:"ARC", role:"CHAIN LIGHTNING", ds:"forks electricity through four clustered enemies", price:4000,
     hp:220,life:32,aggro:660,r:13,c:"#b48cff",kind:"arc",range:470,rate:1.05,dmg:24,chains:4},
-  helios:{nm:"HELIOS",short:"HEL", role:"CUTTING LASER", ds:"holds a high-frequency beam on one target", price:5600,
-    hp:180,life:24,aggro:540,r:12,c:"#ffd84e",kind:"laser",range:640,rate:0.09,dmg:8},
-  mortar:{nm:"MORTAR",short:"MRT", role:"AREA BOMBARDMENT", ds:"slow shells punish dense enemy packs", price:6900,
+  helios:{nm:"HELIOS",short:"HEL", role:"CUTTING LASER", ds:"long-range beam pierces packed targets", price:7000,
+    hp:180,life:24,aggro:540,r:12,c:"#ffd84e",kind:"laser",range:640,rate:0.09,dmg:8,pierce:3},
+  mortar:{nm:"MORTAR",short:"MRT", role:"AREA BOMBARDMENT", ds:"slow heavy blasts erase dense enemy packs", price:10000,
     hp:320,life:42,aggro:780,r:16,c:"#ff9b3d",kind:"mortar",range:760,rate:2.2,dmg:55,blast:120},
-  bastion:{nm:"BASTION",short:"BST", role:"FLAK DEFENCE", ds:"shreds hostile projectiles around itself", price:8200,
+  bastion:{nm:"BASTION",short:"BST", role:"FLAK DEFENCE", ds:"intercepts waves of hostile projectiles", price:14000,
     hp:420,life:44,aggro:840,r:17,c:"#7dffe0",kind:"flak",range:175,rate:0.16},
-  graviton:{nm:"GRAVITON",short:"GRV", role:"CROWD CONTROL", ds:"drags the horde into a tight kill pocket", price:9600,
+  graviton:{nm:"GRAVITON",short:"GRV", role:"CROWD CONTROL", ds:"drags the horde into a tight kill pocket", price:19000,
     hp:480,life:48,aggro:960,r:18,c:"#cf7dff",kind:"gravity",range:300,pull:1350},
-  patcher:{nm:"PATCHER",short:"PTC", role:"FIELD REPAIR", ds:"restores one hull segment every eight seconds", price:11500,
+  patcher:{nm:"PATCHER",short:"PTC", role:"FIELD REPAIR", ds:"restores hull, then repels nearby enemies", price:25000,
     hp:240,life:30,aggro:580,r:14,c:"#7fe8a8",kind:"repair",rate:8},
-  siren:{nm:"SIREN",short:"SRN", role:"MAXIMUM DECOY", ds:"little damage. enormous integrity. everyone notices.", price:13500,
+  siren:{nm:"SIREN",short:"SRN", role:"MAXIMUM DECOY", ds:"enormous integrity. extreme attraction. hostile pulse.", price:32000,
     hp:1100,life:55,aggro:1500,r:20,c:"#ff3df0",kind:"decoy",rate:1.6,range:250},
 };
 const DRONE_KEYS=Object.keys(DRONES);
+const DRONE_BOSS_IDS=["voidmaw","hex","tyrant","cannibal"];
+const DRONE_BOSS_NAMES={voidmaw:"VOIDMAW",hex:"HEXAGON PRIME",tyrant:"NULL TYRANT",cannibal:"THE CANNIBAL"};
+function droneBossProgress(){ return DRONE_BOSS_IDS.filter(id=>meta.bossKills[id]).length; }
+function dronesUnlocked(){ return droneBossProgress()===DRONE_BOSS_IDS.length; }
+function recordDroneBossKill(e){
+  if(e.mini||!DRONE_BOSS_IDS.includes(e.kit)||meta.bossKills[e.kit]) return;
+  meta.bossKills[e.kit]=true; store.save(meta);
+  const progress=droneBossProgress();
+  if(dronesUnlocked()){
+    banner("⬡ DRONE BAY UNLOCKED ⬡");
+    ftext(e.x,e.y-62,"ALL FOUR SIGNALS BROKEN", "#b48cff",18);
+    AU.levelup(); flashScreen(0.25);
+  } else {
+    ftext(e.x,e.y-62,"BOSS ARCHIVE "+progress+" / 4", "#b48cff",15);
+  }
+}
 // ship hulls — real tradeoffs, chosen before a run. size is honest: it scales
 // the drawn ship AND the hitbox
 const HULLS = {
@@ -1038,6 +1065,7 @@ const cloneSave=v=>JSON.parse(JSON.stringify(v));
 function applyCheatEntitlements(){
   meta.cores=999999;
   for(const id of Object.keys(WEAPONS)){ meta.owned[id]=true; meta.seen[id]=true; }
+  for(const id of DRONE_BOSS_IDS) meta.bossKills[id]=true;
   for(const id of DRONE_KEYS) meta.droneStock[id]=99;
   for(const id of Object.keys(HULLS)) meta.hulls[id]=true;
   for(const id of Object.keys(PILOTS)) meta.pilots[id]=true;
@@ -1109,7 +1137,9 @@ function disableCheatMode(){
   if(backup) Object.assign(meta,backup);
   else Object.assign(meta,{best:0,totalScore:0,runs:0,scheme:"pulse",streak:1,lastDay:"",muted:false,
     cores:0,weapon:"pulse",owned:{pulse:true},shop:{gun:0,cycle:0,hull:0,thrust:0,magnet:0,graze:0,surge:0,luck:0},
-    player:"",seen:{},hull:"vector",hulls:{vector:true},pilot:"rex",pilots:{rex:true},droneStock:{}});
+    player:"",seen:{},hull:"vector",hulls:{vector:true},pilot:"rex",pilots:{rex:true},droneStock:{},bossKills:{}});
+  meta.droneStock=Object.assign({},meta.droneStock||{});
+  meta.bossKills=Object.assign({},meta.bossKills||{});
   store.save(meta);
   AU.muted=!!meta.muted;
   if(AU.master) AU.master.gain.value=AU.muted?0:0.5;
@@ -1716,6 +1746,7 @@ function bumpCombo(n=1){
 // ---------- deployable drones ----------
 function deployDrone(id){
   if(G.state!=="playing"||G.launch>0) return;
+  if(!dronesUnlocked()){ AU.deny(); return; }
   const d=DRONES[id], stock=meta.droneStock[id]||0;
   if(!d||stock<=0){ AU.deny(); return; }
   meta.droneStock[id]=stock-1; store.save(meta);
@@ -1773,7 +1804,7 @@ function updateDrones(dt){
       const e=droneTarget(dr,d.range); if(!e) continue;
       const a=Math.atan2(e.y-dr.y,e.x-dr.x), sp=d.kind==="laser"?950:620;
       pbul.push({x:dr.x,y:dr.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,r:d.kind==="laser"?3:4,
-        dmg:dronePower(d.dmg),pierce:d.kind==="laser"?1:0,bounces:0,life:d.range/sp,home:0,droneShot:1,c:d.c});
+        dmg:dronePower(d.dmg),pierce:d.pierce||0,bounces:0,life:d.range/sp,home:0,droneShot:1,c:d.c});
       if(d.kind==="laser") bolts.push({pts:[{x:dr.x,y:dr.y},{x:e.x,y:e.y}],life:0.055,max:0.055,c:d.c,w:1.4});
     } else if(d.kind==="arc"){
       const first=droneTarget(dr,d.range); if(!first) continue;
@@ -2430,6 +2461,7 @@ function killEnemy(i){
   // bosses go down like a second sun (the herald a touch dimmer)
   if(e.boss){
     banner("☠ "+e.name+" DESTROYED ☠");
+    recordDroneBossKill(e);
     G.rushT=10; // the arena answers the kill with a double-strength surge
     if(Math.random()<1/3) dropPilotPrisoner(e.x,e.y); // prisoners are a lucky find, not a given
     // a slain boss opens the devil's table
@@ -3475,7 +3507,7 @@ const TUT=[
  {t:"BONUSES", v:'<div class="tCards"><i></i><i class="mid"></i><i></i></div>',
   b:"Fallen enemies drop <b>shards</b>. Shards fill the <b>bonus bar</b> along the bottom of the screen — when it fills, time pauses and you choose from <b>three bonuses</b>, common through <b>legendary</b>.<br><br>Builds compound: split shots ricochet, frost slows, death blooms chain. No two runs play alike."},
  {t:"THE HANGAR SHOP", v:'<div class="tCore">⬢</div>',
-  b:"Enemies drop <b>⬢ cores</b>, and your score converts to more when you fall — every run leaves you richer, win or lose.<br><br>Spend them in the <b>HANGAR SHOP</b> — the gold button on the menu and the death screen — on permanent ship systems, weapons, ships and pilots, plus <b>consumable combat drones</b>. When the hangar button glows, you can afford something. Check it after every death."},
+  b:"Enemies drop <b>⬢ cores</b>, and your score converts to more when you fall — every run leaves you richer, win or lose.<br><br>Spend them in the <b>HANGAR SHOP</b> — the gold button on the menu and death screen — on permanent systems, weapons, ships and pilots. Defeat <b>all four named boss kinds</b> to unlock the restricted combat-drone bay. Check the hangar after every death."},
 ];
 let tutPage=0;
 function renderTut(){
@@ -3543,7 +3575,7 @@ function goMenu(){
 function canAffordGear(){
   let m=Infinity;
   for(const id in WEAPONS){ if(!meta.owned[id] && meta.seen[id]) m=Math.min(m,WEAPONS[id].price); }
-  for(const id in DRONES) m=Math.min(m,DRONES[id].price); // consumables remain repeat-purchasable
+  if(dronesUnlocked()) for(const id in DRONES) m=Math.min(m,DRONES[id].price); // gated consumables remain repeat-purchasable
   for(const id in HULLS){ if(!meta.hulls[id]) m=Math.min(m,HULLS[id].price); }
   for(const it of SHOP){ const lv=meta.shop[it.id]||0; if(lv<it.max) m=Math.min(m,shopPrice(it,lv)); }
   return meta.cores>=m;
@@ -3568,6 +3600,7 @@ function bindReset(el){
       meta.owned={pulse:true};
       meta.seen={};
       meta.droneStock={};
+      meta.bossKills={};
       meta.hull="vector"; meta.hulls={vector:true}; meta.pilot="rex"; meta.pilots={rex:true};
       meta.shop={gun:0,cycle:0,hull:0,thrust:0,magnet:0,graze:0,surge:0,luck:0};
       delete meta.cheat; delete meta.cheatBackup;
@@ -3882,23 +3915,36 @@ function buildStore(){
   }
   // drones — expensive consumable inventory; every purchase adds another deployable unit
   const dEl=document.getElementById("sDrones"); dEl.innerHTML="";
-  for(const id in DRONES){
-    const d=DRONES[id], stock=meta.droneStock[id]||0, slot=DRONE_KEYS.indexOf(id)+1;
-    const attract=d.aggro>=1200?"EXTREME":d.aggro>=850?"HIGH":"MEDIUM";
-    const card=document.createElement("div");
-    card.className="wcard"+(stock>0?" sel":"")+(meta.cores<d.price?" locked":"");
-    card.innerHTML="<div class='wn'>"+slot+" · "+d.nm+"</div><div class='wd'><b>"+d.role+"</b><br>"+d.ds+
-      "<br>"+d.life+"s · "+d.hp+" integrity · "+attract+" attract</div>"+
-      "<div class='wp'>×"+stock+" IN BAY · ⬢ "+fmtN(d.price)+"</div>";
-    card.addEventListener("pointerenter",()=>AU.hover());
-    card.addEventListener("pointerdown",e=>{
-      e.stopPropagation();
-      if(meta.cores>=d.price){
-        meta.cores-=d.price; meta.droneStock[id]=(meta.droneStock[id]||0)+1;
-        store.save(meta); AU.buy(); buildStore(); buildMenu();
-      } else AU.deny();
-    });
-    dEl.appendChild(card);
+  const droneOpen=dronesUnlocked(), droneProgress=droneBossProgress();
+  const droneTab=document.querySelector('#sTabs .stab[data-tab="drones"]');
+  droneTab.textContent=droneOpen?"DRONES":"DRONES "+droneProgress+"/4";
+  droneTab.classList.toggle("gated",!droneOpen);
+  if(!droneOpen){
+    const lock=document.createElement("div"); lock.className="droneLock";
+    lock.innerHTML="<div class='dlk'>RESTRICTED HARDWARE</div><div class='dlt'>BREAK ALL FOUR SIGNALS</div>"+
+      "<div class='dlb'>defeat every named boss kind at least once. progress persists across runs.</div>"+
+      "<div class='dlbosses'>"+DRONE_BOSS_IDS.map(id=>"<div class='dlboss"+(meta.bossKills[id]?" done":"")+"'>"+
+        (meta.bossKills[id]?"✓ ":"◇ ")+DRONE_BOSS_NAMES[id]+"</div>").join("")+"</div>";
+    dEl.appendChild(lock);
+  } else {
+    for(const id in DRONES){
+      const d=DRONES[id], stock=meta.droneStock[id]||0, slot=DRONE_KEYS.indexOf(id)+1;
+      const attract=d.aggro>=1200?"EXTREME":d.aggro>=850?"HIGH":"MEDIUM";
+      const card=document.createElement("div");
+      card.className="wcard"+(stock>0?" sel":"")+(meta.cores<d.price?" locked":"");
+      card.innerHTML="<div class='wn'>"+slot+" · "+d.nm+"</div><div class='wd'><b>"+d.role+"</b><br>"+d.ds+
+        "<br>"+d.life+"s · "+d.hp+" integrity · "+attract+" attract</div>"+
+        "<div class='wp'>×"+stock+" IN BAY · ⬢ "+fmtN(d.price)+"</div>";
+      card.addEventListener("pointerenter",()=>AU.hover());
+      card.addEventListener("pointerdown",e=>{
+        e.stopPropagation();
+        if(meta.cores>=d.price){
+          meta.cores-=d.price; meta.droneStock[id]=(meta.droneStock[id]||0)+1;
+          store.save(meta); AU.buy(); buildStore(); buildMenu();
+        } else AU.deny();
+      });
+      dEl.appendChild(card);
+    }
   }
   // hulls — same buy/equip grammar as weapons
   const hEl=document.getElementById("sHulls"); hEl.innerHTML="";
@@ -4714,13 +4760,17 @@ function syncHUD(dt){
   document.getElementById("surgewrap").classList.toggle("full",full);
   document.getElementById("surgelabel").textContent =
     full ? (TOUCH?"⚡ TAP — RELEASE":"⚡ SPACE — RELEASE") : (TOUCH?"SURGE — TAP":"SURGE — SPACE");
-  document.getElementById("dronelabel").textContent="DRONE BAY · "+drones.length+" ACTIVE"+(TOUCH?" · TAP":" · KEYS 1–8");
-  document.querySelectorAll(".droneSlot").forEach((b,i)=>{
-    const id=DRONE_KEYS[i], n=meta.droneStock[id]||0;
-    b.innerHTML="<b>"+(i+1)+"</b> "+DRONES[id].short+" ×"+n;
-    b.classList.toggle("empty",n<=0);
-    b.title=DRONES[id].nm+" — "+n+" in bay";
-  });
+  const droneOpen=dronesUnlocked(), droneWrap=document.getElementById("dronewrap");
+  droneWrap.style.display=droneOpen?"":"none";
+  if(droneOpen){
+    document.getElementById("dronelabel").textContent="DRONE BAY · "+drones.length+" ACTIVE"+(TOUCH?" · TAP":" · KEYS 1–8");
+    document.querySelectorAll(".droneSlot").forEach((b,i)=>{
+      const id=DRONE_KEYS[i], n=meta.droneStock[id]||0;
+      b.innerHTML="<b>"+(i+1)+"</b> "+DRONES[id].short+" ×"+n;
+      b.classList.toggle("empty",n<=0);
+      b.title=DRONES[id].nm+" — "+n+" in bay";
+    });
+  }
   // rival line — silent until you breach the top ten, then a countdown of places
   const rEl=document.getElementById("rival");
   if(G.rivals && G.rivals.length && G.score>G.rivalEntry){
