@@ -47,29 +47,29 @@ setTimeout(()=>{
       drones.push({id,x:W/2+Math.cos(a)*170,y:H/2+Math.sin(a)*130,hp:d.hp,maxhp:d.hp,r:d.r,fireT:0.12,spin:0,decay:d.hp/d.life});
     });
     burst(W/2,H/2,"#ff3df0",600,260,4,1.2);
-    rebuildEnemyGrid();
+    // Force the grid for parity even though the live hybrid stays linear at this density.
+    rebuildEnemyGrid(true);
 
     let parityChecks=0;
     for(let i=0;i<240;i++){
       const x=rnd(-40,W+40),y=rnd(-40,H+40),r=rnd(20,440);
       const exact=enemies.filter(e=>!e.dead&&!e.eaten&&d2(x,y,e.x,e.y)<r*r).map(e=>e._fixtureId);
-      const grid=queryEnemies(x,y,r,enemyQueryC).filter(e=>d2(x,y,e.x,e.y)<r*r).map(e=>e._fixtureId).sort((a,b)=>a-b);
+      const grid=queryEnemyGrid(x,y,r,enemyQueryC).filter(e=>d2(x,y,e.x,e.y)<r*r).map(e=>e._fixtureId).sort((a,b)=>a-b);
       if(exact.length!==grid.length||exact.some((id,j)=>id!==grid[j])) throw Error("grid parity failed at query "+i);
       const br=rnd(2,12);
       const exactHit=enemies.filter(e=>!e.dead&&!e.eaten&&d2(x,y,e.x,e.y)<(br+e.r)*(br+e.r)).map(e=>e._fixtureId);
-      const gridHit=queryEnemies(x,y,br+enemyGridMaxR,enemyQueryC,true).filter(e=>d2(x,y,e.x,e.y)<(br+e.r)*(br+e.r)).map(e=>e._fixtureId);
+      const gridHit=queryEnemyGrid(x,y,br+enemyGridMaxR,enemyQueryC,true).filter(e=>d2(x,y,e.x,e.y)<(br+e.r)*(br+e.r)).map(e=>e._fixtureId);
       if(exactHit.length!==gridHit.length||exactHit.some((id,j)=>id!==gridHit[j])) throw Error("collision parity failed at query "+i);
       parityChecks+=2;
     }
 
+    rebuildEnemyGrid();
+    const queryMode=enemyGridActive?"grid":"linear";
     for(let i=0;i<12;i++) render(performance.now()+i*8.333);
     const renderCounts={enemies:enemies.length,pbul:pbul.length,ebul:ebul.length,shards:shards.length,parts:parts.length,drones:drones.length};
     const r0=performance.now();
     for(let i=0;i<180;i++) render(r0+i*8.333);
     const renderMs=(performance.now()-r0)/180;
-    const u0=performance.now();
-    for(let i=0;i<120;i++){ rebuildEnemyGrid(); updateBullets(0); }
-    const bulletMs=(performance.now()-u0)/120;
     syncHUD(1);
     const uniform=list=>{
       if(!list.length) return true;
@@ -95,9 +95,36 @@ setTimeout(()=>{
       shards:shards.length,drones:drones.length,
       enemyX:+enemies.reduce((n,e)=>n+e.x,0).toFixed(3),enemyY:+enemies.reduce((n,e)=>n+e.y,0).toFixed(3),
     };
+    const setupBulletBench=enemyCount=>{
+      enemies.length=0; drones.length=0; clearEnemyGrid(); recycleAll(pbul,"pbul"); recycleAll(ebul,"ebul");
+      for(let i=0;i<enemyCount;i++){
+        const a=i/enemyCount*TAU, rx=190+(i%5)*16, ry=150+(i%7)*12;
+        const e=spawnEnemy("chaser",false,W/2+Math.cos(a)*rx,H/2+Math.sin(a)*ry);
+        e.hp=e.maxhp=999999;
+      }
+      for(let i=0;i<400;i++){
+        const a=i/400*TAU;
+        addPbul(W/2,H/2,Math.cos(a)*300,Math.sin(a)*300,4,4,0,0,4,0);
+      }
+      rebuildEnemyGrid(true);
+    };
+    const measureBullets=enemyCount=>{
+      __fixtureSeed=0x51f15e+enemyCount; setupBulletBench(enemyCount);
+      for(let i=0;i<24;i++) updateBullets(0);
+      const samples=[];
+      for(let run=0;run<7;run++){
+        const t=performance.now();
+        for(let i=0;i<160;i++) updateBullets(0);
+        samples.push((performance.now()-t)/160);
+      }
+      samples.sort((a,b)=>a-b);
+      return samples[3];
+    };
+    const bulletMs=measureBullets(130);
+    const bulletBenchCounts={enemies:enemies.length,pbul:pbul.length,ebul:ebul.length};
     const summary={
-      pass:true,parityChecks,poolReuseChecks:1,shapeChecks:4,viewport:W+"×"+H+" @"+DPR+"x",renderMs:+renderMs.toFixed(3),bulletMs:+bulletMs.toFixed(3),
-      renderCounts,
+      pass:true,parityChecks,poolReuseChecks:1,shapeChecks:4,queryMode,viewport:W+"×"+H+" @"+DPR+"x",renderMs:+renderMs.toFixed(3),bulletMs:+bulletMs.toFixed(3),
+      renderCounts,bulletBenchCounts,
       simulationDigest,
       note:"Lower timings are better; compare on the same browser and hardware."
     };
