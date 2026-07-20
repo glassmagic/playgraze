@@ -40,7 +40,7 @@
   /* animated film grain */
   #grain{position:fixed;inset:-7%;width:114%;height:114%;pointer-events:none;z-index:9;opacity:.06;will-change:transform;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='280' height='280' filter='url(%23n)'/%3E%3C/svg%3E");
-    background-size:280px 280px;animation:grainShift .65s steps(8) infinite;}
+    background-size:280px 280px;background-position:-43vw -43vh;animation:grainShift .65s steps(8) infinite;}
   @keyframes grainShift{
     0%{transform:translate(0,0);}12.5%{transform:translate(-5.263%,3.509%);}25%{transform:translate(3.509%,-5.263%);}
     37.5%{transform:translate(-3.509%,-3.509%);}50%{transform:translate(5.263%,1.754%);}62.5%{transform:translate(-1.754%,5.263%);}
@@ -4467,15 +4467,13 @@ function render(now){
   }
 
   // stars
-  ctx.fillStyle="rgb(160,200,255)";
   for(const st of stars){
     const px=(((st.x*W - (player.x*0.02+cam.x)*st.z)%W)+W)%W;
     const py=(((st.y*H - (player.y*0.02+cam.y)*st.z)%H)+H)%H;
     const a=0.25*st.z + 0.18*Math.sin(now*0.001+st.tw);
-    ctx.globalAlpha=Math.max(0,a);
+    ctx.fillStyle="rgba(160,200,255,"+Math.max(0,a)+")";
     ctx.fillRect(px,py,st.z*1.8,st.z*1.8);
   }
-  ctx.globalAlpha=1;
 
   // wreckage silhouettes — a parallax slab of depth behind the fight
   for(const d of debris){
