@@ -50,7 +50,7 @@ For copy tweaks, constant changes, or similarly low-risk edits, keep the workflo
 - `GET /api/scores?window=day|week` (default all) returns `{scores: top100, total}`. `POST {name, score, time}` returns `{best, bestAt, rank, improved, total}` — `bestAt` powers the client's "YOUR JUN 13 BEST OF 300,053 STANDS" message.
 - **Consistency**: the POST read-modify-write reads with `consistency:"strong"` (eventual reads once let a lower score clobber a higher one). GET uses eventual/edge reads for speed. The game fires a warm-up `fetch` on page load because cold starts once made the board look broken (multi-second first calls).
 - **Known weakness**: two simultaneous POSTs race (last write wins, one submission lost). Accepted at current traffic; fix candidate is write-verify-retry.
-- Validation: callsign 2–16 chars `[a-z0-9 _.-]`, score ≥1, time 5–86400s, score ≤ (time+10)×25000. Friendly anti-forgery only.
+- Validation: callsign 2–16 chars `[a-z0-9 _.-]`, score ≥1 and ≤1e9, time 5–86400s, score ≤ 400×(time+10)². The ceiling is **quadratic in time** because the combo multiplier climbs all run — a linear 25k/s cap once rejected a real 31.4M/16-min run as "implausible" and the client showed it as LEADERBOARD UNREACHABLE. If scores power-creep past this again, raise the coefficient; it's friendly anti-forgery only. The client distinguishes 4xx rejections ("SUBMISSION REJECTED — …") from network failures ("LEADERBOARD UNREACHABLE").
 - **Deploy previews share the production Blobs store.** Any POST you make while testing lands on the real board.
 
 ## Data hygiene

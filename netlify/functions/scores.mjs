@@ -58,8 +58,11 @@ export default async req => {
   if (!NAME_RE.test(name)) return bad("invalid name");
   if (!Number.isFinite(score) || score < 1 || score > 1e9) return bad("invalid score");
   if (!Number.isFinite(time) || time < 5 || time > 86400) return bad("invalid time");
-  // generous ceiling on score-per-second; blocks lazy forgery, not determined cheaters
-  if (score > (time + 10) * 25000) return bad("implausible score");
+  // plausibility ceiling: score grows superlinearly with survival (the combo
+  // multiplier climbs all run), so the cap is quadratic in time. The old linear
+  // 25k/s cap rejected a real 31.4M / 16-minute run once power creep arrived.
+  // Blocks lazy forgery, not determined cheaters.
+  if (score > 400 * (time + 10) * (time + 10)) return bad("implausible score");
 
   // one entry per username (case-insensitive), keeping the max score, in every window.
   // strong consistency here only: the read-modify-write must see the latest board
